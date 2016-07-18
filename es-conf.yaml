@@ -1,0 +1,46 @@
+# configuration for Elasticsearch resources
+
+config:   
+  # ES metricsConsumer
+  # Transport client will be used if a hostname is specified
+  # Node client will be used otherwise
+  es.metrics.addresses: "localhost"
+  es.metrics.index.name: "metrics"
+  es.metrics.doc.type: "datapoint"
+  es.metrics.cluster.name: "elasticsearch"
+  es.metrics.ttl: -1
+  
+  # ES metrics whitelist. Only metrics in this list will be written to ES
+  # es.metrics.whitelist:
+  # - fetcher_counter
+  # - fetcher_average.bytes_fetched
+  
+  # ES metrics blacklist. Never write these metrics to ES
+  # es.metrics.blacklist:
+  # - __receive.capacity
+  # - __receive.read_pos
+  
+  # ES spout and persistence bolt
+  # Transport client will be used if a hostname is specified
+  # Node client will be used otherwise
+  es.status.addresses: "localhost"
+  es.status.index.name: "status"
+  es.status.doc.type: "status"
+  es.status.cluster.name: "elasticsearch"
+  es.status.routing: true
+  es.status.routing.fieldname: "hostname"
+  es.status.bulkActions: 500
+  es.status.flushInterval: "5s"
+  
+  # ElasticSearchSpout
+  # ES Spout throttling. Uses configuration of URLPartitionerBolt for the bucket key.
+  es.status.max.inflight.urls.per.bucket: -1
+  es.status.sort.field: "nextFetchDate"
+  
+  # AggregationSpout
+  es.status.max.buckets: 100
+  es.status.max.urls.per.bucket: 3
+  # field to sort the URLs within a bucket
+  es.status.bucket.sort.field: "nextFetchDate"
+  # field to sort the buckets
+  es.status.global.sort.field: "nextFetchDate"
