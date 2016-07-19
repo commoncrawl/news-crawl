@@ -7,18 +7,47 @@
 config: 
   topology.workers: 1
   topology.message.timeout.secs: 300
-  topology.max.spout.pending: 10
+  topology.max.spout.pending: 100
   topology.debug: false
 
   # mandatory when using Flux
   topology.kryo.register:
     - com.digitalpebble.stormcrawler.Metadata
 
-  # metadata to transfer to the outlinks
-  # used by Fetcher for redirections, sitemapparser, etc...
-  # these are also persisted for the parent document (see below)
-  # metadata.transfer:
-  # - customMetadataName
+  topology.backpressure.enable: false
+  
+  # set to 0 to deactivate debugging
+  topology.eventlogger.executors: 0
+  
+  #Metrics consumers:
+  topology.metrics.consumer.register:
+     - class: "org.apache.storm.metric.LoggingMetricsConsumer"
+       parallelism.hint: 1
+     - class: "com.digitalpebble.stormcrawler.elasticsearch.metrics.MetricsConsumer"
+       parallelism.hint: 1
+
+  partition.url.mode: "byDomain"
+
+  http.content.limit: 1048576
+  
+  parsefilters.config.file: "parsefilters.json"
+  urlfilters.config.file: "urlfilters.json"
+  
+  # time bucket to use for the metrics sent by the Fetcher
+  fetcher.metrics.time.bucket.secs: 30
+  
+  fetcher.threads.number: 20
+  
+  # revisit a page monthly (value in minutes)
+  fetchInterval.default: 44640
+  
+  # revisit a page with a fetch error after 24 hours (value in minutes)
+  fetchInterval.fetch.error: 1440
+  
+  # revisit a page with an error every month (value in minutes)
+  fetchInterval.error: 44640
+  
+  status.updater.cache.spec: "maximumSize=250000,expireAfterAccess=4h"
 
   # lists the metadata to persist to storage
   # these are not transfered to the outlinks
@@ -29,32 +58,11 @@ config:
    - isSitemap
    - isFeed
 
-  http.agent.name: "Anonymous Coward"
+  http.agent.name: "NewsCrawler"
   http.agent.version: "1.0"
-  http.agent.description: "A StormCrawler-based crawler"
-  http.agent.url: "http://someorganization.com/"
-  http.agent.email: "someone@http://someorganization.com/"
-
-  # FetcherBolt queue dump : comment out to activate
-  # if a file exists on the worker machine with the corresponding port number
-  # the FetcherBolt will log the content of its internal queues to the logs
-  # fetcherbolt.queue.debug.filepath: "/tmp/fetcher-dump-{port}
-
-  parsefilters.config.file: "parsefilters.json"
-  urlfilters.config.file: "urlfilters.json"
-
-  # revisit a page daily (value in minutes)
-  fetchInterval.default: 1440
-
-  # revisit a page with a fetch error after 2 hours (value in minutes)
-  fetchInterval.fetch.error: 120
-
-  # revisit a page with an error every month (value in minutes)
-  fetchInterval.error: 44640
-
-  # custom fetch interval to be used when a document has the key/value in its metadata
-  # and has been fetched succesfully (value in minutes)
-  # fetchInterval.isFeed=true: 10
+  http.agent.description: "A StormCrawler-based crawler for newsfeeds"
+  http.agent.url: "http://commoncrawl.org/"
+  http.agent.email: "sebastian@commoncrawl.org"
 
   # configuration for the classes extending AbstractIndexerBolt
   # indexer.md.filter: "someKey=aValue"
@@ -66,8 +74,4 @@ config:
   - parse.keywords=keywords
   - parse.description=description
 
-  # Metrics consumers:
-  topology.metrics.consumer.register:
-     - class: "org.apache.storm.metric.LoggingMetricsConsumer"
-       parallelism.hint: 1
 

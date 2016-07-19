@@ -1,4 +1,4 @@
-name: "crawler"
+name: "feeds"
 
 includes:
     - resource: true
@@ -6,34 +6,43 @@ includes:
       override: false
 
     - resource: false
-      file: "crawler-conf.yaml"
+      file: "crawl-conf.yaml"
       override: true
+
+    - resource: false
+      file: "es-conf.yaml"
+      override: true
+
+# specific to feeds processing
+config:
+  parser.emitOutlinks: false
+  fetchInterval.isFeed=true: 10
+  # revisit a page with a fetch error after 2 hours (value in minutes)
+  fetchInterval.fetch.error: 120
 
 spouts:
   - id: "spout"
-    className: "com.digitalpebble.stormcrawler.spout.MemorySpout"
-    parallelism: 1
-    constructorArgs:
-      - ["http://www.lequipe.fr/", "http://www.lemonde.fr/", "http://www.bbc.co.uk/", "http://storm.apache.org/", "http://digitalpebble.com/"]
+    className: "com.digitalpebble.storm.crawler.elasticsearch.persistence.AggregationSpout"
+    parallelism: 16
 
 bolts:
   - id: "partitioner"
-    className: "com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt"
+    className: "com.digitalpebble.storm.crawler.bolt.URLPartitionerBolt"
     parallelism: 1
   - id: "fetcher"
-    className: "com.digitalpebble.stormcrawler.bolt.FetcherBolt"
+    className: "com.digitalpebble.storm.crawler.bolt.FetcherBolt"
     parallelism: 1
-  - id: "sitemap"
-    className: "com.digitalpebble.stormcrawler.bolt.SiteMapParserBolt"
+  - id: "feed"
+    className: "com.digitalpebble.storm.crawler.bolt.FeedParserBolt"
     parallelism: 1
   - id: "parse"
-    className: "com.digitalpebble.stormcrawler.bolt.JSoupParserBolt"
+    className: "com.digitalpebble.storm.crawler.bolt.JSoupParserBolt"
     parallelism: 1
   - id: "index"
-    className: "com.digitalpebble.stormcrawler.indexing.StdOutIndexer"
+    className: "com.digitalpebble.storm.crawler.elasticsearch.bolt.IndexerBolt"
     parallelism: 1
   - id: "status"
-    className: "com.digitalpebble.stormcrawler.persistence.StdOutStatusUpdater"
+    className: "com.digitalpebble.storm.crawler.elasticsearch.persistence.StatusUpdaterBolt"
     parallelism: 1
 
 streams:
@@ -49,11 +58,11 @@ streams:
       args: ["key"]
 
   - from: "fetcher"
-    to: "sitemap"
+    to: "feed"
     grouping:
       type: LOCAL_OR_SHUFFLE
 
-  - from: "sitemap"
+  - from: "feed"
     to: "parse"
     grouping:
       type: LOCAL_OR_SHUFFLE
@@ -69,7 +78,7 @@ streams:
       type: LOCAL_OR_SHUFFLE
       streamId: "status"
 
-  - from: "sitemap"
+  - from: "feed"
     to: "status"
     grouping:
       type: LOCAL_OR_SHUFFLE
