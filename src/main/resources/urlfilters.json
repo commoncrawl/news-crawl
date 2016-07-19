@@ -43,10 +43,10 @@
       "name": "SelfURLFilter"
     },
     {
-      "class": "com.digitalpebble.stormcrawler.filtering.metadata.MetadataFilter",
-      "name": "MetadataFilter",
+      "class": "com.digitalpebble.stormcrawler.filtering.robots.RobotsFilter",
+      "name": "RobotsFilter",
       "params": {
-        "isSitemap": "false"
+        "limitToSameHost": "true"
       }
     }
   ]

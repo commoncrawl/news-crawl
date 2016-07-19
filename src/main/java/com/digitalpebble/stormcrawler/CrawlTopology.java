@@ -17,6 +17,9 @@
 
 package com.digitalpebble.stormcrawler;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
@@ -74,7 +77,10 @@ public class CrawlTopology extends ConfigurableTopology {
         FileNameFormat fileNameFormat = new WARCFileNameFormat()
                 .withPath(warcFilePath);
 
-        byte[] warcinfo = WARCRecordFormat.generateWARCInfo();
+        Map<String,String> fields = new HashMap<>();
+        fields.put("software:", "StormCrawler 1.0 http://stormcrawler.net/");
+        fields.put("description", "News crawl for CommonCrawl");
+        byte[] warcinfo = WARCRecordFormat.generateWARCInfo(fields);
 
         WARCHdfsBolt warcbolt = (WARCHdfsBolt) new WARCHdfsBolt()
                 .withFileNameFormat(fileNameFormat);
