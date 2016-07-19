@@ -27,7 +27,6 @@ import com.digitalpebble.stormcrawler.bolt.FeedParserBolt;
 import com.digitalpebble.stormcrawler.bolt.FetcherBolt;
 import com.digitalpebble.stormcrawler.bolt.StatusStreamBolt;
 import com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt;
-import com.digitalpebble.stormcrawler.elasticsearch.bolt.IndexerBolt;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.AggregationSpout;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt;
 import com.digitalpebble.stormcrawler.util.ConfUtils;
@@ -69,10 +68,8 @@ public class CrawlTopology extends ConfigurableTopology {
         builder.setBolt("ssb", new StatusStreamBolt(), numWorkers)
                 .localOrShuffleGrouping("feed");
 
-        builder.setBolt("indexer", new IndexerBolt(), numWorkers)
-                .localOrShuffleGrouping("parse");
-
-        String warcFilePath = "/warc";
+        // path is absolute
+        String warcFilePath = "/data/warc";
 
         FileNameFormat fileNameFormat = new WARCFileNameFormat()
                 .withPath(warcFilePath);
@@ -84,7 +81,7 @@ public class CrawlTopology extends ConfigurableTopology {
         warcbolt.withHeader(warcinfo);
 
         // a custom max length can be specified - 1 GB will be used as a default
-        FileSizeRotationPolicy rotpol = new FileSizeRotationPolicy(50.0f,
+        FileSizeRotationPolicy rotpol = new FileSizeRotationPolicy(100.0f,
                 Units.MB);
         warcbolt.withRotationPolicy(rotpol);
 

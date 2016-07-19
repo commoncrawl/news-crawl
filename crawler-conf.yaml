@@ -10,6 +10,8 @@ config:
   topology.max.spout.pending: 100
   topology.debug: false
 
+  topology.name: "NewsCrawl"
+
   # mandatory when using Flux
   topology.kryo.register:
     - com.digitalpebble.stormcrawler.Metadata
@@ -66,15 +68,5 @@ config:
   http.agent.description: "A StormCrawler-based crawler for newsfeeds"
   http.agent.url: "http://commoncrawl.org/"
   http.agent.email: "sebastian@commoncrawl.org"
-
-  # configuration for the classes extending AbstractIndexerBolt
-  # indexer.md.filter: "someKey=aValue"
-  indexer.url.fieldname: "url"
-  indexer.text.fieldname: "content"
-  indexer.canonical.name: "canonical"
-  indexer.md.mapping:
-  - parse.title=title
-  - parse.keywords=keywords
-  - parse.description=description
 
 
