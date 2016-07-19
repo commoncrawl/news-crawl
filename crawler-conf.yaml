@@ -41,11 +41,14 @@ config:
   # revisit a page monthly (value in minutes)
   fetchInterval.default: 44640
   
-  # revisit a page with a fetch error after 24 hours (value in minutes)
-  fetchInterval.fetch.error: 1440
+  # revisit a page with a fetch error after 2 hours (value in minutes)
+  fetchInterval.fetch.error: 120
   
   # revisit a page with an error every month (value in minutes)
   fetchInterval.error: 44640
+
+  # if the url is a feed then revisit it 10 mins later
+  fetchInterval.isFeed=true: 10
   
   status.updater.cache.spec: "maximumSize=250000,expireAfterAccess=4h"
 

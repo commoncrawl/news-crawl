@@ -20,29 +20,41 @@ config:
   # revisit a page with a fetch error after 2 hours (value in minutes)
   fetchInterval.fetch.error: 120
 
+components:
+  - id: "filenameformat"
+    className: "com.digitalpebble.stormcrawler.warc.WARCFileNameFormat"
+    configMethods:
+      - name: "withPath"
+        args:
+          - "/tmp/warc"
+
 spouts:
   - id: "spout"
-    className: "com.digitalpebble.storm.crawler.elasticsearch.persistence.AggregationSpout"
-    parallelism: 16
+    className: "com.digitalpebble.stormcrawler.elasticsearch.persistence.AggregationSpout"
+    parallelism: 10
 
 bolts:
   - id: "partitioner"
-    className: "com.digitalpebble.storm.crawler.bolt.URLPartitionerBolt"
+    className: "com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt"
     parallelism: 1
   - id: "fetcher"
-    className: "com.digitalpebble.storm.crawler.bolt.FetcherBolt"
+    className: "com.digitalpebble.stormcrawler.bolt.FetcherBolt"
     parallelism: 1
   - id: "feed"
-    className: "com.digitalpebble.storm.crawler.bolt.FeedParserBolt"
+    className: "com.digitalpebble.stormcrawler.bolt.FeedParserBolt"
     parallelism: 1
-  - id: "parse"
-    className: "com.digitalpebble.storm.crawler.bolt.JSoupParserBolt"
+  - id: "ssbolt"
+    className: "com.digitalpebble.stormcrawler.bolt.StatusStreamBolt"
     parallelism: 1
-  - id: "index"
-    className: "com.digitalpebble.storm.crawler.elasticsearch.bolt.IndexerBolt"
+  - id: "warc"
+    className: "com.digitalpebble.stormcrawler.warc.WARCHdfsBolt"
     parallelism: 1
+    configMethods:
+      - name: "withFileNameFormat"
+        args:
+          ref: "filenameformat"
   - id: "status"
-    className: "com.digitalpebble.storm.crawler.elasticsearch.persistence.StatusUpdaterBolt"
+    className: "com.digitalpebble.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt"
     parallelism: 1
 
 streams:
@@ -63,12 +75,12 @@ streams:
       type: LOCAL_OR_SHUFFLE
 
   - from: "feed"
-    to: "parse"
+    to: "warc"
     grouping:
       type: LOCAL_OR_SHUFFLE
 
-  - from: "parse"
-    to: "index"
+  - from: "feed"
+    to: "ssbolt"
     grouping:
       type: LOCAL_OR_SHUFFLE
 
@@ -84,14 +96,9 @@ streams:
       type: LOCAL_OR_SHUFFLE
       streamId: "status"
 
-  - from: "parse"
+  - from: "ssbolt"
     to: "status"
     grouping:
       type: LOCAL_OR_SHUFFLE
       streamId: "status"
 
-  - from: "index"
-    to: "status"
-    grouping:
-      type: LOCAL_OR_SHUFFLE
-      streamId: "status"

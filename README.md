@@ -32,6 +32,6 @@ You can check that the URLs have been injected on [http://localhost:9200/status/
 You can then run the crawl topology with :
 
 ``` sh
-storm jar target/crawler-1.0-SNAPSHOT.jar org.apache.storm.flux.Flux crawler.flux
+storm jar target/crawler-1.0-SNAPSHOT.jar com.digitalpebble.stormcrawler.CrawlTopology -conf es-conf.yaml -conf crawler-conf.yaml
 ```
 
