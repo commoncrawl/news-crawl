@@ -7,7 +7,8 @@ Prerequisites
 
 * Install ElasticSearch 2.3.1 and Kibana 4.5.1
 * Install Apache Storm 1.0
-* Clone and compile [https://github.com/DigitalPebble/sc-warc]
+* Clone and compile [https://github.com/DigitalPebble/sc-warc] with `mvn clean install`
+* Clone and compile [https://github.com/DigitalPebble/storm-crawler] with `mvn clean install`
 * Start ES and Storm
 * Build ES indices with : `curl -L "https://git.io/vaGkv" | bash`
 
