@@ -74,8 +74,9 @@ public class CrawlTopology extends ConfigurableTopology {
         // path is absolute
         String warcFilePath = "/data/warc";
 
-        FileNameFormat fileNameFormat = new WARCFileNameFormat()
-                .withPath(warcFilePath);
+        WARCFileNameFormat fileNameFormat = new WARCFileNameFormat();
+        fileNameFormat.withPath(warcFilePath);
+        fileNameFormat.withPrefix("CC-NEWS");
 
         Map<String,String> fields = new HashMap<>();
         fields.put("software:", "StormCrawler 1.0 http://stormcrawler.net/");
