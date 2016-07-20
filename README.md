@@ -1,4 +1,4 @@
-NEWS-CRAWL
+# NEWS-CRAWL
 
 Crawler for news feeds based on [StormCrawler](http://stormcrawler.net). Produces WARC files to be stored as part of the CommonCrawl dataset.
 
@@ -36,3 +36,9 @@ You can then run the crawl topology with :
 storm jar target/crawler-1.0-SNAPSHOT.jar com.digitalpebble.stormcrawler.CrawlTopology -conf es-conf.yaml -conf crawler-conf.yaml
 ```
 
+The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
+
+Monitor the crawl
+------------
+
+See instructions on [https://github.com/DigitalPebble/storm-crawler/tree/master/external/elasticsearch] to install the templates for Kibana. 
