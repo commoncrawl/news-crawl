@@ -99,36 +99,10 @@ http://xml.corriereobjects.it/rss/homepage_veneziamestre.xml		isFeed=true
 http://xml.corriereobjects.it/rss/homepage_verona.xml		isFeed=true
 http://xml.corriereobjects.it/rss/ultimora.xml		isFeed=true
 http://xml.corriereobjects.it/rss/salute.xml		isFeed=true
-http://www.lastampa.it/italia/politica/rss.xml		isFeed=true
-http://www.lastampa.it/esteri/rss.xml		isFeed=true
-http://www.lastampa.it/italia/cronache/rss.xml		isFeed=true
-http://www.lastampa.it/tecnologia/rss.xml		isFeed=true
-http://www.lastampa.it/italia/i-tuoi-diritti/rss.xml		isFeed=true
-http://www.lastampa.it/societa/mare/rss.xml		isFeed=true
-http://www.lastampa.it/economia/rss.xml		isFeed=true
-http://www.lastampa.it/sport/rss.xml		isFeed=true
-http://www.lastampa.it/cronaca/rss.xml		isFeed=true
-http://www.lastampa.it/cultura/rss.xml		isFeed=true
-http://www.lastampa.it/spettacoli/rss.xml		isFeed=true
-http://www.lastampa.it/societa/rss.xml		isFeed=true
-http://www.lastampa.it/motori/rss.xml		isFeed=true
-http://www.lastampa.it/societa/donna/rss.xml		isFeed=true
-http://www.lastampa.it/societa/cucina/rss.xml		isFeed=true
-http://www.lastampa.it/scienza/benessere/rss.xml		isFeed=true
-http://www.lastampa.it/societa/viaggi/rss.xml		isFeed=true
-http://www.lastampa.it/edizioni/cuneo/rss.xml		isFeed=true
-http://www.lastampa.it/edizioni/aosta/rss.xml		isFeed=true
-http://www.lastampa.it/edizioni/asti/rss.xml		isFeed=true
-http://www.lastampa.it/edizioni/novara/rss.xml		isFeed=true
-http://www.lastampa.it/edizioni/verbania/rss.xml		isFeed=true
-http://www.lastampa.it/edizioni/vercelli/rss.xml		isFeed=true
-http://www.lastampa.it/edizioni/biella/rss.xml		isFeed=true
-http://www.lastampa.it/edizioni/alessandria/rss.xml		isFeed=true
-http://www.lastampa.it/edizioni/savona/rss.xml		isFeed=true
-http://www.lastampa.it/edizioni/imperia-sanremo/rss.xml		isFeed=true
 http://www.repubblica.it/rss/homepage/rss2.0.xml		isFeed=true
 
 # disallowed by robots
 # http://www.lemonde.fr/
+# http://www.lastampa.it
 # http://newsrss.bbc.co.uk/rss/newsonline_uk_edition/help/rss/rss.xml	isFeed=true
 
