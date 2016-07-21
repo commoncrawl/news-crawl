@@ -32,6 +32,8 @@ config:
 
   http.content.limit: 1048576
   
+  http.store.headers: true
+
   urlfilters.config.file: "urlfilters.json"
   
   # time bucket to use for the metrics sent by the Fetcher
