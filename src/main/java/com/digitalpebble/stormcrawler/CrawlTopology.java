@@ -31,6 +31,7 @@ import com.digitalpebble.stormcrawler.bolt.StatusStreamBolt;
 import com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.AggregationSpout;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt;
+import com.digitalpebble.stormcrawler.protocol.AbstractHttpProtocol;
 import com.digitalpebble.stormcrawler.util.ConfUtils;
 import com.digitalpebble.stormcrawler.warc.WARCFileNameFormat;
 import com.digitalpebble.stormcrawler.warc.WARCHdfsBolt;
@@ -81,6 +82,11 @@ public class CrawlTopology extends ConfigurableTopology {
         Map<String, String> fields = new HashMap<>();
         fields.put("software:", "StormCrawler 1.0 http://stormcrawler.net/");
         fields.put("description", "News crawl for CommonCrawl");
+        String userAgent = AbstractHttpProtocol.getAgentString(getConf());
+        fields.put("http-header-user-agent", userAgent);
+        fields.put("http-header-from",
+                ConfUtils.getString(getConf(), "http.agent.email"));
+
         byte[] warcinfo = WARCRecordFormat.generateWARCInfo(fields);
 
         WARCHdfsBolt warcbolt = (WARCHdfsBolt) new WARCHdfsBolt()
