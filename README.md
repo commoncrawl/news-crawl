@@ -42,3 +42,30 @@ Monitor the crawl
 ------------
 
 See instructions on [https://github.com/DigitalPebble/storm-crawler/tree/master/external/elasticsearch] to install the templates for Kibana. 
+
+Run Crawl from Docker Container
+-------------
+
+Build the Docker image from the [Dockerfile](./Dockerfile):
+```
+docker build -t newscrawler:1.0 .
+```
+
+Launch an interactive container:
+```
+docker run --net=host \
+    -p 127.0.0.1:9200:9200 -p 127.0.0.1:9300:9300 \
+    -p 5601:5601 -p 8080:8080 \
+    -v .../newscrawl/elasticsearch:/data/elasticsearch \
+    -v .../newscrawl/warc:/data/warc \
+    --rm -i -t newscrawler:1.0 /bin/bash
+```
+
+Note: don't forget to adapt the paths to mounted volumes used to persist data on the host.
+
+The crawler is launched in the running container by the script
+```
+/home/ubuntu/news-crawler/bin/run-crawler.sh
+```
+
+After 1-2 minutes if everything is up, connect to Elasticsearch on port [9200](http://127.0.0.1:9200/) or Kibana on port [5601](http://127.0.0.1:5601/).
