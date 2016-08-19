@@ -64,11 +64,11 @@ config:
    - isSitemap
    - isFeed
 
-  http.agent.name: "NewsCrawler"
-  http.agent.version: "1.0"
-  http.agent.description: "A StormCrawler-based crawler for newsfeeds"
-  http.agent.url: "http://commoncrawl.org/"
-  http.agent.email: "sebastian@commoncrawl.org"
+  http.agent.name: "CCBot"
+  http.agent.version: "3.0"
+  http.agent.description: ""
+  http.agent.url: "http://commoncrawl.org/faq/"
+  http.agent.email: "info@commoncrawl.org"
 
   # change to the location of your choice
   # the directory must already exist
