@@ -20,11 +20,10 @@ package com.digitalpebble.stormcrawler;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
-import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
+import com.digitalpebble.stormcrawler.FileTimeSizeRotationPolicy.Units;
 import com.digitalpebble.stormcrawler.bolt.FeedParserBolt;
 import com.digitalpebble.stormcrawler.bolt.FetcherBolt;
 import com.digitalpebble.stormcrawler.bolt.StatusStreamBolt;
@@ -93,9 +92,11 @@ public class CrawlTopology extends ConfigurableTopology {
                 .withFileNameFormat(fileNameFormat);
         warcbolt.withHeader(warcinfo);
 
-        // a custom max length can be specified - 1 GB will be used as a default
-        FileSizeRotationPolicy rotpol = new FileSizeRotationPolicy(100.0f,
-                Units.MB);
+        // will rotate if reaches 1GB or N units of time
+        FileTimeSizeRotationPolicy rotpol = new FileTimeSizeRotationPolicy(1.0f,
+                Units.GB);
+        rotpol.setTimeRotationInterval(1,
+                FileTimeSizeRotationPolicy.TimeUnit.DAYS);
         warcbolt.withRotationPolicy(rotpol);
 
         // take it from feed default output so that the feed files themselves
