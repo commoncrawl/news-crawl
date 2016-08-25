@@ -50,7 +50,7 @@ ENV ES_HEAP_SIZE=20g
 
 
 #
-# Apache Strom
+# Apache Storm
 #
 ENV STORM_VERSION=1.0.1
 RUN wget -q -O - http://mirrors.ukfast.co.uk/sites/ftp.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz \
