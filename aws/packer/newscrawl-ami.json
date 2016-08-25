@@ -1,0 +1,64 @@
+{
+  "variables": {
+    "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
+    "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}"
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "region": "us-east-1",
+    "source_ami": "ami-6869aa05",
+    "instance_type": "m3.xlarge",
+    "ssh_username": "ec2-user",
+    "ssh_timeout": "1200s",
+    "ami_name": "Common Crawl News Crawler {{timestamp}}",
+    "ami_regions": ["us-east-1"],
+    "ami_groups": ["all"]
+  }],
+  "provisioners": [
+      {
+        "type": "file",
+        "source": "install",
+        "destination": "/tmp/install"
+      },
+      {
+        "type": "shell",
+        "inline": ["mkdir -p /tmp/install/news-crawler/conf/",
+                   "mkdir -p /tmp/install/news-crawler/lib/",
+                   "mkdir -p /tmp/install/news-crawler/seeds/"]
+      },
+      {
+        "type": "file",
+        "source": "crawler-conf.yaml",
+        "destination": "/tmp/install/news-crawler/conf/crawler-conf.yaml"
+      },
+      {
+        "type": "file",
+        "source": "es-conf.yaml",
+        "destination": "/tmp/install/news-crawler/conf/es-conf.yaml"
+      },
+      {
+        "type": "file",
+        "source": "crawler.flux",
+        "destination": "/tmp/install/news-crawler/conf/crawler.flux"
+      },
+      {
+        "type": "file",
+        "source": "target/crawler-1.0-SNAPSHOT.jar",
+        "destination": "/tmp/install/news-crawler/lib/crawler-1.0-SNAPSHOT.jar"
+      },
+      {
+        "type": "file",
+        "source": "feeds",
+        "destination": "/tmp/install/news-crawler/seeds/feeds.txt"
+      },
+      {
+        "type": "shell",
+        "scripts": [
+          "aws/packer/bootstrap.sh"
+        ]
+      }
+  ]
+
+}
