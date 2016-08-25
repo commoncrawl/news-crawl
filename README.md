@@ -51,6 +51,8 @@ Build the Docker image from the [Dockerfile](./Dockerfile):
 docker build -t newscrawler:1.0 .
 ```
 
+Note: the uberjar is included in the Docker image and needs to be built first.
+
 Launch an interactive container:
 ```
 docker run --net=host \
