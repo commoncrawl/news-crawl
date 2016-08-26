@@ -52,8 +52,8 @@ config:
 
   # if the url is a feed then revisit it 10 mins later
   #   fetchInterval.isFeed=true: 10
-  # ... 8h later should be enough (3 requests per day)
-  fetchInterval.isFeed=true: 480
+  # ... 2h later should be enough (12 requests per day)
+  fetchInterval.isFeed=true: 120
   
   status.updater.cache.spec: "maximumSize=250000,expireAfterAccess=4h"
 
@@ -65,6 +65,7 @@ config:
    - error.source
    - isSitemap
    - isFeed
+   - last-modified
 
   http.agent.name: "CCBot"
   http.agent.version: "3.0"
