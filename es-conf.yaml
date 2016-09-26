@@ -16,10 +16,12 @@ config:
   es.status.routing.fieldname: "hostname"
   es.status.bulkActions: 500
   es.status.flushInterval: "1s"
+  # min. time (msec.) between 2 successive queries to ES
+  es.status.min.delay.queries: 60000
   
   # AggregationSpout
   es.status.max.buckets: 100
-  es.status.max.urls.per.bucket: 3
+  es.status.max.urls.per.bucket: 90
   # field to sort the URLs within a bucket
   es.status.bucket.sort.field: "nextFetchDate"
   # field to sort the buckets
