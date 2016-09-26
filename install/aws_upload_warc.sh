@@ -23,6 +23,11 @@ ls /data/warc/CC-NEWS-*.warc.gz | sort | head -n -1 \
     aws s3 cp $warcpath $S3PATH/$year/$month/$warcfile --acl public-read
     echo "remove $warcpath"
     rm $warcpath
+    crc=$(dirname $warcpath)/.$(basename $warcpath.crc)
+    if [ -e $crc ]; then
+        echo "remove checksum file $crc"
+        rm $crc
+    fi
 done
 
 echo
