@@ -41,19 +41,21 @@ config:
   
   fetcher.threads.number: 20
   
-  # revisit a page monthly (value in minutes)
-  fetchInterval.default: 44640
+  # revisit a page (value in minutes)
+  # - never revisit a news article
+  #   (seeds / RSS feeds are revisited)
+  fetchInterval.default: -1
   
   # revisit a page with a fetch error after 2 hours (value in minutes)
   fetchInterval.fetch.error: 120
   
-  # revisit a page with an error every month (value in minutes)
-  fetchInterval.error: 44640
+  # revisit a page with an error after 3 month (value in minutes)
+  fetchInterval.error: 133920
 
   # if the url is a feed then revisit it 10 mins later
   #   fetchInterval.isFeed=true: 10
-  # ... 2h later should be enough (12 requests per day)
-  fetchInterval.isFeed=true: 120
+  # ... 3h later should be enough (8 requests per day)
+  fetchInterval.isFeed=true: 180
   
   status.updater.cache.spec: "maximumSize=250000,expireAfterAccess=4h"
 
