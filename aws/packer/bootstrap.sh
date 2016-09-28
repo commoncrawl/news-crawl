@@ -71,6 +71,12 @@ cp /tmp/install/elasticsearch/*.conf /etc/supervisor/conf.d/
 echo environment=ES_HEAP_SIZE="10g" >>/etc/supervisor/conf.d/elasticsearch.conf
 EOF
 
+# must start elasticsearch via supervisorctl
+# TODO: avoid issues if it's started erroneously via
+#          /etc/init.d/elasticsearch
+#       - remove the init script or
+#       - sync the config in /etc/ with that in /etc/supervisor/conf.d/
+
 
 #
 # Apache Storm and Zookeeper
