@@ -63,7 +63,9 @@ docker run --net=host \
     --rm -i -t newscrawler:1.0 /bin/bash
 ```
 
-Note: don't forget to adapt the paths to mounted volumes used to persist data on the host.
+NOTE: don't forget to adapt the paths to mounted volumes used to persist data on the host.
+
+CAVEAT: Make sure that the Elasticsearch port 9200 is not already in use or mapped by a running ES instance. Otherwise ES commands may affect the running instance!
 
 The crawler is launched in the running container by the script
 ```
