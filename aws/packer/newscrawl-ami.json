@@ -19,29 +19,23 @@
   "provisioners": [
       {
         "type": "file",
-        "source": "install",
-        "destination": "/tmp/install"
+        "source": "etc",
+        "destination": "/tmp/install/etc"
       },
       {
         "type": "shell",
-        "inline": ["mkdir -p /tmp/install/news-crawler/conf/",
-                   "mkdir -p /tmp/install/news-crawler/lib/",
+        "inline": ["mkdir -p /tmp/install/news-crawler/lib/",
                    "mkdir -p /tmp/install/news-crawler/seeds/"]
       },
       {
         "type": "file",
-        "source": "crawler-conf.yaml",
-        "destination": "/tmp/install/news-crawler/conf/crawler-conf.yaml"
+        "source": "conf",
+        "destination": "/tmp/install/news-crawler/conf"
       },
       {
         "type": "file",
-        "source": "es-conf.yaml",
-        "destination": "/tmp/install/news-crawler/conf/es-conf.yaml"
-      },
-      {
-        "type": "file",
-        "source": "crawler.flux",
-        "destination": "/tmp/install/news-crawler/conf/crawler.flux"
+        "source": "bin",
+        "destination": "/tmp/install/news-crawler/bin"
       },
       {
         "type": "file",
@@ -50,8 +44,8 @@
       },
       {
         "type": "file",
-        "source": "feeds",
-        "destination": "/tmp/install/news-crawler/seeds/feeds.txt"
+        "source": "seeds/feeds.txt",
+        "destination": "/tmp/install/news-crawler/seeds/"
       },
       {
         "type": "shell",

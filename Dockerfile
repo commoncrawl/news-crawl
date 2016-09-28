@@ -43,9 +43,10 @@ RUN /opt/kibana/bin/kibana plugin --install elasticsearch/marvel/latest
 RUN /opt/kibana/bin/kibana plugin --install elastic/sense
 USER root
 # system configuration, see https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-configuration.html
-COPY install/etc/sysctl.conf /tmp/
-RUN cat /tmp/sysctl.conf >>/etc/sysctl.conf && rm /tmp/sysctl.conf
-ADD install/elasticsearch/*.conf /etc/supervisor/conf.d/
+ADD etc/sysctl.d/60-elasticsearch.conf       /etc/sysctl.d/60-elasticsearch.conf
+ADD etc/supervisor/conf.d/elasticsearch.conf /etc/supervisor/conf.d/elasticsearch.conf
+ADD etc/supervisor/conf.d/kibana.conf        /etc/supervisor/conf.d/kibana.conf
+RUN chmod -R 644 /etc/sysctl.d/60-elasticsearch.conf /etc/supervisor/conf.d/*.conf
 ENV ES_HEAP_SIZE=20g
 
 
@@ -64,8 +65,9 @@ RUN groupadd storm && \
 	chown -R storm:storm /var/log/storm
 RUN ln -s /var/log/storm $STORM_HOME/logs
 RUN ln -s $STORM_HOME/bin/storm /usr/bin/storm
-ADD install/storm/*.conf /etc/supervisor/conf.d/
-RUN chmod 644 /etc/supervisor/conf.d/*.conf
+ADD etc/supervisor/conf.d/storm-*.conf   /etc/supervisor/conf.d/
+ADD etc/supervisor/conf.d/zookeeper.conf /etc/supervisor/conf.d/
+RUN chmod -R 644 /etc/supervisor/conf.d/*.conf
 
 
 #
@@ -86,11 +88,12 @@ RUN mkdir news-crawler/ && \
 # add the news crawler uber-jar
 ADD target/crawler-1.0-SNAPSHOT.jar news-crawler/lib/
 # and configuration files
-ADD *.yaml crawler.flux news-crawler/conf/
-ADD feeds news-crawler/seeds/
+ADD conf/*.*    news-crawler/conf/
+ADD seeds/feeds news-crawler/seeds/
+ADD bin/*.sh    news-crawler/bin/
 # add storm-crawler/external/elasticsearch/ES_IndexInit.sh
-ADD install/run-crawler.sh news-crawler/bin/
-RUN wget -O news-crawler/bin/ES_IndexInit.sh https://raw.githubusercontent.com/DigitalPebble/storm-crawler/master/external/elasticsearch/ES_IndexInit.sh
+RUN wget -O     news-crawler/bin/ES_IndexInit.sh \
+	https://raw.githubusercontent.com/DigitalPebble/storm-crawler/master/external/elasticsearch/ES_IndexInit.sh
 USER root
 RUN chown -R ubuntu:ubuntu /home/ubuntu && \
 	chmod -R a+r /home/ubuntu && \

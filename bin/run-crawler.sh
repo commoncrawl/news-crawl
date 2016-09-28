@@ -15,6 +15,8 @@ sudo -iu ubuntu /bin/bash <<"EOF"
 
 cd $HOME/news-crawler/
 
+# initialize Elasticsearch indices
+# CAVEAT: this deletes existing indices!
 bin/ES_IndexInit.sh
 sleep 10
 
