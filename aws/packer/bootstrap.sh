@@ -19,9 +19,9 @@ sudo pip install supervisor
 sudo mkdir /etc/supervisor/
 sudo mkdir /etc/supervisor/conf.d/
 sudo mkdir /var/log/supervisor/
-sudo cp /tmp/install/etc/supervisord.conf /etc/supervisor/
+sudo cp /tmp/install/etc/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 # TODO: make sure that there is only one init script/daemon for any service
-#       not init.d + supervisor
+#       not init.d + supervisor, see note below for Elasticsearch
 
 #
 # Elasticsearch and Kibana
@@ -65,11 +65,9 @@ sudo groupadd kibana && sudo useradd --gid kibana kibana
 sudo chown -R kibana:kibana /var/log/kibana
 sudo chown -R kibana:kibana /opt/kibana/
 
-sudo bash <<EOF
-cat /tmp/install/etc/sysctl.conf >>/etc/sysctl.conf
-cp /tmp/install/elasticsearch/*.conf /etc/supervisor/conf.d/
-echo environment=ES_HEAP_SIZE="10g" >>/etc/supervisor/conf.d/elasticsearch.conf
-EOF
+sudo cp /tmp/install/etc/sysctl.d/60-elasticsearch.conf  /etc/sysctl.d/
+sudo cp /tmp/install/elasticsearch.conf                  /etc/supervisor/conf.d/
+sudo cp /tmp/install/kibana.conf                         /etc/supervisor/conf.d/
 
 # must start elasticsearch via supervisorctl
 # TODO: avoid issues if it's started erroneously via
@@ -100,7 +98,8 @@ sudo ln -s $STORM_HOME/bin/storm /usr/bin/storm
 sudo ln -s $ZOOKEEPER_HOME/conf/zoo_sample.cfg $ZOOKEEPER_HOME/conf/zoo.cfg
 sudo ln -s $ZOOKEEPER_HOME /usr/share/zookeeper
 sudo bash <<EOF
-cp /tmp/install/storm/*.conf /etc/supervisor/conf.d/
+cp etc/supervisor/conf.d/storm-*.conf   /etc/supervisor/conf.d/
+cp etc/supervisor/conf.d/zookeeper.conf /etc/supervisor/conf.d/
 chmod 644 /etc/supervisor/conf.d/*.conf
 EOF
 
@@ -114,7 +113,7 @@ mkdir -p news-crawler/{conf,bin,lib,seeds}
 # seeds must readable for user "storm"
 chmod a+rx news-crawler/seeds/
 chmod 644 news-crawler/seeds/*
-cp /tmp/install/run-crawler.sh news-crawler/bin/
+cp /tmp/install/bin/*.sh news-crawler/bin/
 cp /tmp/install/news-crawler/lib/crawler-1.0-SNAPSHOT.jar news-crawler/lib/
 wget -O news-crawler/bin/ES_IndexInit.sh https://raw.githubusercontent.com/DigitalPebble/storm-crawler/master/external/elasticsearch/ES_IndexInit.sh
 chmod u+x news-crawler/bin/*
