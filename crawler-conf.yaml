@@ -71,11 +71,11 @@ config:
 
   # HTTP 'User-Agent' request header
   # NOTE: must set these configuration properties to identify your bot!
-  http.agent.name: ""
-  http.agent.version: ""
+  http.agent.name: "CCBot"
+  http.agent.version: "3.0"
   http.agent.description: ""
-  http.agent.url: ""
-  http.agent.email: ""
+  http.agent.url: "http://commoncrawl.org/faq/"
+  http.agent.email: "info@commoncrawl.org"
 
   # change to the location of your choice
   # the directory must already exist
