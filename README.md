@@ -12,6 +12,12 @@ Prerequisites
 * Start ES and Storm
 * Build ES indices with : `curl -L "https://git.io/vaGkv" | bash`
 
+Configuration
+------------
+
+The default configuration should work out-of-the-box. The only thing to do is to configure the user agent properties send in the HTTP request header. Open the file `conf/crawler-conf.yaml` in an editor and fill in the values for `http.agent.name` and all further properties starting with the `http.agent.` prefix.
+
+
 Run the crawl
 ------------
 
@@ -23,7 +29,7 @@ mvn clean package
 Inject some URLs with 
 
 ``` sh
-storm jar target/crawler-1.0-SNAPSHOT.jar com.digitalpebble.stormcrawler.elasticsearch.ESSeedInjector . feeds -conf es-conf.yaml -conf crawler-conf.yaml -local
+storm jar target/crawler-1.0-SNAPSHOT.jar com.digitalpebble.stormcrawler.elasticsearch.ESSeedInjector . seeds/feeds.txt -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml -local
 ```
 
 This pushes the newsfeed seeds to the status index and has to be done every time new seeds are added. To delete seeds, delete by query in the ES index or wipe the index clean and reindex the whole lot.
@@ -33,7 +39,7 @@ You can check that the URLs have been injected on [http://localhost:9200/status/
 You can then run the crawl topology with :
 
 ``` sh
-storm jar target/crawler-1.0-SNAPSHOT.jar com.digitalpebble.stormcrawler.CrawlTopology -conf es-conf.yaml -conf crawler-conf.yaml
+storm jar target/crawler-1.0-SNAPSHOT.jar com.digitalpebble.stormcrawler.CrawlTopology -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml
 ```
 
 The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
