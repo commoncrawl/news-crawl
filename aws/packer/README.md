@@ -21,4 +21,4 @@ packer build aws/packer/newscrawl-ami.json
 Run an EC2 instance
 -------------------
 
-
+The news crawler AMI should be registered on your AWS account. Select it to launch an EC2 instance.
