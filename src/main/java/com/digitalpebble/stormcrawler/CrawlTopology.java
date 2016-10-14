@@ -17,7 +17,7 @@
 
 package com.digitalpebble.stormcrawler;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.storm.topology.TopologyBuilder;
@@ -34,7 +34,6 @@ import com.digitalpebble.stormcrawler.protocol.AbstractHttpProtocol;
 import com.digitalpebble.stormcrawler.util.ConfUtils;
 import com.digitalpebble.stormcrawler.warc.WARCFileNameFormat;
 import com.digitalpebble.stormcrawler.warc.WARCHdfsBolt;
-import com.digitalpebble.stormcrawler.warc.WARCRecordFormat;
 
 /**
  * Dummy topology to play with the spouts and bolts on ElasticSearch
@@ -78,19 +77,20 @@ public class CrawlTopology extends ConfigurableTopology {
         fileNameFormat.withPath(warcFilePath);
         fileNameFormat.withPrefix("CC-NEWS");
 
-        Map<String, String> fields = new HashMap<>();
-        fields.put("software:", "StormCrawler 1.0 http://stormcrawler.net/");
+        Map<String, String> fields = new LinkedHashMap<>();
+        fields.put("software:", "StormCrawler 1.1.1 http://stormcrawler.net/");
         fields.put("description", "News crawl for CommonCrawl");
         String userAgent = AbstractHttpProtocol.getAgentString(getConf());
         fields.put("http-header-user-agent", userAgent);
         fields.put("http-header-from",
                 ConfUtils.getString(getConf(), "http.agent.email"));
-
-        byte[] warcinfo = WARCRecordFormat.generateWARCInfo(fields);
+        fields.put("format", "WARC File Format 1.0");
+        fields.put("conformsTo",
+                "http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf");
 
         WARCHdfsBolt warcbolt = (WARCHdfsBolt) new WARCHdfsBolt()
                 .withFileNameFormat(fileNameFormat);
-        warcbolt.withHeader(warcinfo);
+        warcbolt.withHeader(fields);
 
         // will rotate if reaches 1GB or N units of time
         FileTimeSizeRotationPolicy rotpol = new FileTimeSizeRotationPolicy(1.0f,
