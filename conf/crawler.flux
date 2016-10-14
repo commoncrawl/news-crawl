@@ -44,7 +44,7 @@ bolts:
     className: "com.digitalpebble.stormcrawler.bolt.FeedParserBolt"
     parallelism: 1
   - id: "ssbolt"
-    className: "com.digitalpebble.stormcrawler.bolt.StatusStreamBolt"
+    className: "com.digitalpebble.stormcrawler.indexing.DummyIndexer"
     parallelism: 1
   - id: "warc"
     className: "com.digitalpebble.stormcrawler.warc.WARCHdfsBolt"

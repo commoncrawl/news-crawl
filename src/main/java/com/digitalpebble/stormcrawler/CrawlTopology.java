@@ -26,10 +26,10 @@ import org.apache.storm.tuple.Fields;
 import com.digitalpebble.stormcrawler.FileTimeSizeRotationPolicy.Units;
 import com.digitalpebble.stormcrawler.bolt.FeedParserBolt;
 import com.digitalpebble.stormcrawler.bolt.FetcherBolt;
-import com.digitalpebble.stormcrawler.bolt.StatusStreamBolt;
 import com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.AggregationSpout;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt;
+import com.digitalpebble.stormcrawler.indexing.DummyIndexer;
 import com.digitalpebble.stormcrawler.protocol.AbstractHttpProtocol;
 import com.digitalpebble.stormcrawler.util.ConfUtils;
 import com.digitalpebble.stormcrawler.warc.WARCFileNameFormat;
@@ -66,7 +66,7 @@ public class CrawlTopology extends ConfigurableTopology {
                 .localOrShuffleGrouping("fetch");
 
         // don't need to parse the pages but need to update their status
-        builder.setBolt("ssb", new StatusStreamBolt(), numWorkers)
+        builder.setBolt("ssb", new DummyIndexer(), numWorkers)
                 .localOrShuffleGrouping("feed");
 
         // path is absolute
