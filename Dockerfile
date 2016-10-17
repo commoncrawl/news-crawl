@@ -88,9 +88,9 @@ RUN mkdir news-crawler/ && \
 # add the news crawler uber-jar
 ADD target/crawler-1.0-SNAPSHOT.jar news-crawler/lib/
 # and configuration files
-ADD conf/*.*    news-crawler/conf/
-ADD seeds/feeds news-crawler/seeds/
-ADD bin/*.sh    news-crawler/bin/
+ADD conf/*.*        news-crawler/conf/
+ADD seeds/feeds.txt news-crawler/seeds/
+ADD bin/*.sh        news-crawler/bin/
 # add storm-crawler/external/elasticsearch/ES_IndexInit.sh
 RUN wget -O     news-crawler/bin/ES_IndexInit.sh \
 	https://raw.githubusercontent.com/DigitalPebble/storm-crawler/master/external/elasticsearch/ES_IndexInit.sh
