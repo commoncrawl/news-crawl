@@ -57,6 +57,9 @@ config:
   # ... 3h later should be enough (8 requests per day)
   fetchInterval.isFeed=true: 180
   
+  # auto-detect RSS feeds
+  feed.sniffContent: true
+
   status.updater.cache.spec: "maximumSize=250000,expireAfterAccess=4h"
 
   # lists the metadata to persist to storage
