@@ -21,7 +21,7 @@
       "name": "HostURLFilter",
       "params": {
         "ignoreOutsideHost": false,
-        "ignoreOutsideDomain": true
+        "ignoreOutsideDomain": false
       }
     },
     {
