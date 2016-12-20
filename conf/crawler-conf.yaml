@@ -1,3 +1,4 @@
+
 # Custom configuration for StormCrawler
 # This is used to override the default values from crawler-default.xml and provide additional ones 
 # for your custom components.
@@ -37,14 +38,20 @@ config:
   urlfilters.config.file: "urlfilters.json"
   
   # time bucket to use for the metrics sent by the Fetcher
-  fetcher.metrics.time.bucket.secs: 30
+  fetcher.metrics.time.bucket.secs: 60
   
   fetcher.threads.number: 20
   
+  # delay between successive requests to the same host
+  # (be defensive, even for large news sites 5 sec. delay
+  #  or about 1000 fetches per hour should be enough)
+  fetcher.server.delay: 5.0
+
   # revisit a page (value in minutes)
   # - never revisit a news article
   #   (seeds / RSS feeds are revisited)
-  fetchInterval.default: -1
+  # - 10 years (-1 would not allow to distinguish the fetch time, required for clean-ups) 
+  fetchInterval.default: 5256000
   
   # revisit a page with a fetch error after 2 hours (value in minutes)
   fetchInterval.fetch.error: 120
@@ -57,8 +64,15 @@ config:
   # ... 3h later should be enough (8 requests per day)
   fetchInterval.isFeed=true: 180
   
+  # news sitemaps may contain up 1000 URLs, fetch twice per day
+  fetchInterval.isSitemapNews=true: 720
+
   # auto-detect RSS feeds
   feed.sniffContent: true
+
+  # auto-detection of news sitemaps
+  sitemap.sniffContent: true
+  sitemap.discovery: true
 
   status.updater.cache.spec: "maximumSize=250000,expireAfterAccess=4h"
 
@@ -69,6 +83,7 @@ config:
    - error.cause
    - error.source
    - isSitemap
+   - isSitemapNews
    - isFeed
    - last-modified
 

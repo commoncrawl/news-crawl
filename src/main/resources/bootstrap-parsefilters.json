@@ -1,0 +1,20 @@
+{
+  "com.digitalpebble.stormcrawler.parse.ParseFilters": [
+    {
+      "class": "com.digitalpebble.stormcrawler.parse.filter.XPathFilter",
+      "name": "CanonicalLink",
+      "params": {
+        "canonical": "//*[@rel=\"canonical\"]/@href"
+      }
+    },
+    {
+      "class": "org.commoncrawl.news.bootstrap.FeedLinkParseFilter",
+      "name": "FeedLinks",
+      "params": {
+        "rss1": "//LINK[@rel='alternate' and @type='application/rss+xml']/@href",
+        "rss2": "//LINK[@rel='alternate' and @type='text/rss']/@href",
+        "atom": "//LINK[@rel='alternate' and @type='application/atom+xml']/@href"
+      }
+    }
+  ]
+}

@@ -15,38 +15,46 @@
  * limitations under the License.
  */
 
-package com.digitalpebble.stormcrawler;
-
-import java.util.LinkedHashMap;
-import java.util.Map;
+package org.commoncrawl.news.bootstrap;
 
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.LoggerFactory;
 
-import com.digitalpebble.stormcrawler.FileTimeSizeRotationPolicy.Units;
-import com.digitalpebble.stormcrawler.bolt.FeedParserBolt;
+import com.digitalpebble.stormcrawler.ConfigurableTopology;
+import com.digitalpebble.stormcrawler.Constants;
+import com.digitalpebble.stormcrawler.CrawlTopology;
 import com.digitalpebble.stormcrawler.bolt.FetcherBolt;
+import com.digitalpebble.stormcrawler.bolt.JSoupParserBolt;
 import com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.AggregationSpout;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt;
 import com.digitalpebble.stormcrawler.indexing.DummyIndexer;
-import com.digitalpebble.stormcrawler.protocol.AbstractHttpProtocol;
 import com.digitalpebble.stormcrawler.util.ConfUtils;
-import com.digitalpebble.stormcrawler.warc.WARCFileNameFormat;
 import com.digitalpebble.stormcrawler.warc.WARCHdfsBolt;
 
 /**
  * Dummy topology to play with the spouts and bolts on ElasticSearch
  */
-public class CrawlTopology extends ConfigurableTopology {
+public class BootstrapTopology extends CrawlTopology {
+
+    private static final org.slf4j.Logger LOG = LoggerFactory
+            .getLogger(BootstrapTopology.class);
 
     public static void main(String[] args) throws Exception {
-        ConfigurableTopology.start(new CrawlTopology(), args);
+        ConfigurableTopology.start(new BootstrapTopology(), args);
     }
 
     @Override
     protected int run(String[] args) {
         TopologyBuilder builder = new TopologyBuilder();
+
+        LOG.debug("sitemap.sniffContent: {}",
+                ConfUtils.getBoolean(getConf(), "sitemap.sniffContent", false));
+        LOG.info("sitemap.sniffContent: {}",
+                ConfUtils.getBoolean(getConf(), "sitemap.sniffContent", false));
+        LOG.warn("sitemap.sniffContent: {}",
+                ConfUtils.getBoolean(getConf(), "sitemap.sniffContent", false));
 
         int numWorkers = ConfUtils.getInt(getConf(), "topology.workers", 1);
 
@@ -62,64 +70,31 @@ public class CrawlTopology extends ConfigurableTopology {
         builder.setBolt("fetch", new FetcherBolt(), numWorkers)
                 .fieldsGrouping("partitioner", new Fields("key"));
 
-        builder.setBolt("sitemap", new NewsSiteMapParserBolt(), numWorkers)
+        builder.setBolt("sitemap", new NewsSiteMapDetectorBolt(), numWorkers)
                 .localOrShuffleGrouping("fetch");
 
-        builder.setBolt("feed", new FeedParserBolt(), numWorkers)
+        builder.setBolt("feed", new FeedDetectorBolt(), numWorkers)
                 .localOrShuffleGrouping("sitemap");
+
+        builder.setBolt("parse", new JSoupParserBolt())
+                .localOrShuffleGrouping("feed");
 
         // don't need to parse the pages but need to update their status
         builder.setBolt("ssb", new DummyIndexer(), numWorkers)
-                .localOrShuffleGrouping("feed");
+                .localOrShuffleGrouping("parse");
 
-        WARCHdfsBolt warcbolt = getWarcBolt("CC-NEWS");
+        WARCHdfsBolt warcbolt = getWarcBolt("CC-NEWS-BOOTSTRAP");
 
-        // take it from feed default output so that the feed files themselves
-        // don't get included - unless we want them too of course!
-        builder.setBolt("warc", warcbolt).localOrShuffleGrouping("feed");
+        builder.setBolt("warc", warcbolt).localOrShuffleGrouping("fetch");
 
         builder.setBolt("status", new StatusUpdaterBolt(), numWorkers)
                 .localOrShuffleGrouping("fetch", Constants.StatusStreamName)
                 .localOrShuffleGrouping("sitemap", Constants.StatusStreamName)
                 .localOrShuffleGrouping("feed", Constants.StatusStreamName)
+                .localOrShuffleGrouping("parse", Constants.StatusStreamName)
                 .localOrShuffleGrouping("ssb", Constants.StatusStreamName)
                 .setNumTasks(numShards);
 
         return submit(conf, builder);
     }
-
-    protected WARCHdfsBolt getWarcBolt(String filePrefix) {
-        // path is absolute
-        String warcFilePath = ConfUtils.getString(getConf(), "warc.dir",
-                "/data/warc");
-
-        WARCFileNameFormat fileNameFormat = new WARCFileNameFormat();
-        fileNameFormat.withPath(warcFilePath);
-        fileNameFormat.withPrefix(filePrefix);
-
-        Map<String, String> fields = new LinkedHashMap<>();
-        fields.put("software:", "StormCrawler 1.3 http://stormcrawler.net/");
-        fields.put("description", "News crawl for CommonCrawl");
-        String userAgent = AbstractHttpProtocol.getAgentString(getConf());
-        fields.put("http-header-user-agent", userAgent);
-        fields.put("http-header-from",
-                ConfUtils.getString(getConf(), "http.agent.email"));
-        fields.put("format", "WARC File Format 1.0");
-        fields.put("conformsTo",
-                "http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf");
-
-        WARCHdfsBolt warcbolt = (WARCHdfsBolt) new WARCHdfsBolt()
-                .withFileNameFormat(fileNameFormat);
-        warcbolt.withHeader(fields);
-
-        // will rotate if reaches 1GB or N units of time
-        FileTimeSizeRotationPolicy rotpol = new FileTimeSizeRotationPolicy(1.0f,
-                Units.GB);
-        rotpol.setTimeRotationInterval(1,
-                FileTimeSizeRotationPolicy.TimeUnit.DAYS);
-        warcbolt.withRotationPolicy(rotpol);
-
-        return warcbolt;
-    }
-
 }
