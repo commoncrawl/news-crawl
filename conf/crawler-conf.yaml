@@ -36,6 +36,7 @@ config:
   http.store.headers: true
 
   urlfilters.config.file: "urlfilters.json"
+  parsefilters.config.file: "parsefilters.json"
   
   # time bucket to use for the metrics sent by the Fetcher
   fetcher.metrics.time.bucket.secs: 60
@@ -46,6 +47,10 @@ config:
   # (be defensive, even for large news sites 5 sec. delay
   #  or about 1000 fetches per hour should be enough)
   fetcher.server.delay: 5.0
+
+  # fetch Scheduler implementation
+  scheduler.class: "com.digitalpebble.stormcrawler.persistence.AdaptiveScheduler"
+  scheduler.adaptive.setLastModified: true
 
   # revisit a page (value in minutes)
   # - never revisit a news article
@@ -80,12 +85,17 @@ config:
   # these are not transfered to the outlinks
   metadata.persist:
    - _redirTo
+   - fetch.statusCode
    - error.cause
    - error.source
    - isSitemap
    - isSitemapNews
    - isFeed
    - last-modified
+   - signature
+   - signatureOld
+   - signatureChangeDate
+   - fetchInterval
 
   # HTTP 'User-Agent' request header
   # NOTE: must set these configuration properties to identify your bot!
