@@ -4,14 +4,14 @@
       "class": "com.digitalpebble.stormcrawler.filtering.depth.MaxDepthFilter",
       "name": "MaxDepthFilter",
       "params": {
-        "maxDepth": 0
+        "maxDepth": 4
       }
     },
     {
       "class": "com.digitalpebble.stormcrawler.filtering.basic.BasicURLNormalizer",
       "name": "BasicURLNormalizer",
       "params": {
-        "removeAnchorPart": true, 
+        "removeAnchorPart": true,
         "unmangleQueryString": true,
         "checkValidURI": true
       }
@@ -41,13 +41,6 @@
     {
       "class": "com.digitalpebble.stormcrawler.filtering.basic.SelfURLFilter",
       "name": "SelfURLFilter"
-    },
-    {
-      "class": "com.digitalpebble.stormcrawler.filtering.robots.RobotsFilter",
-      "name": "RobotsFilter",
-      "params": {
-        "limitToSameHost": "true"
-      }
     }
   ]
 }
