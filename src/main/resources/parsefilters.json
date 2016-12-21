@@ -1,0 +1,20 @@
+{
+  "com.digitalpebble.stormcrawler.parse.ParseFilters": [
+    {
+      "class": "com.digitalpebble.stormcrawler.parse.filter.SignatureCopyParseFilter",
+      "name": "DigestCopy",
+      "params": {
+        "keyName": "signature",
+        "keyNameCopy": "signatureOld"
+      }
+    },
+    {
+      "class": "com.digitalpebble.stormcrawler.parse.filter.MD5SignatureParseFilter",
+      "name": "MD5Digest",
+      "params": {
+        "useText": "false",
+        "keyName": "signature"
+      }
+    }
+  ]
+}
