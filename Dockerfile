@@ -8,6 +8,7 @@ RUN apt-get update -qq && \
 		ca-certificates \
 		curl \
 		git-core \
+		jq \
 		less \
 		maven \
 		openjdk-8-jdk-headless \
@@ -15,6 +16,7 @@ RUN apt-get update -qq && \
 		supervisor \
 		wget \
 		tar \
+		vim \
 		zookeeperd
 
 #
@@ -48,7 +50,8 @@ ADD etc/supervisor/conf.d/elasticsearch.conf /etc/supervisor/conf.d/elasticsearc
 ADD etc/supervisor/conf.d/kibana.conf        /etc/supervisor/conf.d/kibana.conf
 RUN chmod -R 644 /etc/sysctl.d/60-elasticsearch.conf /etc/supervisor/conf.d/*.conf
 ENV ES_HEAP_SIZE=20g
-
+# enable updates via scripting
+RUN echo "\n\nscript.engine.groovy.inline.update: true\n" >>/etc/elasticsearch/elasticsearch.yml
 
 #
 # Apache Storm
@@ -86,7 +89,7 @@ RUN mkdir news-crawler/ && \
     mkdir news-crawler/seeds/ && \
     chmod -R a+rx news-crawler/
 # add the news crawler uber-jar
-ADD target/crawler-1.0-SNAPSHOT.jar news-crawler/lib/
+ADD target/crawler-1.3-SNAPSHOT.jar news-crawler/lib/crawler.jar
 # and configuration files
 ADD conf/*.*        news-crawler/conf/
 ADD seeds/feeds.txt news-crawler/seeds/

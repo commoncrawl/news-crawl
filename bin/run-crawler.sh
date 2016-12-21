@@ -20,7 +20,7 @@ cd $HOME/news-crawler/
 bin/ES_IndexInit.sh
 sleep 10
 
-STORMCRAWLER="storm jar $PWD/lib/crawler-1.0-SNAPSHOT.jar"
+STORMCRAWLER="storm jar $PWD/lib/crawler.jar"
 
 # inject seeds into Elasticsearch
 $STORMCRAWLER com.digitalpebble.stormcrawler.elasticsearch.ESSeedInjector \
