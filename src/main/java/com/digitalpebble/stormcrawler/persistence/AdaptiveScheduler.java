@@ -33,7 +33,12 @@ import com.digitalpebble.stormcrawler.protocol.HttpHeaders;
 import com.digitalpebble.stormcrawler.util.ConfUtils;
 
 /**
- * TODO: description
+ * Adaptive fetch scheduler, checks by signature comparison whether a re-fetched page has changed:
+ * <ul>
+ * <li>if yes, shrink the fetch interval up to a minimum fetch interval</li>
+ * <li>if not, increase the fetch interval up to a maximum</li>
+ * </ul>
+ * TODO: increase/decrease rate
  * TODO: which metadata fields to persist
  * TODO: required parse filters
  */
@@ -107,9 +112,11 @@ public class AdaptiveScheduler extends DefaultScheduler {
 
         if (status != Status.FETCHED) {
 
-            // TODO: reset all metadata ?
-            //metadata.remove(SIGNATURE_MODIFIED_KEY);
-            //metadata.remove(FETCH_INTERVAL_KEY);
+            // reset all metadata
+            metadata.remove(SIGNATURE_MODIFIED_KEY);
+            metadata.remove(FETCH_INTERVAL_KEY);
+            metadata.remove(SIGNATURE_KEY);
+            metadata.remove(SIGNATURE_OLD_KEY);
 
             // fall-back to DefaultScheduler
             return super.schedule(status, metadata);
@@ -117,34 +124,22 @@ public class AdaptiveScheduler extends DefaultScheduler {
 
         Calendar now = Calendar.getInstance(Locale.ROOT);
 
-        String fetchInterval = metadata.getFirstValue(FETCH_INTERVAL_KEY);
-        int interval = defaultfetchInterval;
-        if (fetchInterval != null) {
-            interval = Integer.parseInt(fetchInterval);
-        } else {
-            // initialize from DefaultScheduler
-            // TODO: DefaultScheduler.checkMetadata() should not be private
-            // interval = super.checkMetadata(metadata);
-            Date nextFetch = super.schedule(status, metadata);
-            interval = (int) (nextFetch.getTime() - now.getTime().getTime()) / 60000;
-            fetchInterval = Integer.toString(interval);
-        }
-
         String signatureModified = metadata
                 .getFirstValue(SIGNATURE_MODIFIED_KEY);
 
         boolean changed = false;
 
         if (signature == null || oldSignature == null) {
-            // - not parsed or
-            // - signature not generated and/or
+            // no decision possible by signature comparison if
+            // - document not parsed (intentionally or not) or
+            // - signature not generated or
             // - old signature not copied
 
             if (metadata.getFirstValue("fetch.statusCode").equals("304")) {
                 // HTTP 304 Not Modified
             } else {
-                // something wrong, fall-back to DefaultScheduler
-                LOG.error("No signature for FETCHED page: {}", metadata);
+                // fall-back to DefaultScheduler
+                LOG.debug("No signature for FETCHED page: {}", metadata);
                 return super.schedule(status, metadata);
             }
 
@@ -160,6 +155,19 @@ public class AdaptiveScheduler extends DefaultScheduler {
             if (setLastModified)
                 metadata.setValue(HttpHeaders.LAST_MODIFIED,
                         httpDateFormat.format(now.getTime()));
+        }
+
+        String fetchInterval = metadata.getFirstValue(FETCH_INTERVAL_KEY);
+        int interval = defaultfetchInterval;
+        if (fetchInterval != null) {
+            interval = Integer.parseInt(fetchInterval);
+        } else {
+            // initialize from DefaultScheduler
+            // TODO: DefaultScheduler.checkMetadata() should not be private
+            // interval = super.checkMetadata(metadata);
+            Date nextFetch = super.schedule(status, metadata);
+            interval = (int) (nextFetch.getTime() - now.getTime().getTime()) / 60000;
+            fetchInterval = Integer.toString(interval);
         }
 
         if (changed) {
