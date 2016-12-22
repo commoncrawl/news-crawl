@@ -1,0 +1,467 @@
+#!/bin/bash
+
+__ES_STATUS_URL_DEFAULT='http://localhost:9200/status'
+
+function ____show_help() {
+	echo "$0  [-v|-V] [-C] <command>  [<args>]"
+	echo
+	echo "Query StormCrawler's Elasticsearch status index"
+	echo "  with help of curl, jq and bash"
+	echo
+	echo "Global options"
+	echo " -v   verbose, print commands before execution"
+	echo " -V   very verbose"
+	echo " -C   colorize JSON output"
+	echo
+	echo "Commands"
+	echo
+	echo " url <URL>"
+	echo "      look up by URL"
+	echo " delete_url <URL>"
+	echo "      delete document/record by URL"
+	echo " reset_url [search|count|reset] <URL>"
+	echo "      reset by URL"
+	echo " fetch_now_url <URL>"
+	echo "      set time of next fetch to now for URL"
+	echo
+	echo " id <ID>"
+	echo "      look up by ID"
+	echo " delete_id <ID>"
+	echo "      delete document/record by ID"
+	echo
+	echo " list <SIZE>"
+	echo "      list SIZE documents"
+	echo " query [search|count] <QUERY> <PAGE> <SIZE>"
+	echo "      query status index"
+	echo " match [search|count] <EXPR>"
+	echo "      match expression in status index"
+	echo " match_filtered [search|count] <EXPR> <FILTER>"
+	echo "      filter query"
+	echo " match_field [search|count] <TYPE> <TERM>"
+	echo "      match documents by field and value"
+	echo " match_by_metadata [search|count] <TYPE> <TERM> <META>"
+	echo "      match documents by metadata"
+	echo
+	echo " aggregate_status"
+	echo "      aggregate fetch status"
+	echo " aggregate_hostname"
+	echo "      aggregate host names (or domain names) filtered by metadata"
+	echo " aggregate <FIELD> <SIZE>"
+	echo "      aggregate values on field"
+	echo " aggregate_by_metadata <FIELD> <META> <SIZE>"
+	echo "      aggregate field values filtered by metadata"
+	echo
+	echo " next_fetch [search|count]"
+	echo "      documents to be fetched next"
+	echo " failed_by_metadata [search|count] <META>"
+	echo "      failed fetches (status not FETCHED) filtered by metadata"
+	echo " status_by_metadata [search|count] <STATUS> <META>"
+	echo "      match by status and metadata"
+	echo
+	echo " update_by_query <SCRIPT> <QUERY>"
+	echo "      update documents by query"
+	echo " reset_by_query [search|count|reset] <QUERY>"
+	echo "      reset documents by query (or count/search to inspect impact before)"
+	echo " reset_failed_by_metadata [search|count|reset] <META>"
+	echo "      reset failed fetches filtered by metadata"
+	echo
+	echo "Environment variables"
+	echo " ES_STATUS_URL  URL to query status index, default: ${__ES_STATUS_URL_DEFAULT}"
+	echo
+	echo
+	echo "Examples"
+	echo
+	echo "% $0 aggregate_status"
+	echo "3340330 FETCHED"
+	echo "514847  DISCOVERED"
+	echo "365852  REDIRECTION"
+	echo "59903   ERROR"
+	echo "4545    FETCH_ERROR"
+	echo
+	echo "% $0 -v url http://example.com/"
+	cat <<EOF
++ curl -XGET 'http://localhost:9200/status/_search?pretty' --data '{
+    "query": {
+        "match": {
+            "url": "http://example.com/"
+        }
+    }
+}'
+{
+ "took" : 36,
+ "timed_out" : false,
+ "_shards" : { ... },
+ "hits" : {
+    "total" : 1,
+    "max_score" : 13.739399,
+    "hits" : [ {
+      "_index" : "status",
+      "_type" : "status",
+      "_id" : "http://example.com/",
+ ...
+EOF
+	echo
+}
+
+ES_STATUS_URL=${ES_STATUS_URL:-$__ES_STATUS_URL_DEFAULT}
+
+
+# current time in Elasticsearch date format
+function ____now () {
+	date -u '+%Y-%m-%dT%H:%M:%S.000Z'
+}
+
+# escape reserved characters in id strings ('/?&+')
+function ____escape_id () {
+    URL="$1"
+    URL="${URL//\//%2F}"
+    URL="${URL//\?/%3F}"
+    URL="${URL//&/%26}"
+    URL="${URL//\+/%2B}"
+    echo -n "$URL"
+}
+
+# return expression to match a metadata field in a boolean query
+function ____must_match_metadata () {
+	META="$1"
+	echo '"must": {
+                        "exists": {
+                            "field": "metadata.'"$META"'"
+                        }
+                    },
+                    "must": {
+                        "match": {
+                            "metadata.'"$META"'": "true"
+                        }
+                    }'
+}
+
+# query status index
+function __query () {
+    CMND="$1"
+    QUERY="$2"
+    PAGE="${3:-0}"
+    SIZE="${4:-1000}"
+    if [ "$CMND" == "search" ]; then
+        PAGING='"from" : '$(($PAGE*$SIZE))', "size" : '$SIZE','
+    fi
+    if $VERBOSE; then
+		set -x
+    fi
+    curl -XGET $ES_STATUS_URL'/_'$CMND'?pretty' --data \
+'{ '"$PAGING"'
+    "query": {
+        '"$QUERY"'
+    }
+}'
+}
+
+# match expression in status index
+function __match () {
+    CMND="$1"
+    EXPR="$2"
+    shift 2
+    __query $CMND '
+        "match": {
+            '"$EXPR"'
+        }' "$@"
+}
+
+# filter query
+function __match_filtered () {
+    CMND="$1"
+    EXPR="$2"
+    FILTER="$3"
+    shift 3
+    __query $CMND '
+        "filtered": {
+            "filter": {
+                '"$FILTER"'
+            },
+            "query": {
+                "match": {
+					'"$EXPR"'
+                }
+            }
+        }' "$@"
+}
+
+# look up by URL
+function __url () {
+    URL="$1"
+    __match search '"url": "'"$URL"'"'
+}
+
+# delete document/record by URL
+function __delete_url () {
+    URL="$1"
+    curl -XPOST $ES_STATUS_URL/status/_delete_by_query --data '{
+    "query": {
+        "match": {
+            "url": "'"$URL"'"
+        }
+    }
+}'
+}
+
+# look up by ID
+function __id () {
+    ID="$(____escape_id "$1")"
+    ROUTING="$2"
+    curl -XGET "$ES_STATUS_URL/status/$ID?pretty&routing=$ROUTING"
+}
+
+# delete document/record by ID
+function __delete_id () {
+    ID="$(____escape_id "$1")"
+    ROUTING="$2"
+    curl -XDELETE "$ES_STATUS_URL/status/$ID?pretty&routing=$ROUTING"
+}
+
+# list n documents
+function __list () {
+	SIZE=$1
+	curl -XGET "$ES_STATUS_URL/status/_search?pretty&size=$SIZE"
+}
+
+# match documents by field and value
+function __match_field () {
+    CMND="$1"
+    TYPE="$2"
+    TERM="$3"
+    __match $CMND '"'"$TYPE"'": "'"$TERM"'"'
+}
+
+# documents to be fetched next
+function __next_fetch () {
+    CMND="$1"
+    shift
+    __query $CMND '
+                "range": {
+                    "nextFetchDate": {
+                        "lt": "'"$(____now)"'"
+                    }
+                }' "$@"
+}
+
+# match documents by metadata
+function __match_by_metadata () {
+    CMND="$1"
+    TYPE="$2"
+    TERM="$3"
+    META="$4"
+    shift 4
+    FILTER='
+               "bool": {
+                    "must": {
+                        "exists": {
+                            "field": "metadata.'"$META"'"
+                        }
+                    }
+                }'
+	__match_filtered $CMND '"'"$TYPE"'": "'"$TERM"'"' "$FILTER" "$@"
+}
+
+# aggregate values on field
+function __aggregate () {
+    FIELD="$1"
+    SIZE="${2:-100000}"
+    curl -XGET $ES_STATUS_URL'/_search?search_type=count&pretty' --data \
+'{
+    "aggs" : {
+        "agg" : {
+            "terms" : {
+				"field" : "'"$FIELD"'",
+                "size" : '"$SIZE"'
+            }
+        }
+    }
+}' | jq --raw-output '.aggregations.agg.buckets[] | [(.doc_count|tostring),.key] | join("\t")'
+}
+
+# aggregate fetch status
+function __aggregate_status () {
+	__aggregate status "$@"
+}
+
+# aggregate field values filtered by metadata
+function __aggregate_by_metadata () {
+	FIELD="$1"
+    META="$2"
+    SIZE="${3:-100000}"    
+    curl -XGET $ES_STATUS_URL'/_search?search_type=count&pretty' --data \
+'{
+    "aggs" : {
+        "agg" : {
+            "filter": {
+                "bool": {
+                    '"$(____must_match_metadata "$META")"'
+                }
+            },
+            "aggs" : {
+                "agg" : {
+					"terms" : {
+						"field" : "'"$FIELD"'",
+						"size" : '"$SIZE"'
+                    }
+                }
+            }
+        }
+    }
+}' | jq --raw-output '.aggregations.agg.agg.buckets[] | [(.doc_count|tostring),.key] | join("\t")'
+}
+
+# aggregate host names (or domain names) filtered by metadata
+function __aggregate_hostname () {
+	__aggregate_by_metadata _routing "$@"
+}
+
+# failed fetches (status not FETCHED) filtered by metadata
+function __failed_by_metadata () {
+    CMND="$1"
+    META="$2"
+    shift 2
+    __query $CMND '
+        "filtered": {
+            "filter": {
+                "bool": {
+                    '"$(____must_match_metadata "$META")"',
+                    "must_not": {
+                        "match": {
+                            "status": "FETCHED"
+                        }
+                    }
+                }
+            }
+        }' "$@"
+}
+
+# match by status and metadata
+function __status_by_metadata () {
+    CMND="$1"
+    STATUS="$2"
+    META="$3"
+    shift 3
+    __query $CMND '
+        "filtered": {
+            "filter": {
+                "bool": {
+                    '"$(____must_match_metadata "$META")"',
+                    "must": {
+                        "match": {
+                            "status": "'"$STATUS"'"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}'
+}
+
+# update documents by query
+function __update_by_query () {
+	SCRIPT="$1"
+	QUERY="$2"
+    curl -XPOST $ES_STATUS_URL'/_update_by_query?pretty' --data \
+         '{
+    '"$SCRIPT"'
+    "query": '"$QUERY"'
+}'
+}
+
+# reset documents by query
+function __reset_by_query () {
+    CMND="$1"
+    QUERY="$2"
+    HTTP=GET
+    if [ "$CMND" == "reset" ]; then
+        CMND=update_by_query
+        HTTP=POST
+        NEXTFETCHDATE="$(____now)"
+        SCRIPT='"script" : {
+          "inline": "ctx._source.status = \"DISCOVERED\";
+                     ctx._source.nextFetchDate = \"'"$NEXTFETCHDATE"'\";
+                     ctx._source.metadata['\''error%2Esource'\''] = [];
+                     ctx._source.metadata['\''last-modified'\''] = [];"
+        },'
+        SCRIPT="${SCRIPT//$'\n'/ }"
+    fi
+    curl -X$HTTP $ES_STATUS_URL'/_'$CMND'?pretty' --data \
+         '{
+    '"$SCRIPT"'
+    "query": '"$QUERY"'
+}'
+}
+
+# reset by URL
+function __reset_url () {
+    CMND="$1"
+    URL="$2"
+    __reset_by_query "$CMND" '{
+        "match": {
+            "url": "'"$URL"'"
+        }
+    }'
+}
+
+# set time of next fetch to now for URL
+function __fetch_now_url () {
+    URL="$1"
+    NEXTFETCHDATE="$(____now)"
+	SCRIPT='"script" : {
+          "inline": "ctx._source.nextFetchDate = \"'"$NEXTFETCHDATE"'\";"
+        },'
+	__update_by_query "$SCRIPT" '{
+        "match": {
+            "url": "'"$URL"'"
+        }
+    }'
+}
+
+# reset failed fetches by metadata
+function __reset_failed_by_metadata () {
+    CMND="$1"
+    META="$2"
+    __reset_by_query "$CMND" '{
+        "filtered": {
+            "filter": {
+                "bool": {
+                    '"$(____must_match_metadata "$META")"',
+                    "must_not": {
+                        "match": {
+                            "status": "FETCHED"
+                        }
+                    }
+                }
+            }
+        }
+    }'
+}
+
+
+COLORIZE=false
+VERBOSE=false
+
+while getopts "vVCh?" opt; do
+    case $opt in
+        v ) # verbose
+            VERBOSE=true ;;
+        V ) # very verbose
+            set -x ;;
+        C ) COLORIZE=true ;;
+        h | \? )
+			____show_help
+			exit ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+
+COMMAND="$1"; shift
+
+if $COLORIZE && ! [ "$COMMAND" =~ ^aggregate ]; then
+	__$COMMAND "$@" | jq --color-output --raw-output '.'
+else
+	__$COMMAND "$@"
+fi
