@@ -33,14 +33,29 @@ import com.digitalpebble.stormcrawler.protocol.HttpHeaders;
 import com.digitalpebble.stormcrawler.util.ConfUtils;
 
 /**
- * Adaptive fetch scheduler, checks by signature comparison whether a re-fetched page has changed:
+ * Adaptive fetch scheduler, checks by signature comparison whether a re-fetched
+ * page has changed:
  * <ul>
  * <li>if yes, shrink the fetch interval up to a minimum fetch interval</li>
  * <li>if not, increase the fetch interval up to a maximum</li>
  * </ul>
- * TODO: increase/decrease rate
- * TODO: which metadata fields to persist
- * TODO: required parse filters
+ * 
+ * <p>
+ * The rate how the fetch interval is incremented or decremented is
+ * configurable.
+ * </p>
+ * 
+ * <p>
+ * Note, that this scheduler requires the following metadata:
+ * <dl>
+ * <dt>signature</dt>
+ * <dd>page signature, filled by MD5SignatureParseFilter</dd>
+ * <dt>signatureOld</dt>
+ * <dd>(temporary) copy of the previous signature, copied by
+ * SignatureCopyParseFilter</dd>
+ * </dl>
+ * </p>
+ * 
  */
 public class AdaptiveScheduler extends DefaultScheduler {
 
@@ -50,6 +65,33 @@ public class AdaptiveScheduler extends DefaultScheduler {
      * by signature comparison.
      */
     public static final String SET_LAST_MODIFIED = "scheduler.adaptive.setLastModified";
+
+    /**
+     * Configuration property (int) to set the minimum fetch interval in
+     * minutes.
+     */
+    public static final String INTERVAL_MIN = "scheduler.adaptive.fetchInterval.min";
+
+    /**
+     * Configuration property (int) to set the maximum fetch interval in
+     * minutes.
+     */
+    public static final String INTERVAL_MAX = "scheduler.adaptive.fetchInterval.max";
+
+    /**
+     * Configuration property (float) to set the increment rate. If a page
+     * hasn't changed when refetched, the fetch interval is multiplied by
+     * (1.0 + incr_rate) until the max. fetch interval is reached.
+     */
+    public static final String INTERVAL_INC_RATE = "scheduler.adaptive.fetchInterval.rate.incr";
+
+    /**
+     * Configuration property (float) to set the decrement rate. If a page
+     * has changed when refetched, the fetch interval is multiplied by
+     * (1.0 - decr_rate). If the fetch interval comes closer to the
+     * minimum interval, the decrementing is slowed down.
+     */
+    public static final String INTERVAL_DEC_RATE = "scheduler.adaptive.fetchInterval.rate.decr";
 
     /**
      * Name of the signature key in metadata, must be defined as
@@ -86,6 +128,8 @@ public class AdaptiveScheduler extends DefaultScheduler {
     protected int defaultfetchInterval;
     protected int minFetchInterval = 60;
     protected int maxFetchInterval = 60 * 24 * 14;
+    protected float fetchIntervalDecRate = .5f;
+    protected float fetchIntervalIncRate = .5f;
 
     protected boolean setLastModified = false;
     protected boolean overwriteLastModified = false;
@@ -95,11 +139,20 @@ public class AdaptiveScheduler extends DefaultScheduler {
     // TODO: httpDateFormat should be defined centrally
 
     @Override
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public void init(Map stormConf) {
         defaultfetchInterval = ConfUtils.getInt(stormConf,
                 Constants.defaultFetchIntervalParamName, 1440);
         setLastModified = ConfUtils.getBoolean(stormConf, SET_LAST_MODIFIED,
                 false);
+        minFetchInterval = ConfUtils.getInt(stormConf, INTERVAL_MIN,
+                minFetchInterval);
+        maxFetchInterval = ConfUtils.getInt(stormConf, INTERVAL_MAX,
+                maxFetchInterval);
+        fetchIntervalDecRate = ConfUtils.getFloat(stormConf, INTERVAL_DEC_RATE,
+                fetchIntervalDecRate);
+        fetchIntervalIncRate = ConfUtils.getFloat(stormConf, INTERVAL_INC_RATE,
+                fetchIntervalIncRate);
         super.init(stormConf);
     }
 
@@ -171,15 +224,16 @@ public class AdaptiveScheduler extends DefaultScheduler {
         }
 
         if (changed) {
-            // shrink fetch interval quickly (unless already close to
+            // shrink fetch interval (slow down decrementing if already close to
             // the minimum interval)
-            interval = (interval + minFetchInterval) / 2;
+            interval = (int) ((1.0f - fetchIntervalDecRate) * interval
+                    + fetchIntervalDecRate * minFetchInterval);
             LOG.debug("Signature has changed, fetchInterval decreased from {} to {}",
                     fetchInterval, interval);
 
         } else {
-            // no change or not modified, increase fetch interval slowly
-            interval = interval + (interval / 10);
+            // no change or not modified, increase fetch interval
+            interval = (int) (interval * (1.0f + fetchIntervalIncRate));
             if (interval > maxFetchInterval)
                 interval = maxFetchInterval;
             LOG.debug(

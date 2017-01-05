@@ -51,6 +51,10 @@ config:
   # fetch Scheduler implementation
   scheduler.class: "com.digitalpebble.stormcrawler.persistence.AdaptiveScheduler"
   scheduler.adaptive.setLastModified: true
+  scheduler.adaptive.fetchInterval.min: 90
+  scheduler.adaptive.fetchInterval.max: 40320
+  scheduler.adaptive.fetchInterval.rate.incr: .5
+  scheduler.adaptive.fetchInterval.rate.decr: .2
 
   # revisit a page (value in minutes)
   # - never revisit a news article
@@ -64,13 +68,11 @@ config:
   # revisit a page with an error after 3 month (value in minutes)
   fetchInterval.error: 133920
 
-  # if the url is a feed then revisit it 10 mins later
-  #   fetchInterval.isFeed=true: 10
-  # ... 3h later should be enough (8 requests per day)
-  fetchInterval.isFeed=true: 180
+  # re-fetch feeds 2 times per day by default (adaptive scheduler will set a lower frequency if needed)
+  fetchInterval.isFeed=true: 7200
   
-  # news sitemaps may contain up 1000 URLs, fetch twice per day
-  fetchInterval.isSitemapNews=true: 720
+  # news sitemaps may contain up to 1000 URLs, re-fetch daily
+  fetchInterval.isSitemapNews=true: 1440
 
   # auto-detect RSS feeds
   feed.sniffContent: true
