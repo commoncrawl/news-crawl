@@ -20,8 +20,8 @@ config:
   es.status.min.delay.queries: 60000
   
   # AggregationSpout
-  es.status.max.buckets: 100
-  es.status.max.urls.per.bucket: 90
+  es.status.max.buckets: 200
+  es.status.max.urls.per.bucket: 40
   # field to sort the URLs within a bucket
   es.status.bucket.sort.field: "nextFetchDate"
   # field to sort the buckets

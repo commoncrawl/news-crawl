@@ -40,12 +40,14 @@ config:
   # time bucket to use for the metrics sent by the Fetcher
   fetcher.metrics.time.bucket.secs: 60
   
-  fetcher.threads.number: 20
+  fetcher.threads.number: 50
+
+  worker.heap.memory.mb: 4096
   
   # delay between successive requests to the same host
-  # (be defensive, even for large news sites 5 sec. delay
-  #  or about 1000 fetches per hour should be enough)
-  fetcher.server.delay: 5.0
+  # (be defensive, a delay of 5 sec. means about 1000 fetches per hour
+  #  which should be enough even for large news sites)
+  fetcher.server.delay: 3.0
 
   # revisit a page (value in minutes)
   # - never revisit a news article

@@ -63,9 +63,9 @@ public class CrawlTopology extends ConfigurableTopology {
                 .fieldsGrouping("partitioner", new Fields("key"));
 
         builder.setBolt("sitemap", new NewsSiteMapParserBolt(), numWorkers)
-                .localOrShuffleGrouping("fetch");
+                .setNumTasks(2).localOrShuffleGrouping("fetch");
 
-        builder.setBolt("feed", new FeedParserBolt(), numWorkers)
+        builder.setBolt("feed", new FeedParserBolt(), numWorkers).setNumTasks(4)
                 .localOrShuffleGrouping("sitemap");
 
         // don't need to parse the pages but need to update their status
