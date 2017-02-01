@@ -36,6 +36,7 @@ config:
   http.store.headers: true
 
   urlfilters.config.file: "urlfilters.json"
+  parsefilters.config.file: "parsefilters.json"
   
   # time bucket to use for the metrics sent by the Fetcher
   fetcher.metrics.time.bucket.secs: 60
@@ -55,6 +56,14 @@ config:
   #  about 1000 pages per day, enough for small news sites)
   fetcher.max.crawl.delay: 90
 
+  # fetch Scheduler implementation
+  scheduler.class: "com.digitalpebble.stormcrawler.persistence.AdaptiveScheduler"
+  scheduler.adaptive.setLastModified: true
+  scheduler.adaptive.fetchInterval.min: 90
+  scheduler.adaptive.fetchInterval.max: 40320
+  scheduler.adaptive.fetchInterval.rate.incr: .5
+  scheduler.adaptive.fetchInterval.rate.decr: .2
+
   # revisit a page (value in minutes)
   # - never revisit a news article
   #   (seeds / RSS feeds are revisited)
@@ -67,13 +76,11 @@ config:
   # revisit a page with an error after 3 month (value in minutes)
   fetchInterval.error: 133920
 
-  # if the url is a feed then revisit it 10 mins later
-  #   fetchInterval.isFeed=true: 10
-  # ... 3h later should be enough (8 requests per day)
-  fetchInterval.isFeed=true: 180
+  # re-fetch feeds 2 times per day by default (adaptive scheduler will set a lower frequency if needed)
+  fetchInterval.isFeed=true: 720
   
-  # news sitemaps may contain up 1000 URLs, fetch twice per day
-  fetchInterval.isSitemapNews=true: 720
+  # news sitemaps may contain up to 1000 URLs, re-fetch daily
+  fetchInterval.isSitemapNews=true: 1440
 
   # auto-detect RSS feeds
   feed.sniffContent: true
@@ -88,12 +95,16 @@ config:
   # these are not transfered to the outlinks
   metadata.persist:
    - _redirTo
+   - fetch.statusCode
    - error.cause
    - error.source
    - isSitemap
    - isSitemapNews
    - isFeed
    - last-modified
+   - signature
+   - signatureChangeDate
+   - fetchInterval
 
   # HTTP 'User-Agent' request header
   # NOTE: must set these configuration properties to identify your bot!
