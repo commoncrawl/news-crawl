@@ -77,7 +77,7 @@ config:
   fetchInterval.error: 133920
 
   # re-fetch feeds 2 times per day by default (adaptive scheduler will set a lower frequency if needed)
-  fetchInterval.isFeed=true: 7200
+  fetchInterval.isFeed=true: 720
   
   # news sitemaps may contain up to 1000 URLs, re-fetch daily
   fetchInterval.isSitemapNews=true: 1440
