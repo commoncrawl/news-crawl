@@ -28,14 +28,14 @@ function ____show_help() {
 #   echo " [not implemented] inject_url <URL> <ROUTING> <METAFIELD> <METAVALUE>"
 #   echo "      inject URL with metadata METAFIELD=METAVALUE"
     echo
-    echo " id <ID>"
+    echo " id <ID> <ROUTING>"
     echo "      look up by ID"
-    echo " delete_id <ID>"
+    echo " delete_id <ID> <ROUTING>"
     echo "      delete document/record by ID"
     echo
     echo " list <SIZE>"
     echo "      list SIZE documents"
-    echo " query [search|count] <QUERY> <PAGE> <SIZE>"
+    echo " query [search|count] <QUERY> [<PAGE> [<SIZE>]]"
     echo "      query status index"
     echo " match [search|count] <EXPR>"
     echo "      match expression in status index"
@@ -48,12 +48,16 @@ function ____show_help() {
     echo
     echo " aggregate_status"
     echo "      aggregate fetch status"
-    echo " aggregate_hostname"
+    echo " aggregate_hostname <META> [<SIZE>]"
     echo "      aggregate host names (or domain names) filtered by metadata"
-    echo " aggregate <FIELD> <SIZE>"
+    echo " aggregate_hostname_by_status <STATUS>"
+    echo "      aggregate host names (or domain names) filtered by status"
+    echo " aggregate <FIELD> [<SIZE>]"
     echo "      aggregate values on field"
-    echo " aggregate_by_metadata <FIELD> <META> <SIZE>"
+    echo " aggregate_by_metadata <FIELD> <META> [<SIZE>]"
     echo "      aggregate field values filtered by metadata"
+    echo " aggregate_by <FIELD> <QUERY> <SIZE>"
+    echo "      aggregate field values filtered by query"
     echo
     echo " next_fetch [search|count]"
     echo "      documents to be fetched next"
@@ -68,6 +72,8 @@ function ____show_help() {
     echo "      reset documents by query (or count/search to inspect impact before)"
     echo " reset_failed_by_metadata [search|count|reset] <META>"
     echo "      reset failed fetches filtered by metadata"
+    echo " fetch_at [search|count|update] <DATE> <TYPE> <TERM> <META>"
+    echo "      bulk setting of next fetch time (or count/search to inspect impact before)"
     echo
     echo "Environment variables"
     echo " ES_STATUS_URL  URL to query status index, default: ${__ES_STATUS_URL_DEFAULT}"
@@ -171,7 +177,7 @@ function __query () {
 function __match () {
     CMND="$1"
     EXPR="$2"
-    shift 2
+    shift 2 || { echo "Not enough arguments"; exit 1; }
     __query $CMND '
         "match": {
             '"$EXPR"'
@@ -183,7 +189,7 @@ function __match_filtered () {
     CMND="$1"
     EXPR="$2"
     FILTER="$3"
-    shift 3
+    shift 3 || { echo "Not enough arguments"; exit 1; }
     __query $CMND '
         "filtered": {
             "filter": {
@@ -220,6 +226,7 @@ function __delete_url () {
 function __id () {
     ID="$(____escape_id "$1")"
     ROUTING="$2"
+    shift 2 || { echo "Not enough arguments"; exit 1; }
     $SHOW_COMMAND
     $CURL -XGET "$ES_STATUS_URL/status/$ID?pretty&routing=$ROUTING"
 }
@@ -250,7 +257,7 @@ function __match_field () {
 # documents to be fetched next
 function __next_fetch () {
     CMND="$1"
-    shift || { echo "Not enough arguments"; exit 1; }
+    shift 1 || { echo "Not enough arguments"; exit 1; }
     __query $CMND '
                 "range": {
                     "nextFetchDate": {
@@ -265,7 +272,7 @@ function __match_by_metadata () {
     TYPE="$2"
     TERM="$3"
     META="$4"
-    shift 4
+    shift 4 || { echo "Not enough arguments"; exit 1; }
     FILTER='
                "bool": {
                     '"$(____must_match_metadata "$META")"'
@@ -296,10 +303,10 @@ function __aggregate_status () {
     __aggregate status "$@"
 }
 
-# aggregate field values filtered by metadata
-function __aggregate_by_metadata () {
+# aggregate field values filtered by query
+function __aggregate_by () {
     FIELD="$1"
-    META="$2"
+    QUERY="$2"
     SIZE="${3:-100000}"    
     $SHOW_COMMAND
     $CURL -XGET $ES_STATUS_URL'/_search?search_type=count&pretty' --data \
@@ -308,7 +315,7 @@ function __aggregate_by_metadata () {
         "agg" : {
             "filter": {
                 "bool": {
-                    '"$(____must_match_metadata "$META")"'
+                    '"$QUERY"'
                 }
             },
             "aggs" : {
@@ -324,16 +331,38 @@ function __aggregate_by_metadata () {
 }' | jq --raw-output '.aggregations.agg.agg.buckets[] | [(.doc_count|tostring),.key] | join("\t")'
 }
 
+# aggregate field values filtered by metadata
+function __aggregate_by_metadata () {
+    FIELD="$1"
+    META="$2"
+    SIZE="${3:-100000}"
+    $SHOW_COMMAND
+    __aggregate_by "$FIELD" "$(____must_match_metadata "$META")" "$SIZE"
+}
+
 # aggregate host names (or domain names) filtered by metadata
 function __aggregate_hostname () {
-    __aggregate_by_metadata _routing "$@"
+    META="$1"
+    shift 1 || { echo "Not enough arguments"; exit 1; }
+    __aggregate_by_metadata _routing "$1" "$@"
+}
+
+# aggregate host names (or domain names) filtered by status
+function __aggregate_hostname_by_status () {
+    STATUS="$1"
+    shift 1 || { echo "Not enough arguments"; exit 1; }
+    __aggregate_by _routing '"must": {
+                        "match": {
+                            "status": "'"$STATUS"'"
+                        }
+                    }' "$@"
 }
 
 # failed fetches (status not FETCHED) filtered by metadata
 function __failed_by_metadata () {
     CMND="$1"
     META="$2"
-    shift 2
+    shift 2 || { echo "Not enough arguments"; exit 1; }
     __query $CMND '
         "filtered": {
             "filter": {
@@ -354,7 +383,7 @@ function __status_by_metadata () {
     CMND="$1"
     STATUS="$2"
     META="$3"
-    shift 3
+    shift 3 || { echo "Not enough arguments"; exit 1; }
     __query $CMND '
         "filtered": {
             "filter": {
@@ -402,7 +431,7 @@ function __reset_by_query () {
         SCRIPT="${SCRIPT//$'\n'/ }"
         __update_by_query "$SCRIPT" "$QUERY"
     else
-        __match_by_query $CMND "$QUERY"
+        __query $CMND "$QUERY"
     fi
 }
 

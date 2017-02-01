@@ -50,6 +50,12 @@ config:
   #  which should be enough even for large news sites)
   fetcher.server.delay: 3.0
 
+  # generous max. crawl delay
+  # (fetch content even if the robots.txt specifies a large host-specific crawl delay:
+  #  waiting 90 sec. between successive fetch would still allow to fetch
+  #  about 1000 pages per day, enough for small news sites)
+  fetcher.max.crawl.delay: 90
+
   # fetch Scheduler implementation
   scheduler.class: "com.digitalpebble.stormcrawler.persistence.AdaptiveScheduler"
   scheduler.adaptive.setLastModified: true
@@ -61,7 +67,7 @@ config:
   # revisit a page (value in minutes)
   # - never revisit a news article
   #   (seeds / RSS feeds are revisited)
-  # - 10 years (-1 would not allow to distinguish the fetch time, required for clean-ups) 
+  # - 10 years (-1 would not allow to distinguish the fetch time, required for clean-ups)
   fetchInterval.default: 5256000
   
   # revisit a page with a fetch error after 2 hours (value in minutes)
@@ -75,6 +81,13 @@ config:
   
   # news sitemaps may contain up to 1000 URLs, re-fetch daily
   fetchInterval.isSitemapNews=true: 1440
+  # try to re-fetch failed feeds or sitemaps after 2 month
+  fetchInterval.FETCH_ERROR.isFeed=true: 86400
+  fetchInterval.FETCH_ERROR.isSitemapNews=true: 86400
+  # re-fetch redirected feeds or sitemaps after 2 weeks
+  # (the redirect target may have changed)
+  fetchInterval.REDIRECTION.isFeed=true: 20160
+  fetchInterval.REDIRECTION.isSitemapNews=true: 20160
 
   # auto-detect RSS feeds
   feed.sniffContent: true
@@ -97,7 +110,6 @@ config:
    - isFeed
    - last-modified
    - signature
-   - signatureOld
    - signatureChangeDate
    - fetchInterval
 
