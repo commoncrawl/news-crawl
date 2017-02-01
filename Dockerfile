@@ -89,7 +89,7 @@ RUN mkdir news-crawler/ && \
     mkdir news-crawler/seeds/ && \
     chmod -R a+rx news-crawler/
 # add the news crawler uber-jar
-ADD target/crawler-1.3-SNAPSHOT.jar news-crawler/lib/crawler.jar
+ADD target/crawler-1.4-SNAPSHOT.jar news-crawler/lib/crawler.jar
 # and configuration files
 ADD conf/*.*        news-crawler/conf/
 ADD seeds/feeds.txt news-crawler/seeds/
