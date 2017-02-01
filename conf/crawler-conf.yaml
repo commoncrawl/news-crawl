@@ -81,6 +81,13 @@ config:
   
   # news sitemaps may contain up to 1000 URLs, re-fetch daily
   fetchInterval.isSitemapNews=true: 1440
+  # try to re-fetch failed feeds or sitemaps after 2 month
+  fetchInterval.FETCH_ERROR.isFeed=true: 86400
+  fetchInterval.FETCH_ERROR.isSitemapNews=true: 86400
+  # re-fetch redirected feeds or sitemaps after 2 weeks
+  # (the redirect target may have changed)
+  fetchInterval.REDIRECTION.isFeed=true: 20160
+  fetchInterval.REDIRECTION.isSitemapNews=true: 20160
 
   # auto-detect RSS feeds
   feed.sniffContent: true
