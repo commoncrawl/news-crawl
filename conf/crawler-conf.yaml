@@ -58,11 +58,15 @@ config:
 
   # fetch Scheduler implementation
   scheduler.class: "com.digitalpebble.stormcrawler.persistence.AdaptiveScheduler"
+  # AdaptiveScheduler properties
   scheduler.adaptive.setLastModified: true
   scheduler.adaptive.fetchInterval.min: 90
   scheduler.adaptive.fetchInterval.max: 40320
   scheduler.adaptive.fetchInterval.rate.incr: .5
   scheduler.adaptive.fetchInterval.rate.decr: .2
+
+  # AdaptiveScheduler only handles successful re-fetches (HTTP 200 or 304 not modified),
+  # all others are delegated to DefaultScheduler
 
   # revisit a page (value in minutes)
   # - never revisit a news article
@@ -76,18 +80,26 @@ config:
   # revisit a page with an error after 3 month (value in minutes)
   fetchInterval.error: 133920
 
-  # re-fetch feeds 2 times per day by default (adaptive scheduler will set a lower frequency if needed)
-  fetchInterval.isFeed=true: 720
-  
-  # news sitemaps may contain up to 1000 URLs, re-fetch daily
-  fetchInterval.isSitemapNews=true: 1440
+  # custom interval for feeds and sitemaps
+  # NOTE: must fully specify rules (status + metadata), cf. storm-crawler#420
+
   # try to re-fetch failed feeds or sitemaps after 2 month
   fetchInterval.FETCH_ERROR.isFeed=true: 86400
   fetchInterval.FETCH_ERROR.isSitemapNews=true: 86400
+  fetchInterval.ERROR.isFeed=true: 86400
+  fetchInterval.ERROR.isSitemapNews=true: 86400
+
   # re-fetch redirected feeds or sitemaps after 2 weeks
   # (the redirect target may have changed)
   fetchInterval.REDIRECTION.isFeed=true: 20160
   fetchInterval.REDIRECTION.isSitemapNews=true: 20160
+
+  # re-fetch feeds 2 times per day by default (adaptive scheduler will set a lower frequency if needed)
+  fetchInterval.FETCHED.isFeed=true: 720
+
+  # news sitemaps may contain up to 1000 URLs, re-fetch daily
+  fetchInterval.FETCHED.isSitemapNews=true: 1440
+
 
   # auto-detect RSS feeds
   feed.sniffContent: true
