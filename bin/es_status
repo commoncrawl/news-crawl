@@ -137,6 +137,7 @@ function ____escape_id () {
     URL="${URL//\?/%3F}"
     URL="${URL//&/%26}"
     URL="${URL//\+/%2B}"
+    URL="${URL// /%20}"
     echo -n "$URL"
 }
 
