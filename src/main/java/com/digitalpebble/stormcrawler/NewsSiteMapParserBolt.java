@@ -5,7 +5,6 @@ import static com.digitalpebble.stormcrawler.Constants.StatusStreamName;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -46,6 +45,7 @@ import crawlercommons.sitemaps.UnknownFormatException;
  * "https://support.google.com/news/publisher/answer/74288?hl=en">news
  * sitemaps</a>.
  */
+@SuppressWarnings("serial")
 public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     // TODO:
     //    this is a modified copy of c.d.s.bolt.SiteMapParserBolt
@@ -60,8 +60,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             .getLogger(SiteMapParserBolt.class);
 
     public static String[][] contentClues = {
+            // match 0: a news sitemap
             { "http://www.google.com/schemas/sitemap-news/0.9",
                     "http://www.sitemaps.org/schemas/sitemap/0.9" },
+            // match 1: a sitemap, but not a news sitemap
             { "http://www.sitemaps.org/schemas/sitemap/0.9" } };
     protected static final int maxOffsetContentGuess = 1024;
     private static ContentDetector contentDetector = new ContentDetector(

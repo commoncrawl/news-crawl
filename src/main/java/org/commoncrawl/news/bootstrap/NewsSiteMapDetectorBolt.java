@@ -23,6 +23,7 @@ import com.digitalpebble.stormcrawler.persistence.Status;
  * "https://support.google.com/news/publisher/answer/74288?hl=en">news
  * sitemaps</a> and also <a href="http://www.sitemaps.org/">sitemaps</a>.
  */
+@SuppressWarnings("serial")
 public class NewsSiteMapDetectorBolt extends SiteMapParserBolt {
 
     private static final org.slf4j.Logger LOG = LoggerFactory
