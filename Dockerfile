@@ -94,6 +94,7 @@ ADD target/crawler-1.4-SNAPSHOT.jar news-crawler/lib/crawler.jar
 ADD conf/*.*        news-crawler/conf/
 ADD seeds/feeds.txt news-crawler/seeds/
 ADD bin/*.sh        news-crawler/bin/
+ADD bin/es_status   news-crawler/bin/
 # add storm-crawler/external/elasticsearch/ES_IndexInit.sh
 RUN wget -O     news-crawler/bin/ES_IndexInit.sh \
 	https://raw.githubusercontent.com/DigitalPebble/storm-crawler/master/external/elasticsearch/ES_IndexInit.sh
