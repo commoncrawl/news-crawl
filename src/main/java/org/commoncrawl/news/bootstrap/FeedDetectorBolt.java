@@ -19,6 +19,7 @@ import com.digitalpebble.stormcrawler.persistence.Status;
 import com.digitalpebble.stormcrawler.protocol.HttpHeaders;
 
 /** Detect RSS and Atom feeds, but do not parse and extract links */
+@SuppressWarnings("serial")
 public class FeedDetectorBolt extends FeedParserBolt {
 
     private static final org.slf4j.Logger LOG = LoggerFactory
@@ -86,7 +87,7 @@ public class FeedDetectorBolt extends FeedParserBolt {
     }
 
     @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({ "rawtypes" })
     public void prepare(Map stormConf, TopologyContext context,
             OutputCollector collect) {
         super.prepare(stormConf, context, collect);
