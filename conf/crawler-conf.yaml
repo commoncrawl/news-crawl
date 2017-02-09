@@ -81,13 +81,11 @@ config:
   fetchInterval.error: 133920
 
   # custom interval for feeds and sitemaps
-  # NOTE: must fully specify rules (status + metadata), cf. storm-crawler#420
 
   # try to re-fetch failed feeds or sitemaps after 2 month
-  fetchInterval.FETCH_ERROR.isFeed=true: 86400
-  fetchInterval.FETCH_ERROR.isSitemapNews=true: 86400
-  fetchInterval.ERROR.isFeed=true: 86400
-  fetchInterval.ERROR.isSitemapNews=true: 86400
+  # (status is neither FETCHED nor REDIRECTION) 
+  fetchInterval.isFeed=true: 86400
+  fetchInterval.isSitemapNews=true: 86400
 
   # re-fetch redirected feeds or sitemaps after 2 weeks
   # (the redirect target may have changed)
