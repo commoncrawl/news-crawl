@@ -10,7 +10,7 @@ Prerequisites
 * Clone and compile [https://github.com/DigitalPebble/sc-warc] with `mvn clean install`
 * Clone and compile [https://github.com/DigitalPebble/storm-crawler] with `mvn clean install`
 * Start ES and Storm
-* Build ES indices with : `curl -L "https://git.io/vaGkv" | bash`
+* Build ES indices with : `curl -L "https://git.io/v9Xiz" | bash`
 
 Configuration
 ------------
