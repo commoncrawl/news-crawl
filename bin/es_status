@@ -548,7 +548,7 @@ fi
 
 COMMAND="$1"; shift
 
-if $COLORIZE && ! [ "$COMMAND" =~ ^aggregate ]; then
+if $COLORIZE && ! [[ "$COMMAND" =~ ^aggregate ]]; then
     __$COMMAND "$@" | jq --color-output --raw-output '.'
 else
     __$COMMAND "$@"
