@@ -39,7 +39,7 @@ You can check that the URLs have been injected on [http://localhost:9200/status/
 You can then run the crawl topology with :
 
 ``` sh
-storm jar target/crawler-1.0-SNAPSHOT.jar com.digitalpebble.stormcrawler.CrawlTopology -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml
+storm jar target/crawler-1.0-SNAPSHOT.jar org.commoncrawl.stormcrawler.news.CrawlTopology -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml
 ```
 
 The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
@@ -52,9 +52,21 @@ See instructions on [https://github.com/DigitalPebble/storm-crawler/tree/master/
 Run Crawl from Docker Container
 -------------
 
-Build the Docker image from the [Dockerfile](./Dockerfile):
+First, download Apache Storm:
 ```
-docker build -t newscrawler:1.0 .
+STORM_VERSION=1.1.1
+mkdir downloads
+wget -q -P downloads --timestamping http://mirrors.ukfast.co.uk/sites/ftp.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz
+```
+
+Second, the script to create the Elasticsearch index:
+```
+wget -O bin/ES_IndexInit.sh https://raw.githubusercontent.com/DigitalPebble/storm-crawler/master/external/elasticsearch/ES_IndexInit.sh
+````
+
+Then build the Docker image from the [Dockerfile](./Dockerfile):
+```
+docker build -t newscrawler:1.8 .
 ```
 
 Note: the uberjar is included in the Docker image and needs to be built first.
@@ -66,7 +78,7 @@ docker run --net=host \
     -p 5601:5601 -p 8080:8080 \
     -v .../newscrawl/elasticsearch:/data/elasticsearch \
     -v .../newscrawl/warc:/data/warc \
-    --rm -i -t newscrawler:1.0 /bin/bash
+    --rm -i -t newscrawler:1.8 /bin/bash
 ```
 
 NOTE: don't forget to adapt the paths to mounted volumes used to persist data on the host.

@@ -1,4 +1,4 @@
-name: "feeds"
+name: "newscrawl"
 
 includes:
     - resource: true
@@ -6,7 +6,7 @@ includes:
       override: false
 
     - resource: false
-      file: "crawl-conf.yaml"
+      file: "crawler-conf.yaml"
       override: true
 
     - resource: false

@@ -98,13 +98,18 @@ config:
   # news sitemaps may contain up to 1000 URLs, re-fetch daily
   fetchInterval.FETCHED.isSitemapNews=true: 1440
 
-
   # auto-detect RSS feeds
   feed.sniffContent: true
 
   # auto-detection of news sitemaps
   sitemap.sniffContent: true
   sitemap.discovery: true
+
+  # do not add feeds older than 30 days
+  # (longest adaptive fetch interval is 28 days)
+  feed.filter.hours.since.published: 720
+  # same for news sitemaps
+  sitemap.filter.hours.since.modified: 720
 
   status.updater.cache.spec: "maximumSize=250000,expireAfterAccess=4h"
 

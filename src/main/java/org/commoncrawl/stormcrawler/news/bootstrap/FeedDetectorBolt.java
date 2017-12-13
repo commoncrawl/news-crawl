@@ -1,4 +1,4 @@
-package org.commoncrawl.news.bootstrap;
+package org.commoncrawl.stormcrawler.news.bootstrap;
 
 import java.util.Map;
 

@@ -1,4 +1,4 @@
-package org.commoncrawl.news.bootstrap;
+package org.commoncrawl.stormcrawler.news.bootstrap;
 
 import java.util.Map;
 
@@ -6,11 +6,11 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.stormcrawler.Constants;
 import com.digitalpebble.stormcrawler.Metadata;
-import com.digitalpebble.stormcrawler.NewsSiteMapParserBolt;
 import com.digitalpebble.stormcrawler.bolt.SiteMapParserBolt;
 import com.digitalpebble.stormcrawler.parse.ParseData;
 import com.digitalpebble.stormcrawler.parse.ParseFilter;

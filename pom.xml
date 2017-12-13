@@ -2,15 +2,15 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.digitalpebble.news</groupId>
+	<groupId>org.commoncrawl.news</groupId>
 	<artifactId>crawler</artifactId>
-	<version>1.4-SNAPSHOT</version>
+	<version>1.8-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<storm-crawler.version>1.4-SNAPSHOT</storm-crawler.version>
-		<storm-core.version>1.0.2</storm-core.version>
+		<storm-crawler.version>1.8-SNAPSHOT</storm-crawler.version>
+		<storm-core.version>1.1.0</storm-core.version>
 	</properties>
 
 	<build>
@@ -20,8 +20,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.2</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -34,7 +34,8 @@
 							<goal>exec</goal>
 						</goals>
 					</execution>
-				</executions>
+
+			  </executions>
 				<configuration>
 					<executable>java</executable>
 					<includeProjectDependencies>true</includeProjectDependencies>
@@ -56,10 +57,14 @@
 							<createDependencyReducedPom>false</createDependencyReducedPom>
 							<transformers>
 								<transformer
-									implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+										implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
 								<transformer
-									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+										implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<mainClass>org.apache.storm.flux.Flux</mainClass>
+									<manifestEntries>
+										<Change></Change>
+										<Build-Date></Build-Date>
+									</manifestEntries>
 								</transformer>
 							</transformers>
 							<!-- The filters below are necessary if you want to include the Tika 
@@ -89,11 +94,6 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.storm</groupId>
-			<artifactId>flux-core</artifactId>
-			<version>${storm-core.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>com.digitalpebble.stormcrawler</groupId>
 			<artifactId>storm-crawler-core</artifactId>
 			<version>${storm-crawler.version}</version>
@@ -108,7 +108,7 @@
 			<artifactId>storm-crawler-warc</artifactId>
 			<version>${storm-crawler.version}</version>
 		</dependency>
-		<!--  set version explicitly -->
+		<!-- set version explicitly -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>

@@ -144,16 +144,15 @@ function ____escape_id () {
 # return expression to match a metadata field in a boolean query
 function ____must_match_metadata () {
     META="$1"
-    echo '"must": {
-                        "exists": {
-                            "field": "metadata.'"$META"'"
-                        }
-                    },
-                    "must": {
-                        "match": {
-                            "metadata.'"$META"'": "true"
-                        }
-                    }'
+    echo '"must": [
+'"$(____metadata_exists_istrue "$META")"'
+                    ]'
+}
+
+function ____metadata_exists_istrue () {
+    META="$1"
+    echo '                 { "exists": { "field": "metadata.'"$META"'" }},
+                 { "match": { "metadata.'"$META"'": "true" }}'
 }
 
 # query status index
@@ -286,7 +285,7 @@ function __aggregate () {
     FIELD="$1"
     SIZE="${2:-100000}"
     $SHOW_COMMAND
-    $CURL -XGET $ES_STATUS_URL'/_search?search_type=count&pretty' --data \
+    $CURL -XGET $ES_STATUS_URL'/_search?pretty' --data \
 '{
     "aggs" : {
         "agg" : {
@@ -310,7 +309,7 @@ function __aggregate_by () {
     QUERY="$2"
     SIZE="${3:-100000}"    
     $SHOW_COMMAND
-    $CURL -XGET $ES_STATUS_URL'/_search?search_type=count&pretty' --data \
+    $CURL -XGET $ES_STATUS_URL'/_search?pretty' --data \
 '{
     "aggs" : {
         "agg" : {
@@ -343,16 +342,16 @@ function __aggregate_by_metadata () {
 
 # aggregate host names (or domain names) filtered by metadata
 function __aggregate_hostname () {
-    META="$1"
+    FILTER="$1"
     shift 1 || { echo "Not enough arguments"; exit 1; }
-    __aggregate_by_metadata _routing "$1" "$@"
+    __aggregate_by metadata.hostname "$FILTER" "$@"
 }
 
 # aggregate host names (or domain names) filtered by status
 function __aggregate_hostname_by_status () {
     STATUS="$1"
     shift 1 || { echo "Not enough arguments"; exit 1; }
-    __aggregate_by _routing '"must": {
+    __aggregate_hostname '"must": {
                         "match": {
                             "status": "'"$STATUS"'"
                         }
@@ -364,16 +363,11 @@ function __failed_by_metadata () {
     CMND="$1"
     META="$2"
     shift 2 || { echo "Not enough arguments"; exit 1; }
-    __query $CMND '
-        "filtered": {
-            "filter": {
-                "bool": {
-                    '"$(____must_match_metadata "$META")"',
-                    "must_not": {
-                        "match": {
-                            "status": "FETCHED"
-                        }
-                    }
+    __query $CMND '"bool": {
+            '"$(____must_match_metadata "$META")"',
+            "must_not": {
+                "match": {
+                    "status": "FETCHED"
                 }
             }
         }' "$@"
@@ -386,20 +380,12 @@ function __status_by_metadata () {
     META="$3"
     shift 3 || { echo "Not enough arguments"; exit 1; }
     __query $CMND '
-        "filtered": {
-            "filter": {
-                "bool": {
-                    '"$(____must_match_metadata "$META")"',
-                    "must": {
-                        "match": {
-                            "status": "'"$STATUS"'"
-                        }
-                    }
-                }
-            }
-        }
-    }
-}'
+       "bool": {
+          "must": [
+             { "match": { "status": "'"$STATUS"'" }},
+             '"$(____metadata_exists_istrue "$META")"'
+          ]
+       }'
 }
 
 # update documents by query
@@ -532,7 +518,7 @@ while getopts "vVDCh?" opt; do
 done
 shift $(($OPTIND - 1))
 
-CURL=curl
+CURL="curl -s -H Content-Type:application/json"
 if $DRYRUN; then
     export CURL=": curl"
 fi

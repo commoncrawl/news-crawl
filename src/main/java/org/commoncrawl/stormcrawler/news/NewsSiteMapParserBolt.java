@@ -1,4 +1,4 @@
-package com.digitalpebble.stormcrawler;
+package org.commoncrawl.stormcrawler.news;
 
 import static com.digitalpebble.stormcrawler.Constants.StatusStreamName;
 
@@ -17,7 +17,7 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.commoncrawl.news.bootstrap.ContentDetector;
+import org.commoncrawl.stormcrawler.news.bootstrap.ContentDetector;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.stormcrawler.Constants;
@@ -57,7 +57,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     public static final String isSitemapNewsKey = "isSitemapNews";
 
     private static final org.slf4j.Logger LOG = LoggerFactory
-            .getLogger(SiteMapParserBolt.class);
+            .getLogger(NewsSiteMapParserBolt.class);
 
     public static String[][] contentClues = {
             // match 0: a news sitemap

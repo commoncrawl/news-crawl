@@ -11,6 +11,8 @@ config:
   urlfilters.config.file: "bootstrap-urlfilters.json"
   parsefilters.config.file: "bootstrap-parsefilters.json"
 
+  fetcher.server.delay: 15.0
+
   # useful for debugging
   #metadata.track.path: true
   #metadata.track.depth: true

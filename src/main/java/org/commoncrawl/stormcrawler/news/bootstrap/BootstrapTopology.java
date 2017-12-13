@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 
-package org.commoncrawl.news.bootstrap;
+package org.commoncrawl.stormcrawler.news.bootstrap;
 
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
+import org.commoncrawl.stormcrawler.news.CrawlTopology;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.stormcrawler.ConfigurableTopology;
 import com.digitalpebble.stormcrawler.Constants;
-import com.digitalpebble.stormcrawler.CrawlTopology;
 import com.digitalpebble.stormcrawler.bolt.FetcherBolt;
 import com.digitalpebble.stormcrawler.bolt.JSoupParserBolt;
 import com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt;
