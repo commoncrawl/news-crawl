@@ -115,11 +115,15 @@ public class CrawlTopology extends ConfigurableTopology {
                 .withFileNameFormat(fileNameFormat);
         warcbolt.withHeader(fields);
 
-        // will rotate if reaches 1 GB or 1 day
-        FileTimeSizeRotationPolicy rotpol = new FileTimeSizeRotationPolicy(1.0f,
-                Units.GB);
-        rotpol.setTimeRotationInterval(1,
-                FileTimeSizeRotationPolicy.TimeUnit.DAYS);
+        // will rotate if reaches size or time limit
+        int maxMB = ConfUtils.getInt(getConf(), "warc.rotation.policy.max-mb",
+                1024);
+        int maxMinutes = ConfUtils.getInt(getConf(),
+                "warc.rotation.policy.max-minutes", 1440);
+        FileTimeSizeRotationPolicy rotpol = new FileTimeSizeRotationPolicy(
+                maxMB, Units.MB);
+        rotpol.setTimeRotationInterval(maxMinutes,
+                FileTimeSizeRotationPolicy.TimeUnit.MINUTES);
         warcbolt.withRotationPolicy(rotpol);
 
         return warcbolt;

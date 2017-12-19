@@ -52,7 +52,7 @@ config:
 
   # generous max. crawl delay
   # (fetch content even if the robots.txt specifies a large host-specific crawl delay:
-  #  waiting 90 sec. between successive fetch would still allow to fetch
+  #  waiting 90 sec. between successive fetches would still allow to fetch
   #  about 1000 pages per day, enough for small news sites)
   fetcher.max.crawl.delay: 90
 
@@ -139,5 +139,9 @@ config:
   # change to the location of your choice
   # the directory must already exist
   warc.dir: "/data/warc"
+  # rotate WARC files shortly before 1 GB is reached
+  warc.rotation.policy.max-mb: 1023
+  # but latest after one day
+  warc.rotation.policy.max-minutes: 1440
 
 
