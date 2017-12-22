@@ -17,7 +17,7 @@
       }
     },
     {
-      "class": "org.commoncrawl.news.bootstrap.FeedLinkParseFilter",
+      "class": "org.commoncrawl.stormcrawler.news.bootstrap.FeedLinkParseFilter",
       "name": "FeedLinks",
       "params": {
         "rss1": "//LINK[@rel='alternate' and @type='application/rss+xml']/@href",

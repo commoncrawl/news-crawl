@@ -60,11 +60,17 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             .getLogger(NewsSiteMapParserBolt.class);
 
     public static String[][] contentClues = {
-            // match 0: a news sitemap
-            { "http://www.google.com/schemas/sitemap-news/0.9",
-                    "http://www.sitemaps.org/schemas/sitemap/0.9" },
-            // match 1: a sitemap, but not a news sitemap
-            { "http://www.sitemaps.org/schemas/sitemap/0.9" } };
+            // match 0-n: a news sitemap
+            { "http://www.google.com/schemas/sitemap-news/0.9" },
+            { "https://www.google.com/schemas/sitemap-news/0.9" },
+            { "http://www.google.com/schemas/sitemap-news/0.84" },
+            // match > n: a sitemap, but not a news sitemap
+            { "http://www.sitemaps.org/schemas/sitemap/0.9" },
+            { "https://www.sitemaps.org/schemas/sitemap/0.9" },
+            { "http://www.google.com/schemas/sitemap/0.9" },
+            { "http://www.google.com/schemas/sitemap/0.84" }};
+    public static int contentCluesSitemapNewsMatchUpTo = 2;
+
     protected static final int maxOffsetContentGuess = 1024;
     private static ContentDetector contentDetector = new ContentDetector(
             NewsSiteMapParserBolt.contentClues, maxOffsetContentGuess);
@@ -97,7 +103,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                     // a sitemap, not necessarily a news sitemap
                     isSitemap = true;
                     metadata.setValue(SiteMapParserBolt.isSitemapKey, "true");
-                    if (match == 0) {
+                    if (match <= contentCluesSitemapNewsMatchUpTo) {
                         isNewsSitemap = true;
                         LOG.info("{} detected as news sitemap based on content",
                                 url);
@@ -248,6 +254,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 Date lastModified = smurl.getLastModified();
                 if (lastModified != null) {
                     // filter based on the published date
+                    // TODO: should also consider
+                    //        <news:publication_date>2008-12-23</news:publication_date>
                     if (filterHoursSinceModified != -1) {
                         Calendar rightNow = Calendar.getInstance();
                         rightNow.add(Calendar.HOUR, -filterHoursSinceModified);

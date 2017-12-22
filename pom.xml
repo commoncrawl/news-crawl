@@ -2,7 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.commoncrawl.news</groupId>
+	<groupId>org.commoncrawl.stormcrawler.news</groupId>
 	<artifactId>crawler</artifactId>
 	<version>1.8-SNAPSHOT</version>
 	<packaging>jar</packaging>

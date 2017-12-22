@@ -16,7 +16,7 @@ import com.digitalpebble.stormcrawler.parse.filter.LinkParseFilter;
  * parsefilters.json. A configuration snippet:
  * <pre>
  *     {
- *      "class": "org.commoncrawl.news.bootstrap.FeedLinkParseFilter",
+ *      "class": "org.commoncrawl.stormcrawler.news.bootstrap.FeedLinkParseFilter",
  *      "name": "FeedLinks",
  *      "params": {
  *        "rss1": "//LINK[@rel='alternate' and @type='application/rss+xml']/@href",

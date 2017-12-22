@@ -10,7 +10,7 @@ sh -c 'echo "syntax on" >~/.vimrc'
 
 sudo yum update -y
 sudo yum remove  -y java-1.7.0-openjdk
-sudo yum install -y java-1.8.0-openjdk-devel git
+sudo yum install -y java-1.8.0-openjdk-devel git jq
 
 #
 # Supervisord
@@ -55,11 +55,15 @@ sudo chkconfig --add elasticsearch
 sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install -b repository-s3
 
 sudo ln -s /usr/share/elasticsearch/bin/elasticsearch /usr/bin/elasticsearch
-sudo ln -s /opt/kibana/bin/kibana /usr/bin/kibana
+sudo ln -s /usr/share/kibana/bin/kibana               /usr/bin/kibana
 
 sudo cp /tmp/install/etc/sysctl.d/60-elasticsearch.conf        /etc/sysctl.d/
 sudo cp /tmp/install/etc/supervisor/conf.d/elasticsearch.conf  /etc/supervisor/conf.d/
 sudo cp /tmp/install/etc/supervisor/conf.d/kibana.conf         /etc/supervisor/conf.d/
+
+# set Elasticsearch data path
+sudo sed -Ei 's@^path\.data: .*@path.data: /data/elasticsearch@' /etc/elasticsearch/elasticsearch.yml
+# TODO: enable updates via scripting
 
 # must start elasticsearch via supervisorctl
 # TODO: avoid issues if it's started erroneously via

@@ -54,7 +54,7 @@ public class NewsSiteMapDetectorBolt extends SiteMapParserBolt {
                 // a sitemap, not necessarily a news sitemap
                 isSitemap = true;
                 metadata.setValue(SiteMapParserBolt.isSitemapKey, "true");
-                if (match == 0) {
+                if (match <= NewsSiteMapParserBolt.contentCluesSitemapNewsMatchUpTo) {
                     isNewsSitemap = true;
                     LOG.info("{} detected as news sitemap based on content",
                             url);

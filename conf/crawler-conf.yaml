@@ -2,7 +2,7 @@
 # Custom configuration for StormCrawler
 # This is used to override the default values from crawler-default.xml and provide additional ones 
 # for your custom components.
-# Use this file with the parameter -config when launching your extension of ConfigurableTopology.  
+# Use this file with the parameter -conf when launching your extension of ConfigurableTopology.  
 # This file does not contain all the key values but only the most frequently used ones. See crawler-default.xml for an extensive list.
 
 config: 
@@ -41,7 +41,7 @@ config:
   # time bucket to use for the metrics sent by the Fetcher
   fetcher.metrics.time.bucket.secs: 60
   
-  fetcher.threads.number: 50
+  fetcher.threads.number: 80
 
   worker.heap.memory.mb: 4096
   
@@ -54,7 +54,7 @@ config:
   # (fetch content even if the robots.txt specifies a large host-specific crawl delay:
   #  waiting 90 sec. between successive fetches would still allow to fetch
   #  about 1000 pages per day, enough for small news sites)
-  fetcher.max.crawl.delay: 90
+  fetcher.max.crawl.delay: 120
 
   # fetch Scheduler implementation
   scheduler.class: "com.digitalpebble.stormcrawler.persistence.AdaptiveScheduler"
@@ -111,6 +111,10 @@ config:
   # same for news sitemaps
   sitemap.filter.hours.since.modified: 720
 
+  # no cache
+  #  - ES is running locally and should be fast
+  #  - not following links only accessing news feeds and sitemaps 
+  status.updater.use.cache: false
   status.updater.cache.spec: "maximumSize=250000,expireAfterAccess=4h"
 
   # lists the metadata to persist to storage

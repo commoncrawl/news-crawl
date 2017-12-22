@@ -6,7 +6,8 @@
       "params": {
         "removeAnchorPart": true,
         "unmangleQueryString": true,
-        "checkValidURI": true
+        "checkValidURI": true,
+        "hostIDNtoASCII": true
       }
     },
     {

@@ -39,8 +39,6 @@ function ____show_help() {
     echo "      query status index"
     echo " match [search|count] <EXPR>"
     echo "      match expression in status index"
-    echo " match_filtered [search|count] <EXPR> <FILTER>"
-    echo "      filter query"
     echo " match_field [search|count] <FIELD> <VALUE>"
     echo "      match documents by field and value"
     echo " match_by_metadata [search|count] <FIELD> <VALUE> <META>"
@@ -184,25 +182,6 @@ function __match () {
         }' "$@"
 }
 
-# filter query
-function __match_filtered () {
-    CMND="$1"
-    EXPR="$2"
-    FILTER="$3"
-    shift 3 || { echo "Not enough arguments"; exit 1; }
-    __query $CMND '
-        "filtered": {
-            "filter": {
-                '"$FILTER"'
-            },
-            "query": {
-                "match": {
-                    '"$EXPR"'
-                }
-            }
-        }' "$@"
-}
-
 # look up by URL
 function __url () {
     URL="$1"
@@ -273,11 +252,13 @@ function __match_by_metadata () {
     TERM="$3"
     META="$4"
     shift 4 || { echo "Not enough arguments"; exit 1; }
-    FILTER='
-               "bool": {
-                    '"$(____must_match_metadata "$META")"'
-                }'
-    __match_filtered $CMND '"'"$TYPE"'": "'"$TERM"'"' "$FILTER" "$@"
+    __query $CMND '
+       "bool": {
+          "must": [
+             { "match": { "'"$TYPE"'": "'"$TERM"'" }},
+             '"$(____metadata_exists_istrue "$META")"'
+          ]
+       }'
 }
 
 # aggregate values on field
@@ -379,13 +360,7 @@ function __status_by_metadata () {
     STATUS="$2"
     META="$3"
     shift 3 || { echo "Not enough arguments"; exit 1; }
-    __query $CMND '
-       "bool": {
-          "must": [
-             { "match": { "status": "'"$STATUS"'" }},
-             '"$(____metadata_exists_istrue "$META")"'
-          ]
-       }'
+    __match_by_metadata $CMND "status" "$STATUS" "$META"
 }
 
 # update documents by query
@@ -495,6 +470,10 @@ function __fetch_at () {
 }
 
 
+function __index_stats() {
+    $CURL -XGET $ES_STATUS_URL'/_stats' \
+          | jq ._all.primaries.docs
+}
 
 
 COLORIZE=false

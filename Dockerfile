@@ -40,8 +40,9 @@ ADD etc/supervisor/conf.d/elasticsearch.conf /etc/supervisor/conf.d/elasticsearc
 ADD etc/supervisor/conf.d/kibana.conf        /etc/supervisor/conf.d/kibana.conf
 RUN chmod -R 644 /etc/sysctl.d/60-elasticsearch.conf /etc/supervisor/conf.d/*.conf
 ENV ES_HEAP_SIZE=20g
-# enable updates via scripting
+# set Elasticsearch data path
 RUN sed -Ei 's@^path\.data: .*@path.data: /data/elasticsearch@' /etc/elasticsearch/elasticsearch.yml
+# TODO: enable updates via scripting
 
 #
 # Apache Storm
