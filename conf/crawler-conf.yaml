@@ -83,7 +83,7 @@ config:
   # custom interval for feeds and sitemaps
 
   # try to re-fetch failed feeds or sitemaps after 2 month
-  # (status is neither FETCHED nor REDIRECTION) 
+  # (status is neither FETCHED, REDIRECTION, or DISCOVERED)
   fetchInterval.isFeed=true: 86400
   fetchInterval.isSitemapNews=true: 86400
 
@@ -97,6 +97,11 @@ config:
 
   # news sitemaps may contain up to 1000 URLs, re-fetch daily
   fetchInterval.FETCHED.isSitemapNews=true: 1440
+
+  # must specify otherwise the default interval is added
+  # during injection and for newly discovered sitemaps
+  fetchInterval.DISCOVERED.isFeed=true: 0
+  fetchInterval.DISCOVERED.isSitemapNews=true: 0
 
   # auto-detect RSS feeds
   feed.sniffContent: true
