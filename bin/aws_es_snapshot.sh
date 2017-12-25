@@ -3,7 +3,7 @@
 set -e
 set -x
 
-curl -XPUT http://localhost:9200/_snapshot/news_crawler_status  --data '{
+curl -H Content-Type:application/json -XPUT http://localhost:9200/_snapshot/news_crawler_status  --data '{
   "type": "s3",
   "settings": {
     "region": "us-east-1",
@@ -15,7 +15,7 @@ curl -XPUT http://localhost:9200/_snapshot/news_crawler_status  --data '{
 
 TIMESTAMP=`date +%Y-%m-%d-%H-%M`
 
-curl -XPUT 'http://localhost:9200/_snapshot/news_crawler_status/'$TIMESTAMP'?wait_for_completion=true' --data '{
+curl -H Content-Type:application/json -XPUT 'http://localhost:9200/_snapshot/news_crawler_status/'$TIMESTAMP'?wait_for_completion=true' --data '{
     "indices": "status",
     "ignore_unavailable": "true",
     "include_global_state": false

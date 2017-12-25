@@ -88,7 +88,7 @@ function ____show_help() {
     echo
     echo "% $0 -v url http://example.com/"
     cat <<EOF
-+ curl -XGET 'http://localhost:9200/status/_search?pretty' --data '{
++ curl -s -H Content-Type:application/json -XGET 'http://localhost:9200/status/_search?pretty' --data '{
     "query": {
         "match": {
             "url": "http://example.com/"
@@ -471,6 +471,7 @@ function __fetch_at () {
 
 
 function __index_stats() {
+    $SHOW_COMMAND
     $CURL -XGET $ES_STATUS_URL'/_stats' \
           | jq ._all.primaries.docs
 }
