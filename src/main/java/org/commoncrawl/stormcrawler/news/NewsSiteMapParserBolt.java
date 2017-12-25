@@ -181,6 +181,18 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         collector.ack(tuple);
     }
 
+    private boolean rencentlyModified(Date lastModified) {
+        if (lastModified != null && filterHoursSinceModified != -1) {
+            // filter based on the published date
+            Calendar rightNow = Calendar.getInstance();
+            rightNow.add(Calendar.HOUR, -filterHoursSinceModified);
+            if (lastModified.before(rightNow.getTime())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private List<Outlink> parseSiteMap(String url, byte[] content,
             String contentType, Metadata parentMetadata)
             throws UnknownFormatException, IOException {
@@ -199,6 +211,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         }
 
         List<Outlink> links = new ArrayList<>();
+        int linksFound = 0;
+        int linksSkippedNotRecentlyModified = 0;
 
         if (siteMap.isIndex()) {
             SiteMapIndex smi = (SiteMapIndex) siteMap;
@@ -207,23 +221,18 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             // they will be fetched and parsed in the following steps
             Iterator<AbstractSiteMap> iter = subsitemaps.iterator();
             while (iter.hasNext()) {
+                linksFound++;
                 AbstractSiteMap asm = iter.next();
                 String target = asm.getUrl().toExternalForm();
 
                 Date lastModified = asm.getLastModified();
-                if (lastModified != null) {
-                    // filter based on the published date
-                    if (filterHoursSinceModified != -1) {
-                        Calendar rightNow = Calendar.getInstance();
-                        rightNow.add(Calendar.HOUR, -filterHoursSinceModified);
-                        if (lastModified.before(rightNow.getTime())) {
-                            LOG.info(
-                                    "{} has a modified date {} which is more than {} hours old",
-                                    target, lastModified.toString(),
-                                    filterHoursSinceModified);
-                            continue;
-                        }
-                    }
+                if (!rencentlyModified(lastModified)) {
+                    linksSkippedNotRecentlyModified++;
+                    LOG.debug(
+                            "{} has a modified date {} which is more than {} hours old",
+                            target, lastModified.toString(),
+                            filterHoursSinceModified);
+                    continue;
                 }
 
                 Outlink ol = filterOutlink(sURL, target, parentMetadata,
@@ -234,6 +243,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 links.add(ol);
                 LOG.debug("{} : [sitemap] {}", url, target);
             }
+            LOG.info("Sitemap index (found {} sitemaps, {} skipped): {}",
+                    linksFound, linksSkippedNotRecentlyModified, url);
         }
         // sitemap files
         else {
@@ -242,6 +253,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             Collection<SiteMapURL> sitemapURLs = sm.getSiteMapUrls();
             Iterator<SiteMapURL> iter = sitemapURLs.iterator();
             while (iter.hasNext()) {
+                linksFound++;
                 SiteMapURL smurl = iter.next();
                 // TODO handle priority in metadata
                 double priority = smurl.getPriority();
@@ -252,21 +264,16 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 String target = smurl.getUrl().toExternalForm();
 
                 Date lastModified = smurl.getLastModified();
-                if (lastModified != null) {
+                if (!rencentlyModified(lastModified)) {
                     // filter based on the published date
                     // TODO: should also consider
                     //        <news:publication_date>2008-12-23</news:publication_date>
-                    if (filterHoursSinceModified != -1) {
-                        Calendar rightNow = Calendar.getInstance();
-                        rightNow.add(Calendar.HOUR, -filterHoursSinceModified);
-                        if (lastModified.before(rightNow.getTime())) {
-                            LOG.info(
-                                    "{} has a modified date {} which is more than {} hours old",
-                                    target, lastModified.toString(),
-                                    filterHoursSinceModified);
-                            continue;
-                        }
-                    }
+                    linksSkippedNotRecentlyModified++;
+                    LOG.debug(
+                            "{} has a modified date {} which is more than {} hours old",
+                            target, lastModified.toString(),
+                            filterHoursSinceModified);
+                    continue;
                 }
 
                 Outlink ol = filterOutlink(sURL, target, parentMetadata,
@@ -277,6 +284,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 links.add(ol);
                 LOG.debug("{} : [sitemap] {}", url, target);
             }
+            LOG.info("Sitemap (found {} links, {} skipped): {}", linksFound,
+                    linksSkippedNotRecentlyModified, url);
         }
 
         return links;
