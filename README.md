@@ -5,12 +5,12 @@ Crawler for news feeds based on [StormCrawler](http://stormcrawler.net). Produce
 Prerequisites
 ------------
 
-* Install ElasticSearch 2.3.1 and Kibana 4.5.1
-* Install Apache Storm 1.0
-* Clone and compile [https://github.com/DigitalPebble/sc-warc] with `mvn clean install`
+* Install Elasticsearch 6.0.x (ev. also Kibana)
+* Install Apache Storm 1.1
 * Clone and compile [https://github.com/DigitalPebble/storm-crawler] with `mvn clean install`
-* Start ES and Storm
-* Build ES indices with : `curl -L "https://git.io/v9Xiz" | bash`
+* Start Elasticsearch and Storm
+* Build ES indices by running `bin/ES_IndexInit.sh`
+
 
 Configuration
 ------------
@@ -29,7 +29,7 @@ mvn clean package
 Inject some URLs with 
 
 ``` sh
-storm jar target/crawler-1.0-SNAPSHOT.jar com.digitalpebble.stormcrawler.elasticsearch.ESSeedInjector . seeds/feeds.txt -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml -local
+storm jar target/crawler-1.8-SNAPSHOT.jar com.digitalpebble.stormcrawler.elasticsearch.ESSeedInjector . seeds/feeds.txt -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml
 ```
 
 This pushes the newsfeed seeds to the status index and has to be done every time new seeds are added. To delete seeds, delete by query in the ES index or wipe the index clean and reindex the whole lot.
@@ -39,22 +39,36 @@ You can check that the URLs have been injected on [http://localhost:9200/status/
 You can then run the crawl topology with :
 
 ``` sh
-storm jar target/crawler-1.0-SNAPSHOT.jar com.digitalpebble.stormcrawler.CrawlTopology -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml
+storm jar target/crawler-1.8-SNAPSHOT.jar org.commoncrawl.stormcrawler.news.CrawlTopology -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml
 ```
 
 The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
+
 
 Monitor the crawl
 ------------
 
 See instructions on [https://github.com/DigitalPebble/storm-crawler/tree/master/external/elasticsearch] to install the templates for Kibana. 
 
+
 Run Crawl from Docker Container
 -------------
 
-Build the Docker image from the [Dockerfile](./Dockerfile):
+First, download Apache Storm:
 ```
-docker build -t newscrawler:1.0 .
+STORM_VERSION=1.1.1
+mkdir downloads
+wget -q -P downloads --timestamping http://mirrors.ukfast.co.uk/sites/ftp.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz
+```
+
+Second, the script to create the Elasticsearch index:
+```
+wget -O bin/ES_IndexInit.sh https://raw.githubusercontent.com/DigitalPebble/storm-crawler/master/external/elasticsearch/ES_IndexInit.sh
+````
+
+Then build the Docker image from the [Dockerfile](./Dockerfile):
+```
+docker build -t newscrawler:1.8 .
 ```
 
 Note: the uberjar is included in the Docker image and needs to be built first.
@@ -66,7 +80,7 @@ docker run --net=host \
     -p 5601:5601 -p 8080:8080 \
     -v .../newscrawl/elasticsearch:/data/elasticsearch \
     -v .../newscrawl/warc:/data/warc \
-    --rm -i -t newscrawler:1.0 /bin/bash
+    --rm -i -t newscrawler:1.8 /bin/bash
 ```
 
 NOTE: don't forget to adapt the paths to mounted volumes used to persist data on the host.

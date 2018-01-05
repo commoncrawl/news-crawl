@@ -28,7 +28,7 @@ $STORMCRAWLER com.digitalpebble.stormcrawler.elasticsearch.ESSeedInjector \
 sleep 20
 
 # run the crawler
-$STORMCRAWLER com.digitalpebble.stormcrawler.CrawlTopology \
+$STORMCRAWLER org.commoncrawl.stormcrawler.news.CrawlTopology \
 	-conf $PWD/conf/es-conf.yaml -conf $PWD/conf/crawler-conf.yaml
 storm set_log_level NewsCrawl \
       -l crawlercommons.sitemaps.SiteMapParser=ERROR

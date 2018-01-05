@@ -22,43 +22,35 @@ RUN apt-get update -qq && \
 #
 # Elasticsearch and Kibana
 #
-RUN wget -qO - https://packages.elastic.co/GPG-KEY-elasticsearch \
+RUN wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch \
 	| apt-key add -
-RUN echo "deb https://packages.elastic.co/elasticsearch/2.x/debian stable main" \
-	>> /etc/apt/sources.list.d/elasticsearch-2.x.list
-RUN echo "deb http://packages.elastic.co/kibana/4.5/debian stable main" \
-	>> /etc/apt/sources.list.d/elasticsearch-2.x.list
+RUN echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" \
+	>> /etc/apt/sources.list.d/elasticsearch-6.x.list
 RUN apt-get update -qq && \
 	apt-get install -yq --no-install-recommends \
-		elasticsearch=2.3.1 \
-        kibana=4.5.1
+		elasticsearch=6.0.1 \
+        kibana=6.0.1
 RUN ln -s /usr/share/elasticsearch/bin/elasticsearch /usr/bin/elasticsearch
-RUN ln -s /opt/kibana/bin/kibana /usr/bin/kibana
-RUN mkdir /var/log/kibana && chown -R kibana:kibana /var/log/kibana
-RUN chown -R kibana:kibana /opt/kibana/
-# install marvel, see https://www.elastic.co/downloads/marvel
-USER elasticsearch
-RUN /usr/share/elasticsearch/bin/plugin install license
-RUN /usr/share/elasticsearch/bin/plugin install marvel-agent
-USER kibana
-RUN /opt/kibana/bin/kibana plugin --install elasticsearch/marvel/latest
-RUN /opt/kibana/bin/kibana plugin --install elastic/sense
+RUN ln -s /usr/share/kibana/bin/kibana /usr/bin/kibana
+RUN chown -R kibana:kibana /usr/share/kibana/
 USER root
-# system configuration, see https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-configuration.html
+# system configuration, see https://www.elastic.co/guide/en/elasticsearch/reference/current/deb.html
 ADD etc/sysctl.d/60-elasticsearch.conf       /etc/sysctl.d/60-elasticsearch.conf
 ADD etc/supervisor/conf.d/elasticsearch.conf /etc/supervisor/conf.d/elasticsearch.conf
 ADD etc/supervisor/conf.d/kibana.conf        /etc/supervisor/conf.d/kibana.conf
 RUN chmod -R 644 /etc/sysctl.d/60-elasticsearch.conf /etc/supervisor/conf.d/*.conf
 ENV ES_HEAP_SIZE=20g
-# enable updates via scripting
-RUN echo "\n\nscript.engine.groovy.inline.update: true\n" >>/etc/elasticsearch/elasticsearch.yml
+# set Elasticsearch data path
+RUN sed -Ei 's@^path\.data: .*@path.data: /data/elasticsearch@' /etc/elasticsearch/elasticsearch.yml
+# TODO: enable updates via scripting
 
 #
 # Apache Storm
 #
-ENV STORM_VERSION=1.0.1
-RUN wget -q -O - http://mirrors.ukfast.co.uk/sites/ftp.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz \
-	| tar -xzf - -C /opt
+ENV STORM_VERSION=1.1.1
+COPY downloads/apache-storm-$STORM_VERSION.tar.gz /tmp/apache-storm-$STORM_VERSION.tar.gz
+RUN tar -xzf /tmp/apache-storm-$STORM_VERSION.tar.gz -C /opt
+RUN rm /tmp/apache-storm-$STORM_VERSION.tar.gz
 ENV STORM_HOME /opt/apache-storm-$STORM_VERSION
 RUN groupadd storm && \
 	useradd --gid storm --home-dir /home/storm \
@@ -89,15 +81,13 @@ RUN mkdir news-crawler/ && \
     mkdir news-crawler/seeds/ && \
     chmod -R a+rx news-crawler/
 # add the news crawler uber-jar
-ADD target/crawler-1.4-SNAPSHOT.jar news-crawler/lib/crawler.jar
+ADD target/crawler-1.8-SNAPSHOT.jar news-crawler/lib/crawler.jar
 # and configuration files
 ADD conf/*.*        news-crawler/conf/
-ADD seeds/feeds.txt news-crawler/seeds/
+ADD seeds/*.txt     news-crawler/seeds/
 ADD bin/*.sh        news-crawler/bin/
 ADD bin/es_status   news-crawler/bin/
-# add storm-crawler/external/elasticsearch/ES_IndexInit.sh
-RUN wget -O     news-crawler/bin/ES_IndexInit.sh \
-	https://raw.githubusercontent.com/DigitalPebble/storm-crawler/master/external/elasticsearch/ES_IndexInit.sh
+
 USER root
 RUN chown -R ubuntu:ubuntu /home/ubuntu && \
 	chmod -R a+r /home/ubuntu && \

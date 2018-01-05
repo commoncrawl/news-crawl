@@ -1,7 +1,7 @@
 # Custom configuration for StormCrawler
 # This is used to override the default values from crawler-default.xml and provide additional ones 
 # for your custom components.
-# Use this file with the parameter -config when launching your extension of ConfigurableTopology.  
+# Use this file with the parameter -conf when launching your extension of ConfigurableTopology.  
 # This file does not contain all the key values but only the most frequently used ones. See crawler-default.xml for an extensive list.
 
 config:
@@ -11,6 +11,19 @@ config:
   urlfilters.config.file: "bootstrap-urlfilters.json"
   parsefilters.config.file: "bootstrap-parsefilters.json"
 
+  fetcher.server.delay: 45.0
+
+  http.content.limit: 524288
+
   # useful for debugging
   #metadata.track.path: true
   #metadata.track.depth: true
+
+  # change to the location of your choice
+  # the directory must already exist
+  warc.dir: "/data/warc/bootstrap"
+  # rotate WARC files shortly before 1 GB is reached
+  warc.rotation.policy.max-mb: 80
+  # but latest after one day
+  warc.rotation.policy.max-minutes: 60
+  

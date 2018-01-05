@@ -1,31 +1,53 @@
 {
   "variables": {
     "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
-    "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}"
+    "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
+    "aws_vpc_id": "{{env `AWS_VPC_ID`}}",
+    "aws_subnet_id": "{{env `AWS_SUBNET_ID`}}",
+    "aws_security_group_id": "{{env `AWS_SECURITY_GROUP_ID`}}"
   },
   "builders": [{
     "type": "amazon-ebs",
+    "source_ami_filter": {
+	    "filters": {
+	      "virtualization-type": "hvm",
+	      "name": "amzn-ami-hvm-*",
+	      "root-device-type": "ebs"
+	    },
+	    "most_recent": true
+	},
+    "instance_type": "r4.xlarge",
+    "region": "us-east-1",
     "access_key": "{{user `aws_access_key`}}",
     "secret_key": "{{user `aws_secret_key`}}",
-    "region": "us-east-1",
-    "source_ami": "ami-6869aa05",
-    "instance_type": "m3.xlarge",
+    "vpc_id": "{{user `aws_vpc_id`}}",
+    "subnet_id": "{{user `aws_subnet_id`}}",
+    "security_group_id": "{{user `aws_security_group_id`}}",
+    "associate_public_ip_address": true,
     "ssh_username": "ec2-user",
     "ssh_timeout": "1200s",
     "ami_name": "Common Crawl News Crawler {{timestamp}}",
-    "ami_regions": ["us-east-1"],
-    "ami_groups": ["all"]
+    "ami_groups": ["all"],
+    "ami_block_device_mappings": [
+        {
+          "device_name": "/dev/sdb",
+          "virtual_name": "ephemeral0",
+          "volume_size": 200,
+          "volume_type": "gp2",
+          "delete_on_termination": true
+        }
+      ]
   }],
   "provisioners": [
-      {
-        "type": "file",
-        "source": "etc",
-        "destination": "/tmp/install/etc"
-      },
       {
         "type": "shell",
         "inline": ["mkdir -p /tmp/install/news-crawler/lib/",
                    "mkdir -p /tmp/install/news-crawler/seeds/"]
+      },
+      {
+        "type": "file",
+        "source": "etc",
+        "destination": "/tmp/install/etc"
       },
       {
         "type": "file",
@@ -39,8 +61,8 @@
       },
       {
         "type": "file",
-        "source": "target/crawler-1.0-SNAPSHOT.jar",
-        "destination": "/tmp/install/news-crawler/lib/crawler-1.0-SNAPSHOT.jar"
+        "source": "target/crawler-1.8-SNAPSHOT.jar",
+        "destination": "/tmp/install/news-crawler/lib/crawler-1.8-SNAPSHOT.jar"
       },
       {
         "type": "file",

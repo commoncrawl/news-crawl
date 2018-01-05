@@ -1,4 +1,4 @@
-package org.commoncrawl.news.bootstrap;
+package org.commoncrawl.stormcrawler.news.bootstrap;
 
 import java.util.Map;
 
@@ -6,34 +6,32 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.stormcrawler.Constants;
 import com.digitalpebble.stormcrawler.Metadata;
-import com.digitalpebble.stormcrawler.bolt.FeedParserBolt;
+import com.digitalpebble.stormcrawler.bolt.SiteMapParserBolt;
 import com.digitalpebble.stormcrawler.parse.ParseData;
 import com.digitalpebble.stormcrawler.parse.ParseFilter;
 import com.digitalpebble.stormcrawler.parse.ParseFilters;
 import com.digitalpebble.stormcrawler.parse.ParseResult;
 import com.digitalpebble.stormcrawler.persistence.Status;
-import com.digitalpebble.stormcrawler.protocol.HttpHeaders;
 
-/** Detect RSS and Atom feeds, but do not parse and extract links */
+/**
+ * Detector for <link href=
+ * "https://support.google.com/news/publisher/answer/74288?hl=en">news
+ * sitemaps</a> and also <a href="http://www.sitemaps.org/">sitemaps</a>.
+ */
 @SuppressWarnings("serial")
-public class FeedDetectorBolt extends FeedParserBolt {
+public class NewsSiteMapDetectorBolt extends SiteMapParserBolt {
 
     private static final org.slf4j.Logger LOG = LoggerFactory
-            .getLogger(FeedDetectorBolt.class);
+            .getLogger(NewsSiteMapDetectorBolt.class);
 
-    public static final String[] mimeTypeClues = {
-            "rss+xml", "atom+xml", "text/rss"
-    };
-
-    public static String[][] contentClues = { { "<rss" }, { "<feed" },
-            { "http://www.w3.org/2005/Atom" } };
-    protected static final int maxOffsetContentGuess = 512;
+    protected static final int maxOffsetContentGuess = 1024;
     private static ContentDetector contentDetector = new ContentDetector(
-            contentClues, maxOffsetContentGuess);
+            NewsSiteMapParserBolt.contentClues, maxOffsetContentGuess);
 
     private ParseFilter parseFilters;
 
@@ -45,32 +43,28 @@ public class FeedDetectorBolt extends FeedParserBolt {
         byte[] content = tuple.getBinaryByField("content");
         String url = tuple.getStringByField("url");
 
-        boolean isFeed = Boolean.valueOf(metadata.getFirstValue(isFeedKey));
+        boolean isSitemap = Boolean.valueOf(
+                metadata.getFirstValue(SiteMapParserBolt.isSitemapKey));
+        boolean isNewsSitemap = Boolean.valueOf(
+                metadata.getFirstValue(NewsSiteMapParserBolt.isSitemapNewsKey));
 
-        if (!isFeed) {
-            String ct = metadata.getFirstValue(HttpHeaders.CONTENT_TYPE);
-            if (ct != null) {
-                for (String clue : mimeTypeClues) {
-                    if (ct.contains(clue)) {
-                        isFeed = true;
-                        metadata.setValue(isFeedKey, "true");
-                        LOG.info("Feed detected from content type <{}> for {}",
-                                ct, url);
-                        break;
-                    }
+        if (!isNewsSitemap || !isSitemap) {
+            int match = contentDetector.getFirstMatch(content);
+            if (match >= 0) {
+                // a sitemap, not necessarily a news sitemap
+                isSitemap = true;
+                metadata.setValue(SiteMapParserBolt.isSitemapKey, "true");
+                if (match <= NewsSiteMapParserBolt.contentCluesSitemapNewsMatchUpTo) {
+                    isNewsSitemap = true;
+                    LOG.info("{} detected as news sitemap based on content",
+                            url);
+                    metadata.setValue(NewsSiteMapParserBolt.isSitemapNewsKey,
+                            "true");
                 }
             }
         }
 
-        if (!isFeed) {
-            if (contentDetector.matches(content)) {
-                isFeed = true;
-                metadata.setValue(isFeedKey, "true");
-                LOG.info("Feed detected from content: {}", url);
-            }
-        }
-
-        if (isFeed) {
+        if (isSitemap) {
             // do not parse but run parse filters
             ParseResult parse = new ParseResult();
             ParseData parseData = parse.get(url);
@@ -87,7 +81,7 @@ public class FeedDetectorBolt extends FeedParserBolt {
     }
 
     @Override
-    @SuppressWarnings({ "rawtypes" })
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     public void prepare(Map stormConf, TopologyContext context,
             OutputCollector collect) {
         super.prepare(stormConf, context, collect);

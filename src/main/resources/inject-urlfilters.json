@@ -26,14 +26,6 @@
       }
     },
     {
-      "class": "com.digitalpebble.stormcrawler.filtering.host.HostURLFilter",
-      "name": "HostURLFilter",
-      "params": {
-        "ignoreOutsideHost": false,
-        "ignoreOutsideDomain": false
-      }
-    },
-    {
       "class": "com.digitalpebble.stormcrawler.filtering.regex.RegexURLNormalizer",
       "name": "RegexURLNormalizer",
       "params": {
@@ -50,13 +42,6 @@
     {
       "class": "com.digitalpebble.stormcrawler.filtering.basic.SelfURLFilter",
       "name": "SelfURLFilter"
-    },
-    {
-      "class": "com.digitalpebble.stormcrawler.filtering.robots.RobotsFilter",
-      "name": "RobotsFilter",
-      "params": {
-        "limitToSameHost": "true"
-      }
     }
   ]
 }

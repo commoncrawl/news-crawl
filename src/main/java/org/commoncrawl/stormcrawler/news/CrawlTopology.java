@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package com.digitalpebble.stormcrawler;
+package org.commoncrawl.stormcrawler.news;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,7 +23,10 @@ import java.util.Map;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
-import com.digitalpebble.stormcrawler.FileTimeSizeRotationPolicy.Units;
+import com.digitalpebble.stormcrawler.warc.FileTimeSizeRotationPolicy;
+import com.digitalpebble.stormcrawler.warc.FileTimeSizeRotationPolicy.Units;
+import com.digitalpebble.stormcrawler.ConfigurableTopology;
+import com.digitalpebble.stormcrawler.Constants;
 import com.digitalpebble.stormcrawler.bolt.FeedParserBolt;
 import com.digitalpebble.stormcrawler.bolt.FetcherBolt;
 import com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt;
@@ -98,8 +101,8 @@ public class CrawlTopology extends ConfigurableTopology {
         fileNameFormat.withPrefix(filePrefix);
 
         Map<String, String> fields = new LinkedHashMap<>();
-        fields.put("software:", "StormCrawler 1.3 http://stormcrawler.net/");
-        fields.put("description", "News crawl for CommonCrawl");
+        fields.put("software:", "StormCrawler 1.8 http://stormcrawler.net/");
+        fields.put("description", "News crawl for Common Crawl");
         String userAgent = AbstractHttpProtocol.getAgentString(getConf());
         fields.put("http-header-user-agent", userAgent);
         fields.put("http-header-from",
@@ -112,11 +115,15 @@ public class CrawlTopology extends ConfigurableTopology {
                 .withFileNameFormat(fileNameFormat);
         warcbolt.withHeader(fields);
 
-        // will rotate if reaches 1GB or N units of time
-        FileTimeSizeRotationPolicy rotpol = new FileTimeSizeRotationPolicy(1.0f,
-                Units.GB);
-        rotpol.setTimeRotationInterval(1,
-                FileTimeSizeRotationPolicy.TimeUnit.DAYS);
+        // will rotate if reaches size or time limit
+        int maxMB = ConfUtils.getInt(getConf(), "warc.rotation.policy.max-mb",
+                1024);
+        int maxMinutes = ConfUtils.getInt(getConf(),
+                "warc.rotation.policy.max-minutes", 1440);
+        FileTimeSizeRotationPolicy rotpol = new FileTimeSizeRotationPolicy(
+                maxMB, Units.MB);
+        rotpol.setTimeRotationInterval(maxMinutes,
+                FileTimeSizeRotationPolicy.TimeUnit.MINUTES);
         warcbolt.withRotationPolicy(rotpol);
 
         return warcbolt;
