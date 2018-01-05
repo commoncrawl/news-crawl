@@ -5,12 +5,12 @@ Crawler for news feeds based on [StormCrawler](http://stormcrawler.net). Produce
 Prerequisites
 ------------
 
-* Install ElasticSearch 2.3.1 and Kibana 4.5.1
-* Install Apache Storm 1.0
-* Clone and compile [https://github.com/DigitalPebble/sc-warc] with `mvn clean install`
+* Install Elasticsearch 6.0.x (ev. also Kibana)
+* Install Apache Storm 1.1
 * Clone and compile [https://github.com/DigitalPebble/storm-crawler] with `mvn clean install`
-* Start ES and Storm
-* Build ES indices with : `curl -L "https://git.io/vaGkv" | bash`
+* Start Elasticsearch and Storm
+* Build ES indices by running `bin/ES_IndexInit.sh`
+
 
 Configuration
 ------------
@@ -29,7 +29,7 @@ mvn clean package
 Inject some URLs with 
 
 ``` sh
-storm jar target/crawler-1.8-SNAPSHOT.jar com.digitalpebble.stormcrawler.elasticsearch.ESSeedInjector . seeds/feeds.txt -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml -local
+storm jar target/crawler-1.8-SNAPSHOT.jar com.digitalpebble.stormcrawler.elasticsearch.ESSeedInjector . seeds/feeds.txt -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml
 ```
 
 This pushes the newsfeed seeds to the status index and has to be done every time new seeds are added. To delete seeds, delete by query in the ES index or wipe the index clean and reindex the whole lot.
@@ -44,10 +44,12 @@ storm jar target/crawler-1.8-SNAPSHOT.jar org.commoncrawl.stormcrawler.news.Craw
 
 The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
 
+
 Monitor the crawl
 ------------
 
 See instructions on [https://github.com/DigitalPebble/storm-crawler/tree/master/external/elasticsearch] to install the templates for Kibana. 
+
 
 Run Crawl from Docker Container
 -------------

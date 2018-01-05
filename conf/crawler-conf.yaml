@@ -98,8 +98,8 @@ config:
   # news sitemaps may contain up to 1000 URLs, re-fetch daily
   fetchInterval.FETCHED.isSitemapNews=true: 1440
 
-  # must specify otherwise the default interval is added
-  # during injection and for newly discovered sitemaps
+  # must specify a zero interval for newly discovered or injected
+  # feeds and sitemaps, otherwise the default interval is added.
   fetchInterval.DISCOVERED.isFeed=true: 0
   fetchInterval.DISCOVERED.isSitemapNews=true: 0
 
