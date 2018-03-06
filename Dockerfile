@@ -28,8 +28,8 @@ RUN echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" \
 	>> /etc/apt/sources.list.d/elasticsearch-6.x.list
 RUN apt-get update -qq && \
 	apt-get install -yq --no-install-recommends \
-		elasticsearch=6.0.1 \
-        kibana=6.0.1
+		elasticsearch=6.1.1 \
+		kibana=6.1.1
 RUN ln -s /usr/share/elasticsearch/bin/elasticsearch /usr/bin/elasticsearch
 RUN ln -s /usr/share/kibana/bin/kibana /usr/bin/kibana
 RUN chown -R kibana:kibana /usr/share/kibana/
@@ -47,7 +47,7 @@ RUN sed -Ei 's@^path\.data: .*@path.data: /data/elasticsearch@' /etc/elasticsear
 #
 # Apache Storm
 #
-ENV STORM_VERSION=1.1.1
+ENV STORM_VERSION=1.2.1
 COPY downloads/apache-storm-$STORM_VERSION.tar.gz /tmp/apache-storm-$STORM_VERSION.tar.gz
 RUN tar -xzf /tmp/apache-storm-$STORM_VERSION.tar.gz -C /opt
 RUN rm /tmp/apache-storm-$STORM_VERSION.tar.gz

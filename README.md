@@ -5,8 +5,8 @@ Crawler for news feeds based on [StormCrawler](http://stormcrawler.net). Produce
 Prerequisites
 ------------
 
-* Install Elasticsearch 6.0.x (ev. also Kibana)
-* Install Apache Storm 1.1
+* Install Elasticsearch 6.1.1 (ev. also Kibana)
+* Install Apache Storm 1.2.1
 * Clone and compile [https://github.com/DigitalPebble/storm-crawler] with `mvn clean install`
 * Start Elasticsearch and Storm
 * Build ES indices by running `bin/ES_IndexInit.sh`
@@ -56,7 +56,7 @@ Run Crawl from Docker Container
 
 First, download Apache Storm:
 ```
-STORM_VERSION=1.1.1
+STORM_VERSION=1.2.1
 mkdir downloads
 wget -q -P downloads --timestamping http://mirrors.ukfast.co.uk/sites/ftp.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz
 ```

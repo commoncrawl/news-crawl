@@ -49,7 +49,7 @@ autorefresh=1
 type=rpm-md
 EOF'
 
-sudo yum install -y elasticsearch-6.0.1 kibana-6.0.1
+sudo yum install -y elasticsearch-6.1.1 kibana-6.1.1
 sudo chkconfig --add elasticsearch
 
 sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install -b repository-s3
@@ -79,7 +79,7 @@ ZOOKEEPER_VERSION=3.4.11
 wget -q -O - http://mirrors.ukfast.co.uk/sites/ftp.apache.org/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz \
     | sudo tar -xzf - -C /opt
 ZOOKEEPER_HOME=/opt/zookeeper-$ZOOKEEPER_VERSION
-STORM_VERSION=1.1.1
+STORM_VERSION=1.2.1
 wget -q -O - http://mirrors.ukfast.co.uk/sites/ftp.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz \
     | sudo tar -xzf - -C /opt
 STORM_HOME=/opt/apache-storm-$STORM_VERSION
