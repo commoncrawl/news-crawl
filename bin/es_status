@@ -22,9 +22,9 @@ function ____show_help() {
     echo " delete_url <URL>"
     echo "      delete document/record by URL"
     echo " reset_url [search|count|reset] <URL>"
-    echo "      reset by URL"
+    echo "      reset by URL (resets status to DISCOVERED and removes fetch-relevant metadata)"
     echo " fetch_now_url <URL>"
-    echo "      set time of next fetch to now for URL"
+    echo "      set time of next fetch to now for URL (does not reset metadata)"
 #   echo " [not implemented] inject_url <URL> <ROUTING> <METAFIELD> <METAVALUE>"
 #   echo "      inject URL with metadata METAFIELD=METAVALUE"
     echo
@@ -386,6 +386,7 @@ function __reset_by_query () {
         NEXTFETCHDATE="$(____now)"
         SCRIPT='"script" : {
           "inline": "ctx._source.status = \"DISCOVERED\";
+                     ctx._source.metadata['\''signatureChangeDate'\''] = [];
                      ctx._source.nextFetchDate = \"'"$NEXTFETCHDATE"'\";
                      ctx._source.metadata['\''error%2Esource'\''] = [];
                      ctx._source.metadata['\''last-modified'\''] = [];"
