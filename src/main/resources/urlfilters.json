@@ -26,21 +26,6 @@
       }
     },
     {
-      "class": "com.digitalpebble.stormcrawler.filtering.host.HostURLFilter",
-      "name": "HostURLFilter",
-      "params": {
-        "ignoreOutsideHost": false,
-        "ignoreOutsideDomain": false
-      }
-    },
-    {
-      "class": "com.digitalpebble.stormcrawler.filtering.regex.RegexURLNormalizer",
-      "name": "RegexURLNormalizer",
-      "params": {
-        "regexNormalizerFile": "default-regex-normalizers.xml"
-      }
-    },
-    {
       "class": "com.digitalpebble.stormcrawler.filtering.regex.RegexURLFilter",
       "name": "RegexURLFilter",
       "params": {
