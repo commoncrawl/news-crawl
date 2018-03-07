@@ -86,11 +86,13 @@ config:
   # (status is neither FETCHED, REDIRECTION, or DISCOVERED)
   fetchInterval.isFeed=true: 86400
   fetchInterval.isSitemapNews=true: 86400
+  fetchInterval.isSitemapIndex=true: 86400
 
   # re-fetch redirected feeds or sitemaps after 2 weeks
   # (the redirect target may have changed)
   fetchInterval.REDIRECTION.isFeed=true: 20160
   fetchInterval.REDIRECTION.isSitemapNews=true: 20160
+  fetchInterval.REDIRECTION.isSitemapIndex=true: 20160
 
   # re-fetch feeds 2 times per day by default (adaptive scheduler will set a lower frequency if needed)
   fetchInterval.FETCHED.isFeed=true: 720
@@ -98,10 +100,15 @@ config:
   # news sitemaps may contain up to 1000 URLs, re-fetch daily
   fetchInterval.FETCHED.isSitemapNews=true: 1440
 
+  # a sitemap index may contain a new link to a news sitemap
+  # but usually more links to non-news sitemaps, re-fetch weekly
+  fetchInterval.FETCHED.isSitemapIndex=true: 10080
+
   # must specify a zero interval for newly discovered or injected
   # feeds and sitemaps, otherwise the default interval is added.
   fetchInterval.DISCOVERED.isFeed=true: 0
   fetchInterval.DISCOVERED.isSitemapNews=true: 0
+  fetchInterval.DISCOVERED.isSitemapIndex=true: 0
 
   # auto-detect RSS feeds
   feed.sniffContent: true
@@ -131,6 +138,7 @@ config:
    - error.source
    - isSitemap
    - isSitemapNews
+   - isSitemapIndex
    - isFeed
    - last-modified
    - signature

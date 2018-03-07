@@ -1,4 +1,4 @@
-package org.commoncrawl.stormcrawler.news.bootstrap;
+package org.commoncrawl.stormcrawler.news;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
