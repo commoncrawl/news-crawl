@@ -80,7 +80,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     private static ContentDetector contentDetector = new ContentDetector(
             NewsSiteMapParserBolt.contentClues, maxOffsetContentGuess);
 
-    private boolean strictMode = false;
+    private boolean strictModeSitemaps = false;
+    private boolean allowPartialSitemaps = true;
     private boolean sniffContent = false;
 
     private ParseFilter parseFilters;
@@ -117,9 +118,24 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                     metadata.setValue(isSitemapNewsKey, "true");
                 } else if (match <= contentCluesSitemapIndexMatchFrom) {
                     isSitemapIndex = true;
+                    if (isNewsSitemap) {
+                        metadata.setValue(isSitemapNewsKey, "false");
+                    }
+                    isNewsSitemap = false;
                     LOG.info("{} detected as sitemap index based on content",
                             url);
                     metadata.setValue(isSitemapIndexKey, "true");
+                } else {
+                    // sitemaps may change: reset wrong metadata values from
+                    // previous fetches
+                    if (isNewsSitemap) {
+                        metadata.setValue(isSitemapNewsKey, "false");
+                    }
+                    if (isSitemapIndex) {
+                        metadata.setValue(isSitemapIndexKey, "false");
+                    }
+                    isNewsSitemap = false;
+                    isSitemapIndex = false;
                 }
             }
 
@@ -222,7 +238,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             throws UnknownFormatException, IOException {
 
         crawlercommons.sitemaps.SiteMapParser parser = new crawlercommons.sitemaps.SiteMapParser(
-                strictMode);
+                strictModeSitemaps, allowPartialSitemaps);
 
         URL sURL = new URL(url);
         AbstractSiteMap siteMap = null;
@@ -259,7 +275,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 }
 
                 Outlink ol = filterOutlink(sURL, target, parentMetadata,
-                        isSitemapKey, "true", isSitemapNewsKey, "true");
+                        isSitemapKey, "true", isSitemapNewsKey, "false");
                 if (ol == null) {
                     continue;
                 }
