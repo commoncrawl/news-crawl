@@ -25,6 +25,9 @@ function ____show_help() {
     echo "      reset by URL (resets status to DISCOVERED and removes fetch-relevant metadata)"
     echo " fetch_now_url <URL>"
     echo "      set time of next fetch to now for URL (does not reset metadata)"
+    echo " fetch_at_url <URL> <DATE>"
+    echo "      set time of next fetch to DATE for URL (does not reset metadata)"
+    echo "      (valid DATE formats include even `tomorrow', `third day', see `man date')"
 #   echo " [not implemented] inject_url <URL> <ROUTING> <METAFIELD> <METAVALUE>"
 #   echo "      inject URL with metadata METAFIELD=METAVALUE"
     echo
@@ -411,6 +414,13 @@ function __reset_url () {
 function __fetch_now_url () {
     URL="$1"
     NEXTFETCHDATE="$(____now)"
+    __fetch_at_url "$URL" "$NEXTFETCHDATE"
+}
+
+# set time of next fetch to now for URL
+function __fetch_at_url () {
+    URL="$1"
+    NEXTFETCHDATE="$(____date "$2")"
     SCRIPT='"script" : {
           "inline": "ctx._source.nextFetchDate = \"'"$NEXTFETCHDATE"'\";"
         },'
