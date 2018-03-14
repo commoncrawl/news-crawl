@@ -44,7 +44,10 @@ config:
   fetcher.threads.number: 80
 
   worker.heap.memory.mb: 4096
-  
+
+  # increased network timeout (ms) for news sites from Asia and eastern Europe
+  http.timeout: 20000
+
   # delay between successive requests to the same host
   # (be defensive, a delay of 5 sec. means about 1000 fetches per hour
   #  which should be enough even for large news sites)
@@ -55,6 +58,11 @@ config:
   #  waiting 90 sec. between successive fetches would still allow to fetch
   #  about 1000 pages per day, enough for small news sites)
   fetcher.max.crawl.delay: 120
+
+  # limit the number of queued URLs
+  # - avoid duplicate fetches (queues are not sets)
+  fetcher.max.queue.size: 10
+  fetcher.max.urls.in.queues: 3000
 
   # fetch Scheduler implementation
   scheduler.class: "com.digitalpebble.stormcrawler.persistence.AdaptiveScheduler"
@@ -144,6 +152,8 @@ config:
    - signature
    - signatureChangeDate
    - fetchInterval
+  # do not track the URL path
+  metadata.track.path: false
 
   # HTTP 'User-Agent' request header
   # NOTE: must set these configuration properties to identify your bot!
