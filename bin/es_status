@@ -27,9 +27,9 @@ function ____show_help() {
     echo "      set time of next fetch to now for URL (does not reset metadata)"
     echo " fetch_at_url <URL> <DATE>"
     echo "      set time of next fetch to DATE for URL (does not reset metadata)"
-    echo "      (valid DATE formats include even `tomorrow', `third day', see `man date')"
-#   echo " [not implemented] inject_url <URL> <ROUTING> <METAFIELD> <METAVALUE>"
-#   echo "      inject URL with metadata METAFIELD=METAVALUE"
+    echo "      (valid DATE formats include even \`tomorrow', \`third day', see \`man date')"
+    echo " inject_url <URL> <ROUTING> [<METAFIELD> <METAVALUE>]..."
+    echo "      inject URL with metadata METAFIELD=METAVALUE"
     echo
     echo " id <ID> <ROUTING>"
     echo "      look up by ID"
@@ -190,6 +190,30 @@ function __url () {
     URL="$1"
     __match search '"url": "'"$URL"'"'
 }
+
+function __inject_url () {
+    URL="$1"
+    ROUTING="$2"
+    shift 2 || { echo "Not enough arguments"; exit 1; }
+    METADATA_ADD=""
+    while [ $# -gt 0 ]; do
+        META_NAME="$1"
+        META_VALUE="$2"
+        shift 2 || { echo "Metadata must be given as key-value pairs"; exit 1; }
+        METADATA_ADD="$METADATA_ADD,"$'\n'"      \"$META_NAME\": \"$META_VALUE\""
+    done
+    ID="$(echo -n "$URL" | sha256sum | cut -d' ' -f1)"
+    $SHOW_COMMAND
+    $CURL -XPUT "$ES_STATUS_URL/status/$ID?op_type=create&routing=$ROUTING" --data '{
+    "url" : "'"$URL"'",
+    "status" : "DISCOVERED",
+    "metadata" : {
+      "hostname": "'"$ROUTING"'"'"$METADATA_ADD"'
+    },
+    "nextFetchDate": "'"$(____now)"'"
+}'
+}
+
 
 # delete document/record by URL
 function __delete_url () {
