@@ -4,13 +4,14 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.commoncrawl.stormcrawler.news</groupId>
 	<artifactId>crawler</artifactId>
-	<version>1.8-SNAPSHOT</version>
+	<version>1.11</version>
 	<packaging>jar</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<storm-crawler.version>1.8-SNAPSHOT</storm-crawler.version>
-		<storm-core.version>1.2.1</storm-core.version>
+		<storm-crawler.version>1.11</storm-crawler.version>
+		<storm-core.version>1.2.2</storm-core.version>
+		<jackson-databind.version>2.8.11.2</jackson-databind.version>
 	</properties>
 
 	<build>
@@ -24,6 +25,7 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
@@ -43,6 +45,7 @@
 					<classpathScope>compile</classpathScope>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
@@ -83,6 +86,19 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<plugin>
+				<groupId>org.owasp</groupId>
+				<artifactId>dependency-check-maven</artifactId>
+				<version>3.3.2</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>aggregate</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -93,6 +109,7 @@
 			<version>${storm-core.version}</version>
 			<scope>provided</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>com.digitalpebble.stormcrawler</groupId>
 			<artifactId>storm-crawler-core</artifactId>
@@ -108,11 +125,12 @@
 			<artifactId>storm-crawler-warc</artifactId>
 			<version>${storm-crawler.version}</version>
 		</dependency>
+
 		<!-- set version explicitly -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.6.6</version>
+			<version>${jackson-databind.version}</version>
 		</dependency>
 	</dependencies>
 </project>

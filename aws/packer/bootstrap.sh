@@ -28,6 +28,7 @@ sudo cp /tmp/install/etc/supervisor/supervisord.conf /etc/supervisor/supervisord
 #
 # see https://www.elastic.co/guide/en/elasticsearch/reference/master/rpm.html
 #
+ES_VERSION=6.4.1
 sudo rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
 sudo bash -c 'cat >/etc/yum.repos.d/elasticsearch.repo <<"EOF"
 [elasticsearch-6.x]
@@ -49,7 +50,7 @@ autorefresh=1
 type=rpm-md
 EOF'
 
-sudo yum install -y elasticsearch-6.1.1 kibana-6.1.1
+sudo yum install -y elasticsearch-$ES_VERSION kibana-$ES_VERSION
 sudo chkconfig --add elasticsearch
 
 sudo /usr/share/elasticsearch/bin/elasticsearch-plugin install -b repository-s3
@@ -75,11 +76,11 @@ sudo sed -Ei 's@^path\.data: .*@path.data: /data/elasticsearch@' /etc/elasticsea
 #
 # Apache Storm and Zookeeper
 #
-ZOOKEEPER_VERSION=3.4.11
+ZOOKEEPER_VERSION=3.4.13
 wget -q -O - http://mirrors.ukfast.co.uk/sites/ftp.apache.org/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz \
     | sudo tar -xzf - -C /opt
 ZOOKEEPER_HOME=/opt/zookeeper-$ZOOKEEPER_VERSION
-STORM_VERSION=1.2.1
+STORM_VERSION=1.2.2
 wget -q -O - http://mirrors.ukfast.co.uk/sites/ftp.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz \
     | sudo tar -xzf - -C /opt
 STORM_HOME=/opt/apache-storm-$STORM_VERSION

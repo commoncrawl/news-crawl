@@ -17,6 +17,7 @@
 
 package org.commoncrawl.stormcrawler.news;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -101,7 +102,7 @@ public class CrawlTopology extends ConfigurableTopology {
         fileNameFormat.withPrefix(filePrefix);
 
         Map<String, String> fields = new LinkedHashMap<>();
-        fields.put("software:", "StormCrawler 1.8 http://stormcrawler.net/");
+        fields.put("software:", "StormCrawler 1.11 http://stormcrawler.net/");
         fields.put("description", "News crawl for Common Crawl");
         String userAgent = AbstractHttpProtocol.getAgentString(getConf());
         fields.put("http-header-user-agent", userAgent);
@@ -111,9 +112,17 @@ public class CrawlTopology extends ConfigurableTopology {
         fields.put("conformsTo",
                 "http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf");
 
-        WARCHdfsBolt warcbolt = (WARCHdfsBolt) new WARCHdfsBolt()
-                .withFileNameFormat(fileNameFormat);
+        WARCHdfsBolt warcbolt = (WARCHdfsBolt) new WARCHdfsBolt();
+        warcbolt.withConfigKey("warc");
+        warcbolt.withFileNameFormat(fileNameFormat);
         warcbolt.withHeader(fields);
+
+        // use RawLocalFileSystem (instead of ChecksumFileSystem) to avoid that
+        // WARC files are truncated if the topology is stopped because of a
+        // delayed sync of the default ChecksumFileSystem
+        Map<String, Object> hdfsConf = new HashMap<>();
+        hdfsConf.put("fs.file.impl", "org.apache.hadoop.fs.RawLocalFileSystem");
+        getConf().put("warc", hdfsConf);
 
         // will rotate if reaches size or time limit
         int maxMB = ConfUtils.getInt(getConf(), "warc.rotation.policy.max-mb",
