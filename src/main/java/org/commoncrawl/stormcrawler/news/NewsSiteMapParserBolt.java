@@ -50,6 +50,10 @@ import crawlercommons.sitemaps.SiteMapIndex;
 import crawlercommons.sitemaps.SiteMapURL;
 import crawlercommons.sitemaps.SiteMapURL.ChangeFrequency;
 import crawlercommons.sitemaps.UnknownFormatException;
+import crawlercommons.sitemaps.extension.Extension;
+import crawlercommons.sitemaps.extension.ExtensionMetadata;
+import crawlercommons.sitemaps.extension.LinkAttributes;
+import crawlercommons.sitemaps.extension.NewsAttributes;
 
 
 /**
@@ -249,12 +253,19 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         return true;
     }
 
-    private AbstractSiteMap parseSiteMap(String url, byte[] content,
+    protected AbstractSiteMap parseSiteMap(String url, byte[] content,
             String contentType, Metadata parentMetadata, List<Outlink> links)
             throws UnknownFormatException, IOException {
 
         crawlercommons.sitemaps.SiteMapParser parser = new crawlercommons.sitemaps.SiteMapParser(
                 strictModeSitemaps, allowPartialSitemaps);
+        parser.setStrictNamespace(true);
+        parser.addAcceptedNamespace(
+                crawlercommons.sitemaps.Namespace.SITEMAP_LEGACY);
+        parser.addAcceptedNamespace(crawlercommons.sitemaps.Namespace.EMPTY);
+        // enable extensions (also adds extension namespaces)
+        parser.enableExtension(Extension.NEWS);
+        parser.enableExtension(Extension.LINKS);
 
         URL sURL = new URL(url);
         AbstractSiteMap siteMap = null;
@@ -307,7 +318,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             // TODO see what we can do with the LastModified info
             Collection<SiteMapURL> sitemapURLs = sm.getSiteMapUrls();
             Iterator<SiteMapURL> iter = sitemapURLs.iterator();
-            while (iter.hasNext()) {
+            sitemap_urls: while (iter.hasNext()) {
                 linksFound++;
                 SiteMapURL smurl = iter.next();
                 // TODO handle priority in metadata
@@ -321,14 +332,53 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 Date lastModified = smurl.getLastModified();
                 if (!recentlyModified(lastModified)) {
                     // filter based on the published date
-                    // TODO: should also consider
-                    //        <news:publication_date>2008-12-23</news:publication_date>
                     linksSkippedNotRecentlyModified++;
                     LOG.debug(
                             "{} has a modified date {} which is more than {} hours old",
-                            target, lastModified.toString(),
-                            filterHoursSinceModified);
+                            target, lastModified, filterHoursSinceModified);
                     continue;
+                }
+                ExtensionMetadata[] newsAttrs = smurl
+                        .getAttributesForExtension(Extension.NEWS);
+                if (newsAttrs != null) {
+                    // filter based on news publication date
+                    // <news:publication_date>2008-12-23</news:publication_date>
+                    for (ExtensionMetadata attr : newsAttrs) {
+                        NewsAttributes newsAttr = (NewsAttributes) attr;
+                        Date pubDate = newsAttr.getPublicationDate();
+                        if (pubDate != null && !recentlyModified(pubDate)) {
+                            linksSkippedNotRecentlyModified++;
+                            LOG.debug(
+                                    "{} has a news publication date {} which is more than {} hours old",
+                                    target, pubDate, filterHoursSinceModified);
+                            continue sitemap_urls;
+                        }
+                    }
+                    // TODO: add news attributes to metadata
+                }
+
+                // add alternative language links
+                ExtensionMetadata[] linkAttrs = smurl
+                        .getAttributesForExtension(Extension.LINKS);
+                if (linkAttrs != null) {
+                    for (ExtensionMetadata attr : linkAttrs) {
+                        LinkAttributes linkAttr = (LinkAttributes) attr;
+                        URL href = linkAttr.getHref();
+                        if (href == null) {
+                            continue;
+                        }
+                        String hrefStr = href.toString();
+                        if (hrefStr.equals(target)) {
+                            // skip href links duplicating sitemap URL
+                            continue;
+                        }
+                        Outlink ol = filterOutlink(sURL, hrefStr,
+                                parentMetadata, isSitemapKey, "false",
+                                isSitemapNewsKey, "false");
+                        if (ol != null) {
+                            links.add(ol);
+                        }
+                    }
                 }
 
                 Outlink ol = filterOutlink(sURL, target, parentMetadata,
@@ -336,6 +386,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 if (ol == null) {
                     continue;
                 }
+
                 links.add(ol);
                 LOG.debug("{} : [sitemap] {}", url, target);
             }
