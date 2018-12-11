@@ -24,7 +24,7 @@ RUN apt-get update -qq && \
 #
 # Elasticsearch and Kibana
 #
-ENV ES_VERSION=6.4.1
+ENV ES_VERSION=6.5.0
 RUN wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch \
 	| apt-key add -
 RUN echo "deb https://artifacts.elastic.co/packages/6.x/apt stable main" \
@@ -84,7 +84,7 @@ RUN mkdir news-crawler/ && \
     mkdir news-crawler/seeds/ && \
     chmod -R a+rx news-crawler/
 # add the news crawler uber-jar
-ADD target/crawler-1.11.jar news-crawler/lib/crawler.jar
+ADD target/crawler-1.12.1.jar news-crawler/lib/crawler.jar
 # and configuration files
 ADD conf/*.*        news-crawler/conf/
 ADD seeds/*.txt     news-crawler/seeds/
