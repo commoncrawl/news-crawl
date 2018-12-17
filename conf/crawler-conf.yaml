@@ -61,6 +61,10 @@ config:
   # do not fail on unknown SSL certificates
   http.trust.everything: true
 
+  # use okhttp
+  http.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
+  https.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
+
   # delay between successive requests to the same host
   # (be defensive, a delay of 5 sec. means about 1000 fetches per hour
   #  which should be enough even for large news sites)
@@ -81,8 +85,10 @@ config:
   scheduler.class: "com.digitalpebble.stormcrawler.persistence.AdaptiveScheduler"
   # AdaptiveScheduler properties
   scheduler.adaptive.setLastModified: true
+  # frequently changing feeds or news sitemaps are refetched after 90 min.
   scheduler.adaptive.fetchInterval.min: 90
-  scheduler.adaptive.fetchInterval.max: 40320
+  # if there are no changes the interval may grow to 90 days
+  scheduler.adaptive.fetchInterval.max: 129600
   scheduler.adaptive.fetchInterval.rate.incr: .5
   scheduler.adaptive.fetchInterval.rate.decr: .2
 
@@ -105,9 +111,12 @@ config:
 
   # try to re-fetch failed feeds or sitemaps after 2 month
   # (status is neither FETCHED, REDIRECTION, or DISCOVERED)
-  fetchInterval.isFeed=true: 86400
-  fetchInterval.isSitemapNews=true: 86400
-  fetchInterval.isSitemapIndex=true: 86400
+  fetchInterval.FETCH_ERROR.isFeed=true: 86400
+  fetchInterval.FETCH_ERROR.isSitemapNews=true: 86400
+  fetchInterval.FETCH_ERROR.isSitemapIndex=true: 86400
+  fetchInterval.ERROR.isFeed=true: 86400
+  fetchInterval.ERROR.isSitemapNews=true: 86400
+  fetchInterval.ERROR.isSitemapIndex=true: 86400
 
   # re-fetch redirected feeds or sitemaps after 2 weeks
   # (the redirect target may have changed)
@@ -125,11 +134,20 @@ config:
   # but usually more links to non-news sitemaps, re-fetch weekly
   fetchInterval.FETCHED.isSitemapIndex=true: 10080
 
+  # retry a sitemap after 6 month because it may change and
+  # may turn into a news sitemap by adding namespace and annotations
+  fetchInterval.FETCHED.isSitemap=true: 259200
+  fetchInterval.REDIRECTION.isSitemap=true: 259200
+  fetchInterval.FETCH_ERROR.isSitemap=true: 259200
+  fetchInterval.ERROR.isSitemap=true: 259200
+
   # must specify a zero interval for newly discovered or injected
   # feeds and sitemaps, otherwise the default interval is added.
   fetchInterval.DISCOVERED.isFeed=true: 0
   fetchInterval.DISCOVERED.isSitemapNews=true: 0
   fetchInterval.DISCOVERED.isSitemapIndex=true: 0
+  # wait 5 min. for auto-detected sitemaps
+  fetchInterval.DISCOVERED.isSitemap=true: 300
 
   # auto-detect RSS feeds
   feed.sniffContent: true
@@ -137,6 +155,14 @@ config:
   # auto-detection of news sitemaps
   sitemap.sniffContent: true
   sitemap.discovery: true
+  sitemap.offset.guess: 1024
+
+  # delay each detected subsitemap for 15 min. before being fetched
+  # after the previous one so that a large sitemap index "floods"
+  # the status index slowly. A sitemap index is allowed to link
+  # to 50,000 sitemaps, and each sitemap can contain up to 50,000
+  # URLs.
+  sitemap.schedule.delay: 15
 
   # do not add feeds older than 30 days
   # (longest adaptive fetch interval is 28 days)
@@ -161,12 +187,14 @@ config:
    - isSitemapNews
    - isSitemapIndex
    - isFeed
+   - numLinks
    - last-modified
    - signature
    - signatureChangeDate
    - fetchInterval
-  # do not track the URL path
-  metadata.track.path: false
+  # whether to track the URL path
+  # (allows to identify which feeds and sitemaps contribute links)
+  metadata.track.path: true
 
   # HTTP 'User-Agent' request header
   # NOTE: must set these configuration properties to identify your bot!

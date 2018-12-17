@@ -16,14 +16,14 @@ config:
   http.content.limit: 524288
 
   # useful for debugging
-  #metadata.track.path: true
-  #metadata.track.depth: true
+  metadata.track.path: true
+  metadata.track.depth: true
 
   # change to the location of your choice
   # the directory must already exist
   warc.dir: "/data/warc/bootstrap"
-  # rotate WARC files shortly before 1 GB is reached
+  # rotate WARC files with 80 MB
   warc.rotation.policy.max-mb: 80
-  # but latest after one day
+  # but latest after one hour
   warc.rotation.policy.max-minutes: 60
   
