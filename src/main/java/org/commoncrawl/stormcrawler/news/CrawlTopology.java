@@ -102,15 +102,15 @@ public class CrawlTopology extends ConfigurableTopology {
         fileNameFormat.withPrefix(filePrefix);
 
         Map<String, String> fields = new LinkedHashMap<>();
-        fields.put("software:", "StormCrawler 1.11 http://stormcrawler.net/");
+        fields.put("software:", "StormCrawler 1.12.1 http://stormcrawler.net/");
         fields.put("description", "News crawl for Common Crawl");
         String userAgent = AbstractHttpProtocol.getAgentString(getConf());
         fields.put("http-header-user-agent", userAgent);
         fields.put("http-header-from",
                 ConfUtils.getString(getConf(), "http.agent.email"));
-        fields.put("format", "WARC File Format 1.0");
+        fields.put("format", "WARC File Format 1.1");
         fields.put("conformsTo",
-                "http://bibnum.bnf.fr/WARC/WARC_ISO_28500_version1_latestdraft.pdf");
+                "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/");
 
         WARCHdfsBolt warcbolt = (WARCHdfsBolt) new WARCHdfsBolt();
         warcbolt.withConfigKey("warc");
