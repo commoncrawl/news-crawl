@@ -26,10 +26,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.storm.metric.api.MeanReducer;
+import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.stormcrawler.Constants;
@@ -40,13 +43,16 @@ import com.digitalpebble.stormcrawler.parse.ParseData;
 import com.digitalpebble.stormcrawler.parse.ParseFilter;
 import com.digitalpebble.stormcrawler.parse.ParseFilters;
 import com.digitalpebble.stormcrawler.parse.ParseResult;
+import com.digitalpebble.stormcrawler.persistence.DefaultScheduler;
 import com.digitalpebble.stormcrawler.persistence.Status;
 import com.digitalpebble.stormcrawler.protocol.HttpHeaders;
 import com.digitalpebble.stormcrawler.util.ConfUtils;
 
 import crawlercommons.sitemaps.AbstractSiteMap;
+import crawlercommons.sitemaps.Namespace;
 import crawlercommons.sitemaps.SiteMap;
 import crawlercommons.sitemaps.SiteMapIndex;
+import crawlercommons.sitemaps.SiteMapParser;
 import crawlercommons.sitemaps.SiteMapURL;
 import crawlercommons.sitemaps.SiteMapURL.ChangeFrequency;
 import crawlercommons.sitemaps.UnknownFormatException;
@@ -72,6 +78,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     //      be news sitemaps
     //    - pass "isSitemapNews" to status metadata
 
+    public static enum SitemapType {
+        NEWS, INDEX, SITEMAP
+    }
+
     public static final String isSitemapNewsKey = "isSitemapNews";
     public static final String isSitemapIndexKey = "isSitemapIndex";
     /**
@@ -84,24 +94,32 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     private static final org.slf4j.Logger LOG = LoggerFactory
             .getLogger(NewsSiteMapParserBolt.class);
 
-    public static String[][] contentClues = {
-            // match 0-m: a news sitemap
-            { "http://www.google.com/schemas/sitemap-news/0.9" },
-            { "https://www.google.com/schemas/sitemap-news/0.9" },
-            { "http://www.google.com/schemas/sitemap-news/0.84" },
-            // m < match <= n: a sitemapindex
-            { "<sitemapindex"},
-            // match > n: a "simple" sitemap
-            { "http://www.sitemaps.org/schemas/sitemap/0.9" },
-            { "https://www.sitemaps.org/schemas/sitemap/0.9" },
-            { "http://www.google.com/schemas/sitemap/0.9" },
-            { "http://www.google.com/schemas/sitemap/0.84" }};
-    public static int contentCluesSitemapNewsMatchUpTo = 2;
-    public static int contentCluesSitemapIndexMatchFrom = 3;
+    /* content clues for news sitemaps, sitemap indexes or any sitemaps */
+    public static String[][] contentClues;
+    public static int contentCluesSitemapNewsMatchUpTo = -1;
+    public static int contentCluesSitemapIndexMatchUpTo = -1;
+    static {
+        int cluesSize = Namespace.NEWS.length + 1 + 1 + Namespace.SITEMAP_LEGACY.length;
+        contentClues = new String[cluesSize][1];
+        int j = 0;
+        // match 0-m: a news sitemap
+        for (int i = 0; i < Namespace.NEWS.length; i++, j++) {
+            contentClues[j][0] = Namespace.NEWS[i];
+            contentCluesSitemapNewsMatchUpTo = j;
+        }
+        // m < match <= n: a sitemapindex
+        contentClues[j][0] = "<sitemapindex";
+        contentCluesSitemapIndexMatchUpTo = j;
+        j++;
+        // match > n: a "simple" sitemap
+        contentClues[j][0] = Namespace.SITEMAP;
+        j++;
+        for (int i = 0; i < Namespace.SITEMAP_LEGACY.length; i++, j++) {
+            contentClues[j][0] = Namespace.SITEMAP_LEGACY[i];
+        }
+    }
 
-    protected static final int maxOffsetContentGuess = 1024;
-    private static ContentDetector contentDetector = new ContentDetector(
-            NewsSiteMapParserBolt.contentClues, maxOffsetContentGuess);
+    private static ContentDetector contentDetector;
 
     private boolean strictModeSitemaps = false;
     private boolean allowPartialSitemaps = true;
@@ -109,6 +127,11 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
     private ParseFilter parseFilters;
     private int filterHoursSinceModified = -1;
+
+    private ReducedMetric averagedMetrics;
+
+    /** Delay in minutes used for scheduling sub-sitemaps **/
+    private int scheduleSitemapsWithDelay = -1;
 
     @Override
     public void execute(Tuple tuple) {
@@ -128,27 +151,19 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 .valueOf(metadata.getFirstValue(isSitemapVerifiedKey));
 
         if (sniffContent) {
-            // try based on the first bytes?
-            // works for XML and non-compressed documents
-            // TODO: implement check for compressed XML
-            int match = contentDetector.getFirstMatch(content);
-            if (match >= 0) {
-                // a sitemap, not necessarily a news sitemap
+            SitemapType type = detectContent(url, content);
+            if (type != null) {
                 isSitemap = true;
                 metadata.setValue(SiteMapParserBolt.isSitemapKey, "true");
-                if (match <= contentCluesSitemapNewsMatchUpTo) {
+                if (type == SitemapType.NEWS) {
                     isNewsSitemap = true;
-                    LOG.info("{} detected as news sitemap based on content",
-                            url);
                     metadata.setValue(isSitemapNewsKey, "true");
-                } else if (match <= contentCluesSitemapIndexMatchFrom) {
+                } else if (type == SitemapType.INDEX) {
                     isSitemapIndex = true;
                     if (isNewsSitemap) {
                         metadata.setValue(isSitemapNewsKey, "false");
                     }
                     isNewsSitemap = false;
-                    LOG.info("{} detected as sitemap index based on content",
-                            url);
                     metadata.setValue(isSitemapIndexKey, "true");
                 } else if (isSitemapVerified) {
                     // do not reset metadata for verified sitemaps
@@ -165,7 +180,6 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                     isSitemapIndex = false;
                 }
             }
-
         }
 
         if (!(isNewsSitemap || isSitemapIndex)) {
@@ -234,7 +248,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             metadata.remove(isSitemapIndexKey);
         }
 
-        // send to status stream
+        // send outlinks to status stream
         for (Outlink ol : outlinks) {
             if (isSitemapIndex) {
                 ol.getMetadata().setValue(isSitemapKey, "true");
@@ -248,11 +262,35 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             collector.emit(Constants.StatusStreamName, tuple, v);
         }
 
+        // track the number of links found in the sitemap
+        metadata.addValue("numLinks", String.valueOf(outlinks.size()));
+
         // marking the main URL as successfully fetched
-        // regardless of whether we got a parse exception or not
         collector.emit(Constants.StatusStreamName, tuple, new Values(url,
                 metadata, Status.FETCHED));
         collector.ack(tuple);
+    }
+
+    public SitemapType detectContent(String url, byte[] content) {
+        // try to detect content based on the first n bytes
+        // works for XML and non-compressed documents
+        // TODO: implement check for compressed XML
+        int match = contentDetector.getFirstMatch(content);
+        if (match >= 0) {
+            // a sitemap, need to detect type of sitemap
+            if (match <= contentCluesSitemapNewsMatchUpTo) {
+                LOG.info("{} detected as news sitemap based on content",
+                        url);
+                return SitemapType.NEWS;
+            } else if (match <= contentCluesSitemapIndexMatchUpTo) {
+                LOG.info("{} detected as sitemap index based on content",
+                        url);
+                return SitemapType.INDEX;
+            } else {
+                return SitemapType.SITEMAP;
+            }
+        }
+        return null;
     }
 
     private boolean recentlyModified(Date lastModified) {
@@ -271,18 +309,18 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             String contentType, Metadata parentMetadata, List<Outlink> links)
             throws UnknownFormatException, IOException {
 
-        crawlercommons.sitemaps.SiteMapParser parser = new crawlercommons.sitemaps.SiteMapParser(
-                strictModeSitemaps, allowPartialSitemaps);
+        SiteMapParser parser = new SiteMapParser(strictModeSitemaps,
+                allowPartialSitemaps);
         parser.setStrictNamespace(true);
-        parser.addAcceptedNamespace(
-                crawlercommons.sitemaps.Namespace.SITEMAP_LEGACY);
-        parser.addAcceptedNamespace(crawlercommons.sitemaps.Namespace.EMPTY);
+        parser.addAcceptedNamespace(Namespace.SITEMAP_LEGACY);
+        parser.addAcceptedNamespace(Namespace.EMPTY);
         // enable extensions (also adds extension namespaces)
         parser.enableExtension(Extension.NEWS);
         parser.enableExtension(Extension.LINKS);
 
         URL sURL = new URL(url);
-        AbstractSiteMap siteMap = null;
+        long start = System.currentTimeMillis();
+        AbstractSiteMap siteMap;
         // let the parser guess what the mimetype is
         if (StringUtils.isBlank(contentType)
                 || contentType.contains("octet-stream")) {
@@ -290,6 +328,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         } else {
             siteMap = parser.parseSiteMap(contentType, content, sURL);
         }
+        long end = System.currentTimeMillis();
+        averagedMetrics.update(end - start);
 
         int linksFound = 0;
         int linksSkippedNotRecentlyModified = 0;
@@ -297,8 +337,11 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         if (siteMap.isIndex()) {
             SiteMapIndex smi = (SiteMapIndex) siteMap;
             Collection<AbstractSiteMap> subsitemaps = smi.getSitemaps();
-            // keep the subsitemaps as outlinks
-            // they will be fetched and parsed in the following steps
+            int delay = 0;
+            /*
+             * keep the subsitemaps as outlinks they will be fetched and parsed
+             * in the following steps
+             */
             Iterator<AbstractSiteMap> iter = subsitemaps.iterator();
             while (iter.hasNext()) {
                 linksFound++;
@@ -320,6 +363,17 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 if (ol == null) {
                     continue;
                 }
+
+                // add a delay
+                if (this.scheduleSitemapsWithDelay > 0) {
+                    if (delay > 0) {
+                        ol.getMetadata().setValue(
+                                DefaultScheduler.DELAY_METADATA,
+                                Integer.toString(delay));
+                    }
+                    delay += this.scheduleSitemapsWithDelay;
+                }
+
                 links.add(ol);
                 LOG.debug("{} : [sitemap] {}", url, target);
             }
@@ -329,7 +383,6 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         // sitemap files
         else {
             SiteMap sm = (SiteMap) siteMap;
-            // TODO see what we can do with the LastModified info
             Collection<SiteMapURL> sitemapURLs = sm.getSiteMapUrls();
             Iterator<SiteMapURL> iter = sitemapURLs.iterator();
             sitemap_urls: while (iter.hasNext()) {
@@ -421,6 +474,15 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         filterHoursSinceModified = ConfUtils.getInt(stormConf,
                 "sitemap.filter.hours.since.modified", -1);
         parseFilters = ParseFilters.fromConf(stormConf);
+        int maxOffsetGuess = ConfUtils.getInt(stormConf, "sitemap.offset.guess",
+                1024);
+        contentDetector = new ContentDetector(
+                NewsSiteMapParserBolt.contentClues, maxOffsetGuess);
+        averagedMetrics = context.registerMetric(
+                "sitemap_average_processing_time",
+                new ReducedMetric(new MeanReducer()), 30);
+        scheduleSitemapsWithDelay = ConfUtils.getInt(stormConf,
+                "sitemap.schedule.delay", scheduleSitemapsWithDelay);
     }
 
 }

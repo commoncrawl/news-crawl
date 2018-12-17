@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.storm.task.OutputCollector;
+import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -55,16 +56,20 @@ public class NewsSiteMapParserTest {
 
     @Test
     public void testSiteMapParser() throws IOException, UnknownFormatException {
-        String url = "https://example.org/";
+        String url = "https://example.org/sitemap-news.xml";
         byte[] content = readContent("sitemap-news.xml");
         String contentType = "";
         Metadata parentMetadata = new Metadata();
         List<Outlink> links = new ArrayList<>();
 
+        SitemapType type = bolt.detectContent(url, content);
+        assertEquals(SitemapType.NEWS, type);
+
+        bolt.parseSiteMap(url, content, contentType, parentMetadata, links);
+
         // unmodified sitemap:
         // - publication date is far in the past, link should be skipped
         // <news:publication_date>2008-12-23</news:publication_date>
-        bolt.parseSiteMap(url, content, contentType, parentMetadata, links);
         assertEquals("Outdated link not skipped", 0, links.size());
 
         // now set the publication date to yesterday
