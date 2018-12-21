@@ -21,6 +21,8 @@ function ____show_help() {
     echo "      look up by URL"
     echo " delete_url <URL>"
     echo "      delete document/record by URL"
+    echo " delete_url_with_routing <URL> <ROUTING>"
+    echo "      delete document/record by URL with forced routing"
     echo " reset_url [search|count|reset] <URL>"
     echo "      reset by URL (resets status to DISCOVERED and removes fetch-relevant metadata)"
     echo " fetch_now_url <URL>"
@@ -60,8 +62,10 @@ function ____show_help() {
     echo " aggregate_by <FIELD> <QUERY> <SIZE>"
     echo "      aggregate field values filtered by query"
     echo
-    echo " next_fetch [search|count]"
+    echo " next_fetch [search|count] [<PAGE> [<SIZE>]]"
     echo "      documents to be fetched next"
+    echo " next_fetch_for_date [search|count] <DATE> [<PAGE> [<SIZE>]]"
+    echo "      documents to be fetched next for date"
     echo " failed_by_metadata [search|count] <META>"
     echo "      failed fetches (status not FETCHED) filtered by metadata"
     echo " status_by_metadata [search|count] <STATUS> <META>"
@@ -245,6 +249,16 @@ function __delete_id () {
     $CURL -XDELETE "$ES_STATUS_URL/status/$ID?pretty&routing=$ROUTING"
 }
 
+# delete document/record by URL with forced routing
+function __delete_url_with_routing () {
+    URL="$1"
+    ROUTING="$2"
+    ID="$(echo -n "$URL" | sha256sum | cut -d' ' -f1)"
+    ID="$(____escape_id "$ID")"
+    $SHOW_COMMAND
+    $CURL -XDELETE "$ES_STATUS_URL/status/$ID?pretty&routing=$ROUTING"
+}
+
 # list n documents
 function __list () {
     SIZE=$1
@@ -260,16 +274,32 @@ function __match_field () {
     __match $CMND '"'"$TYPE"'": "'"$TERM"'"'
 }
 
+function ____next_fetch_at () {
+    CMND="$1"
+    DATE="$2"
+    shift 2
+    __query $CMND '
+                "range": {
+                    "nextFetchDate": {
+                        "lt": "'"$DATE"'"
+                    }
+                }' "$@"
+}
+
 # documents to be fetched next
 function __next_fetch () {
     CMND="$1"
     shift 1 || { echo "Not enough arguments"; exit 1; }
-    __query $CMND '
-                "range": {
-                    "nextFetchDate": {
-                        "lt": "'"$(____now)"'"
-                    }
-                }' "$@"
+    DATE="$(____now)"
+    ____next_fetch_at "$CMND" "$DATE" "$@"
+}
+
+# documents to be fetched next at date
+function __next_fetch_for_date () {
+    CMND="$1"
+    DATE="$(____date "$2")"
+    shift 2 || { echo "Not enough arguments"; exit 1; }
+    ____next_fetch_at "$CMND" "$DATE" "$@"
 }
 
 # match documents by field value and metadata
