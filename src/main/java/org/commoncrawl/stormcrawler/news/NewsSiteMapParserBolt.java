@@ -32,7 +32,6 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.stormcrawler.Constants;
@@ -270,7 +269,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         }
 
         // track the number of links found in the sitemap
-        metadata.addValue("numLinks", String.valueOf(outlinks.size()));
+        metadata.setValue("numLinks", String.valueOf(outlinks.size()));
 
         // marking the main URL as successfully fetched
         collector.emit(Constants.StatusStreamName, tuple, new Values(url,
@@ -486,7 +485,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         contentDetector = new ContentDetector(
                 NewsSiteMapParserBolt.contentClues, maxOffsetGuess);
         averagedMetrics = context.registerMetric(
-                "sitemap_average_processing_time",
+                "news_sitemap_average_processing_time",
                 new ReducedMetric(new MeanReducer()), 30);
         scheduleSitemapsWithDelay = ConfUtils.getInt(stormConf,
                 "sitemap.schedule.delay", scheduleSitemapsWithDelay);
