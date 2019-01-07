@@ -28,7 +28,7 @@ sudo cp /tmp/install/etc/supervisor/supervisord.conf /etc/supervisor/supervisord
 #
 # see https://www.elastic.co/guide/en/elasticsearch/reference/master/rpm.html
 #
-ES_VERSION=6.4.1
+ES_VERSION=6.5.3
 sudo rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
 sudo bash -c 'cat >/etc/yum.repos.d/elasticsearch.repo <<"EOF"
 [elasticsearch-6.x]
@@ -110,7 +110,7 @@ mkdir -p news-crawler/{conf,bin,lib,seeds}
 # seeds must be readable for user "storm"
 chmod a+rx news-crawler/seeds/
 chmod 644 news-crawler/seeds/*
-cp /tmp/install/news-crawler/lib/crawler-1.8-SNAPSHOT.jar news-crawler/lib/
+cp /tmp/install/news-crawler/lib/crawler-1.13.jar news-crawler/lib/
 chmod u+x news-crawler/bin/*
 
 

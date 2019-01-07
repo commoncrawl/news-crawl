@@ -61,8 +61,8 @@
       },
       {
         "type": "file",
-        "source": "target/crawler-1.8-SNAPSHOT.jar",
-        "destination": "/tmp/install/news-crawler/lib/crawler-1.8-SNAPSHOT.jar"
+        "source": "target/crawler-1.13.jar",
+        "destination": "/tmp/install/news-crawler/lib/crawler-1.13.jar"
       },
       {
         "type": "file",

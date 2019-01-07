@@ -5,7 +5,7 @@ Crawler for news feeds based on [StormCrawler](http://stormcrawler.net). Produce
 Prerequisites
 ------------
 
-* Install Elasticsearch 6.4.1 (ev. also Kibana)
+* Install Elasticsearch 6.5.3 (ev. also Kibana)
 * Install Apache Storm 1.2.2
 * Clone and compile [https://github.com/DigitalPebble/storm-crawler] with `mvn clean install`
 * Start Elasticsearch and Storm
@@ -29,7 +29,7 @@ mvn clean package
 Inject some URLs with 
 
 ``` sh
-storm jar target/crawler-1.11.jar com.digitalpebble.stormcrawler.elasticsearch.ESSeedInjector . seeds/feeds.txt -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml
+storm jar target/crawler-1.13.jar com.digitalpebble.stormcrawler.elasticsearch.ESSeedInjector . seeds/feeds.txt -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml
 ```
 
 This pushes the newsfeed seeds to the status index and has to be done every time new seeds are added. To delete seeds, delete by query in the ES index or wipe the index clean and reindex the whole lot.
@@ -39,7 +39,7 @@ You can check that the URLs have been injected on [http://localhost:9200/status/
 You can then run the crawl topology with :
 
 ``` sh
-storm jar target/crawler-1.11.jar org.commoncrawl.stormcrawler.news.CrawlTopology -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml
+storm jar target/crawler-1.13.jar org.commoncrawl.stormcrawler.news.CrawlTopology -conf conf/es-conf.yaml -conf conf/crawler-conf.yaml
 ```
 
 The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
@@ -68,7 +68,7 @@ wget -O bin/ES_IndexInit.sh https://raw.githubusercontent.com/DigitalPebble/stor
 
 Then build the Docker image from the [Dockerfile](./Dockerfile):
 ```
-docker build -t newscrawler:1.11 .
+docker build -t newscrawler:1.13 .
 ```
 
 Note: the uberjar is included in the Docker image and needs to be built first.
@@ -80,7 +80,7 @@ docker run --net=host \
     -p 5601:5601 -p 8080:8080 \
     -v .../newscrawl/elasticsearch:/data/elasticsearch \
     -v .../newscrawl/warc:/data/warc \
-    --rm -i -t newscrawler:1.11 /bin/bash
+    --rm -i -t newscrawler:1.13 /bin/bash
 ```
 
 NOTE: don't forget to adapt the paths to mounted volumes used to persist data on the host.

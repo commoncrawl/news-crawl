@@ -117,8 +117,9 @@ public class ESReindexInjector extends ESSeedInjector {
         TopologyBuilder builder = new TopologyBuilder();
 
         Scheme scheme = new ReindexStringTabScheme();
-
-        builder.setSpout("spout", new FileSpout(args[0], args[1], scheme));
+        FileSpout spout = new FileSpout(args[0], args[1], false);
+        spout.setScheme(scheme);
+        builder.setSpout("spout", spout);
 
         Fields key = new Fields("url");
 
