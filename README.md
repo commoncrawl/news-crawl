@@ -61,11 +61,6 @@ mkdir downloads
 wget -q -P downloads --timestamping http://mirrors.ukfast.co.uk/sites/ftp.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz
 ```
 
-Second, the script to create the Elasticsearch index:
-```
-wget -O bin/ES_IndexInit.sh https://raw.githubusercontent.com/DigitalPebble/storm-crawler/master/external/elasticsearch/ES_IndexInit.sh
-````
-
 Then build the Docker image from the [Dockerfile](./Dockerfile):
 ```
 docker build -t newscrawler:1.13 .
