@@ -66,6 +66,8 @@ function ____show_help() {
     echo "      documents to be fetched next"
     echo " next_fetch_for_date [search|count] <DATE> [<PAGE> [<SIZE>]]"
     echo "      documents to be fetched next for date"
+    echo " next_fetch_for_date_and_host [search|count] <DATE> <HOST/DOMAIN> [<PAGE> [<SIZE>]]"
+    echo "      documents to be fetched next at date for given host/domain"
     echo " failed_by_metadata [search|count] <META>"
     echo "      failed fetches (status not FETCHED) filtered by metadata"
     echo " status_by_metadata [search|count] <STATUS> <META>"
@@ -178,6 +180,25 @@ function __query () {
 }'
 }
 
+# query status index with routing
+function __query_routed () {
+    CMND="$1"
+    ROUTE="$2"
+    QUERY="$3"
+    PAGE="${4:-0}"
+    SIZE="${5:-1000}"
+    if [ "$CMND" == "search" ]; then
+        PAGING=$'\n''    "from" : '$(($PAGE*$SIZE))', "size" : '$SIZE','
+    fi
+    $SHOW_COMMAND
+    $CURL -XGET $ES_STATUS_URL'/_'$CMND'?pretty&routing='$ROUTE --data \
+'{'"$PAGING"'
+    "query": {
+        '"$QUERY"'
+    }
+}'
+}
+
 # match expression in status index
 function __match () {
     CMND="$1"
@@ -278,12 +299,34 @@ function ____next_fetch_at () {
     CMND="$1"
     DATE="$2"
     shift 2
-    __query $CMND '
-                "range": {
-                    "nextFetchDate": {
-                        "lt": "'"$DATE"'"
-                    }
-                }' "$@"
+    __query $CMND \
+      '"range": {
+           "nextFetchDate": {
+               "lt": "'"$DATE"'"
+           }
+       }' "$@"
+}
+
+function ____next_fetch_at_for_host () {
+    CMND="$1"
+    DATE="$2"
+    HOST="$3"
+    shift 3
+    __query_routed $CMND "$HOST" \
+     '"bool" : {
+        "must": {
+           "term": {
+               "metadata.hostname": "'"$HOST"'"
+           }
+        },
+        "filter": {
+           "range": {
+               "nextFetchDate": {
+                 "lt": "'"$DATE"'"
+               }
+           }
+        }
+       }' "$@"
 }
 
 # documents to be fetched next
@@ -300,6 +343,15 @@ function __next_fetch_for_date () {
     DATE="$(____date "$2")"
     shift 2 || { echo "Not enough arguments"; exit 1; }
     ____next_fetch_at "$CMND" "$DATE" "$@"
+}
+
+# documents to be fetched next at date
+function __next_fetch_for_date_and_host () {
+    CMND="$1"
+    DATE="$(____date "$2")"
+    HOST="$3"
+    shift 3 || { echo "Not enough arguments"; exit 1; }
+    ____next_fetch_at_for_host "$CMND" "$DATE" "$HOST" "$@"
 }
 
 # match documents by field value and metadata
