@@ -182,6 +182,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             // its status
             metadata.setValue(Constants.STATUS_ERROR_SOURCE, "sitemap parsing");
             metadata.setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
+            metadata.remove("numLinks");
             collector.emit(Constants.StatusStreamName, tuple, new Values(url,
                     metadata, Status.ERROR));
             collector.ack(tuple);
@@ -203,6 +204,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             metadata.setValue(Constants.STATUS_ERROR_SOURCE,
                     "content filtering");
             metadata.setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
+            metadata.remove("numLinks");
             collector.emit(StatusStreamName, tuple, new Values(url, metadata,
                     Status.ERROR));
             collector.ack(tuple);
@@ -215,6 +217,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             metadata.setValue(isSitemapIndexKey, "true");
         } else {
             isSitemapIndex = false;
+            metadata.remove(isSitemapIndexKey);
         }
 
         // send to status stream
