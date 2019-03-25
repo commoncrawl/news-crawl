@@ -82,6 +82,11 @@ function ____show_help() {
     echo " fetch_at [search|count|update] <DATE> <TYPE> <TERM> <META>"
     echo "      bulk setting of next fetch time (or count/search to inspect impact before)"
     echo
+    echo " index_size"
+    echo "      current size (number of documents) of the status index"
+    echo " index_size_gb"
+    echo "      current size (GB) of the status index"
+    echo
     echo "Environment variables"
     echo " ES_STATUS_URL  URL to query status index, default: ${__ES_STATUS_URL_DEFAULT}"
     echo
@@ -229,7 +234,7 @@ function __inject_url () {
     done
     ID="$(echo -n "$URL" | sha256sum | cut -d' ' -f1)"
     $SHOW_COMMAND
-    $CURL -XPUT "$ES_STATUS_URL/status/$ID?op_type=create&routing=$ROUTING" --data '{
+    $CURL -XPUT "$ES_STATUS_URL/_doc/$ID?op_type=create&routing=$ROUTING" --data '{
     "url" : "'"$URL"'",
     "status" : "DISCOVERED",
     "metadata" : {
@@ -244,7 +249,7 @@ function __inject_url () {
 function __delete_url () {
     URL="$1"
     $SHOW_COMMAND
-    $CURL -XPOST $ES_STATUS_URL/status/_delete_by_query --data '{
+    $CURL -XPOST $ES_STATUS_URL/_doc/_delete_by_query --data '{
     "query": {
         "match": {
             "url": "'"$URL"'"
@@ -259,7 +264,7 @@ function __id () {
     ROUTING="$2"
     shift 2 || { echo "Not enough arguments"; exit 1; }
     $SHOW_COMMAND
-    $CURL -XGET "$ES_STATUS_URL/status/$ID?pretty&routing=$ROUTING"
+    $CURL -XGET "$ES_STATUS_URL/_doc/$ID?pretty&routing=$ROUTING"
 }
 
 # delete document/record by ID
@@ -267,7 +272,7 @@ function __delete_id () {
     ID="$(____escape_id "$1")"
     ROUTING="$2"
     $SHOW_COMMAND
-    $CURL -XDELETE "$ES_STATUS_URL/status/$ID?pretty&routing=$ROUTING"
+    $CURL -XDELETE "$ES_STATUS_URL/_doc/$ID?pretty&routing=$ROUTING"
 }
 
 # delete document/record by URL with forced routing
@@ -277,14 +282,14 @@ function __delete_url_with_routing () {
     ID="$(echo -n "$URL" | sha256sum | cut -d' ' -f1)"
     ID="$(____escape_id "$ID")"
     $SHOW_COMMAND
-    $CURL -XDELETE "$ES_STATUS_URL/status/$ID?pretty&routing=$ROUTING"
+    $CURL -XDELETE "$ES_STATUS_URL/_doc/$ID?pretty&routing=$ROUTING"
 }
 
 # list n documents
 function __list () {
     SIZE=$1
     $SHOW_COMMAND
-    $CURL -XGET "$ES_STATUS_URL/status/_search?pretty&size=$SIZE"
+    $CURL -XGET "$ES_STATUS_URL/_doc/_search?pretty&size=$SIZE"
 }
 
 # match documents by field and value
@@ -501,7 +506,7 @@ function __reset_by_query () {
                      ctx._source.metadata['\''last-modified'\''] = [];"
         },'
         SCRIPT="${SCRIPT//$'\n'/ }"
-        __update_by_query "$SCRIPT" "$QUERY"
+        $CMND "$SCRIPT" "$QUERY"
     else
         __query $CMND "$QUERY"
     fi
@@ -587,10 +592,33 @@ function __fetch_at () {
 }
 
 
+# set metadata for URL
+function __set_metadata_url () {
+    URL="$1"
+    METAFIELD="$2"
+    METAVALUE="$3"
+    shift 3 || { echo "Not enough arguments"; exit 1; }
+    SCRIPT='"script" : {
+          "inline": "ctx._source.metadata[\"'"$METAFIELD"'\"] = [\"'"$METAVALUE"'\"];"
+        },'
+    __update_by_query "$SCRIPT" '"match": {
+            "url": "'"$URL"'"
+        }'
+}
+
 function __index_stats() {
     $SHOW_COMMAND
+    FILTER="${1:-.}"
     $CURL -XGET $ES_STATUS_URL'/_stats' \
-          | jq ._all.primaries.docs
+          | jq "$FILTER"
+}
+
+function __index_size() {
+    __index_stats ._all.primaries.docs.count
+}
+
+function __index_size_gb() {
+    __index_stats "._all.primaries.store.size_in_bytes | (. / (1024*1024*1024))"
 }
 
 

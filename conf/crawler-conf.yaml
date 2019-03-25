@@ -7,6 +7,7 @@
 
 config: 
   topology.workers: 1
+  # topology timeout also defines the total time allowed to fetch a single page
   topology.message.timeout.secs: 300
   topology.max.spout.pending: 100
   topology.debug: false
@@ -32,7 +33,12 @@ config:
   partition.url.mode: "byDomain"
 
   http.content.limit: 1048576
-  
+
+  # store partial fetches as trimmed content (some content has been fetched,
+  # but reading more data from socket failed, eg. because of a network timeout)
+  http.content.partial.as.trimmed: true
+
+  # store HTTP headers (required for WARC files)
   http.store.headers: true
 
   urlfilters.config.file: "urlfilters.json"
@@ -40,13 +46,20 @@ config:
   
   # time bucket to use for the metrics sent by the Fetcher
   fetcher.metrics.time.bucket.secs: 60
-  
+
   fetcher.threads.number: 80
 
   worker.heap.memory.mb: 4096
 
   # increased network timeout (ms) for news sites from Asia and eastern Europe
-  http.timeout: 20000
+  http.timeout: 30000
+
+  # use okhttp
+  http.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
+  https.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
+
+  # do not fail on unknown SSL certificates
+  http.trust.everything: true
 
   # delay between successive requests to the same host
   # (be defensive, a delay of 5 sec. means about 1000 fetches per hour

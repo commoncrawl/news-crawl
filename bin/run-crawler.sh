@@ -4,6 +4,8 @@
 chown -R elasticsearch:elasticsearch /data/elasticsearch
 chown -R storm:storm /data/warc
 
+export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
 # as root
 /usr/bin/supervisord
 
@@ -12,6 +14,8 @@ sleep 60
 
 # start the news crawler as user ubuntu
 sudo -iu ubuntu /bin/bash <<"EOF"
+
+set -e
 
 cd $HOME/news-crawler/
 
@@ -25,11 +29,17 @@ STORMCRAWLER="storm jar $PWD/lib/crawler.jar"
 # inject seeds into Elasticsearch
 $STORMCRAWLER com.digitalpebble.stormcrawler.elasticsearch.ESSeedInjector \
 	$PWD/seeds '*' -conf $PWD/conf/es-conf.yaml -conf $PWD/conf/crawler-conf.yaml
+# alternatively running the flux
+#$STORMCRAWLER org.apache.storm.flux.Flux --remote $PWD/conf/es-injector.flux
+# wait until seeds are in the status index
 sleep 20
 
 # run the crawler
 $STORMCRAWLER org.commoncrawl.stormcrawler.news.CrawlTopology \
 	-conf $PWD/conf/es-conf.yaml -conf $PWD/conf/crawler-conf.yaml
+# alternatively running the flux
+#$STORMCRAWLER org.apache.storm.flux.Flux --remote $PWD/conf/crawler.flux
+# suppress warnings about malformed XML in sitemaps
 storm set_log_level NewsCrawl \
       -l crawlercommons.sitemaps.SiteMapParser=ERROR
 

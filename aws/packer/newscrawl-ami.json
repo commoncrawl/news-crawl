@@ -11,9 +11,10 @@
     "source_ami_filter": {
 	    "filters": {
 	      "virtualization-type": "hvm",
-	      "name": "amzn-ami-hvm-*",
+	      "name": "amzn2-ami-hvm-2.0.*-x86_64-ebs",
 	      "root-device-type": "ebs"
 	    },
+	    "owners": ["137112412989"],
 	    "most_recent": true
 	},
     "instance_type": "r4.xlarge",
@@ -32,7 +33,7 @@
         {
           "device_name": "/dev/sdb",
           "virtual_name": "ephemeral0",
-          "volume_size": 200,
+          "volume_size": 64,
           "volume_type": "gp2",
           "delete_on_termination": true
         }
@@ -61,8 +62,8 @@
       },
       {
         "type": "file",
-        "source": "target/crawler-1.13.jar",
-        "destination": "/tmp/install/news-crawler/lib/crawler-1.13.jar"
+        "source": "target/crawler-1.14.jar",
+        "destination": "/tmp/install/news-crawler/lib/crawler-1.14.jar"
       },
       {
         "type": "file",

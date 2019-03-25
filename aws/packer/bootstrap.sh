@@ -9,8 +9,7 @@ sudo sh -c 'echo "LC_ALL=en_US.utf-8" >> /etc/environment'
 sh -c 'echo "syntax on" >~/.vimrc'
 
 sudo yum update -y
-sudo yum remove  -y java-1.7.0-openjdk
-sudo yum install -y java-1.8.0-openjdk-devel git jq
+sudo yum install -y java-1.8.0-openjdk-devel git jq python2-pip
 
 #
 # Supervisord
@@ -28,21 +27,21 @@ sudo cp /tmp/install/etc/supervisor/supervisord.conf /etc/supervisor/supervisord
 #
 # see https://www.elastic.co/guide/en/elasticsearch/reference/master/rpm.html
 #
-ES_VERSION=6.5.3
+ES_VERSION=7.0.0
 sudo rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
 sudo bash -c 'cat >/etc/yum.repos.d/elasticsearch.repo <<"EOF"
-[elasticsearch-6.x]
-name=Elasticsearch repository for 6.x packages
-baseurl=https://artifacts.elastic.co/packages/6.x/yum
+[elasticsearch-7.x]
+name=Elasticsearch repository for 7.x packages
+baseurl=https://artifacts.elastic.co/packages/7.x/yum
 gpgcheck=1
 gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
 enabled=1
 autorefresh=1
 type=rpm-md
 
-[kibana-6.x]
-name=Kibana repository for 6.x packages
-baseurl=https://artifacts.elastic.co/packages/6.x/yum
+[kibana-7.x]
+name=Kibana repository for 7.x packages
+baseurl=https://artifacts.elastic.co/packages/7.x/yum
 gpgcheck=1
 gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
 enabled=1
@@ -76,12 +75,12 @@ sudo sed -Ei 's@^path\.data: .*@path.data: /data/elasticsearch@' /etc/elasticsea
 #
 # Apache Storm and Zookeeper
 #
-ZOOKEEPER_VERSION=3.4.13
-wget -q -O - http://mirrors.ukfast.co.uk/sites/ftp.apache.org/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz \
+ZOOKEEPER_VERSION=3.4.14
+wget -q -O - http://www-us.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz \
     | sudo tar -xzf - -C /opt
 ZOOKEEPER_HOME=/opt/zookeeper-$ZOOKEEPER_VERSION
 STORM_VERSION=1.2.2
-wget -q -O - http://mirrors.ukfast.co.uk/sites/ftp.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz \
+wget -q -O - http://www-us.apache.org/dist/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz \
     | sudo tar -xzf - -C /opt
 STORM_HOME=/opt/apache-storm-$STORM_VERSION
 sudo groupadd storm
@@ -110,7 +109,7 @@ mkdir -p news-crawler/{conf,bin,lib,seeds}
 # seeds must be readable for user "storm"
 chmod a+rx news-crawler/seeds/
 chmod 644 news-crawler/seeds/*
-cp /tmp/install/news-crawler/lib/crawler-1.13.jar news-crawler/lib/
+cp /tmp/install/news-crawler/lib/crawler-1.14.jar news-crawler/lib/
 chmod u+x news-crawler/bin/*
 
 

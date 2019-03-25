@@ -18,13 +18,12 @@ curl $ESCREDENTIALS -s -XPUT $ESHOST/status -H 'Content-Type: application/json' 
 {
 	"settings": {
 		"index": {
-			"number_of_shards": 10,
+			"number_of_shards": 16,
 			"number_of_replicas": 1,
 			"refresh_interval": "5s"
 		}
 	},
 	"mappings": {
-		"status": {
 			"dynamic_templates": [{
 				"metadata": {
 					"path_match": "metadata.*",
@@ -49,7 +48,6 @@ curl $ESCREDENTIALS -s -XPUT $ESHOST/status -H 'Content-Type: application/json' 
 					"type": "keyword"
 				}
 			}
-		}
 	}
 }'
 
@@ -74,10 +72,12 @@ curl $ESCREDENTIALS -s -XPOST $ESHOST/_template/storm-metrics-template -H 'Conte
     "number_of_replicas" : 0
   },
   "mappings": {
-    "datapoint": {
       "_source":         { "enabled": true },
       "properties": {
           "name": {
+            "type": "keyword"
+          },
+          "stormId": {
             "type": "keyword"
           },
           "srcComponentId": {
@@ -100,7 +100,6 @@ curl $ESCREDENTIALS -s -XPOST $ESHOST/_template/storm-metrics-template -H 'Conte
             "type": "double"
           }
       }
-    }
   }
 }'
 

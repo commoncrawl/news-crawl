@@ -56,7 +56,7 @@ public class CrawlTopology extends ConfigurableTopology {
 
         // set to the real number of shards ONLY if es.status.routing is set to
         // true in the configuration
-        int numShards = 10;
+        int numShards = 16;
 
         builder.setSpout("spout", new AggregationSpout(), numShards);
 
@@ -102,12 +102,16 @@ public class CrawlTopology extends ConfigurableTopology {
         fileNameFormat.withPrefix(filePrefix);
 
         Map<String, String> fields = new LinkedHashMap<>();
-        fields.put("software:", "StormCrawler 1.13 http://stormcrawler.net/");
+        fields.put("software:", "StormCrawler 1.14 http://stormcrawler.net/");
         fields.put("description", "News crawl for Common Crawl");
         String userAgent = AbstractHttpProtocol.getAgentString(getConf());
         fields.put("http-header-user-agent", userAgent);
         fields.put("http-header-from",
                 ConfUtils.getString(getConf(), "http.agent.email"));
+        String robotsTxtParser = "checked by crawler-commons "
+                + crawlercommons.CrawlerCommons.getVersion()
+                + " (https://github.com/crawler-commons/crawler-commons)";
+        fields.put("robots", robotsTxtParser);
         fields.put("format", "WARC File Format 1.1");
         fields.put("conformsTo",
                 "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/");
@@ -116,6 +120,7 @@ public class CrawlTopology extends ConfigurableTopology {
         warcbolt.withConfigKey("warc");
         warcbolt.withFileNameFormat(fileNameFormat);
         warcbolt.withHeader(fields);
+        warcbolt.withRequestRecords();
 
         // use RawLocalFileSystem (instead of ChecksumFileSystem) to avoid that
         // WARC files are truncated if the topology is stopped because of a

@@ -1,4 +1,4 @@
-name: "newscrawl"
+name: "NewsCrawl"
 
 includes:
     - resource: true
@@ -13,25 +13,72 @@ includes:
       file: "es-conf.yaml"
       override: true
 
-# specific to feeds processing
 config:
-  parser.emitOutlinks: false
-  fetchInterval.isFeed=true: 10
-  # revisit a page with a fetch error after 2 hours (value in minutes)
-  fetchInterval.fetch.error: 120
+  # use RawLocalFileSystem (instead of ChecksumFileSystem) to avoid that
+  # WARC files are truncated if the topology is stopped because of a
+  # delayed sync of the default ChecksumFileSystem
+  warc: {"fs.file.impl": "org.apache.hadoop.fs.RawLocalFileSystem"}
 
 components:
-  - id: "filenameformat"
+  - id: "WARCFileNameFormat"
     className: "com.digitalpebble.stormcrawler.warc.WARCFileNameFormat"
     configMethods:
       - name: "withPath"
         args:
-          - "/tmp/warc"
+          - "/data/warc"
+      - name: "withPrefix"
+        args:
+          - "CC-NEWS"
+  - id: "WARCFileRotationPolicy"
+    className: "com.digitalpebble.stormcrawler.warc.FileTimeSizeRotationPolicy"
+    constructorArgs:
+      - 1024
+      - MB
+    configMethods:
+      - name: "setTimeRotationInterval"
+        args:
+          - 1440
+          - MINUTES
+  - id: "WARCInfo"
+    className: "java.util.LinkedHashMap"
+    configMethods:
+      - name: "put"
+        args:
+         - "software"
+         - "StormCrawler 1.14 http://stormcrawler.net/"
+      - name: "put"
+        args:
+         - "description"
+         - "News crawl for Common Crawl"
+      - name: "put"
+        args:
+         - "http-header-user-agent"
+         - "... Please insert your user-agent name"
+      - name: "put"
+        args:
+         - "http-header-from"
+         - "..."
+      - name: "put"
+        args:
+         - "operator"
+         - "..."
+      - name: "put"
+        args:
+         - "robots"
+         - "..."
+      - name: "put"
+        args:
+         - "format"
+         - "WARC File Format 1.1"
+      - name: "put"
+        args:
+         - "conformsTo"
+         - "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/"
 
 spouts:
   - id: "spout"
     className: "com.digitalpebble.stormcrawler.elasticsearch.persistence.AggregationSpout"
-    parallelism: 10
+    parallelism: 16
 
 bolts:
   - id: "partitioner"
@@ -39,6 +86,9 @@ bolts:
     parallelism: 1
   - id: "fetcher"
     className: "com.digitalpebble.stormcrawler.bolt.FetcherBolt"
+    parallelism: 1
+  - id: "sitemap"
+    className: "org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt"
     parallelism: 1
   - id: "feed"
     className: "com.digitalpebble.stormcrawler.bolt.FeedParserBolt"
@@ -52,7 +102,17 @@ bolts:
     configMethods:
       - name: "withFileNameFormat"
         args:
-          ref: "filenameformat"
+          - ref: "WARCFileNameFormat"
+      - name: "withRotationPolicy"
+        args:
+          - ref: "WARCFileRotationPolicy"
+      - name: "withRequestRecords"
+      - name: "withHeader"
+        args:
+          - ref: "WARCInfo"
+      - name: "withConfigKey"
+        args:
+          - "warc"
   - id: "status"
     className: "com.digitalpebble.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt"
     parallelism: 1
@@ -70,6 +130,11 @@ streams:
       args: ["key"]
 
   - from: "fetcher"
+    to: "sitemap"
+    grouping:
+      type: LOCAL_OR_SHUFFLE
+
+  - from: "sitemap"
     to: "feed"
     grouping:
       type: LOCAL_OR_SHUFFLE
@@ -85,6 +150,12 @@ streams:
       type: LOCAL_OR_SHUFFLE
 
   - from: "fetcher"
+    to: "status"
+    grouping:
+      type: LOCAL_OR_SHUFFLE
+      streamId: "status"
+
+  - from: "sitemap"
     to: "status"
     grouping:
       type: LOCAL_OR_SHUFFLE
