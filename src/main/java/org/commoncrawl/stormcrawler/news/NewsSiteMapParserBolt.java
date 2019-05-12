@@ -74,6 +74,12 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
     public static final String isSitemapNewsKey = "isSitemapNews";
     public static final String isSitemapIndexKey = "isSitemapIndex";
+    /**
+     * A sitemap (not necessarily a news sitemap) which is verified to contain
+     * links to news articles. Necessary to crawl news sites which provide a
+     * sitemap but neither a news feed or sitemap.
+     */
+    public static final String isSitemapVerifiedKey = "isSitemapVerified";
 
     private static final org.slf4j.Logger LOG = LoggerFactory
             .getLogger(NewsSiteMapParserBolt.class);
@@ -118,6 +124,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 .valueOf(metadata.getFirstValue(isSitemapNewsKey));
         boolean isSitemapIndex = Boolean
                 .valueOf(metadata.getFirstValue(isSitemapIndexKey));
+        boolean isSitemapVerified = Boolean
+                .valueOf(metadata.getFirstValue(isSitemapVerifiedKey));
 
         if (sniffContent) {
             // try based on the first bytes?
@@ -142,6 +150,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                     LOG.info("{} detected as sitemap index based on content",
                             url);
                     metadata.setValue(isSitemapIndexKey, "true");
+                } else if (isSitemapVerified) {
+                    // do not reset metadata for verified sitemaps
                 } else {
                     // sitemaps may change: reset wrong metadata values from
                     // previous fetches
@@ -228,6 +238,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         for (Outlink ol : outlinks) {
             if (isSitemapIndex) {
                 ol.getMetadata().setValue(isSitemapKey, "true");
+                if (isSitemapVerified) {
+                    // mark sitemaps from verified sitemap index also as "verified"
+                    ol.getMetadata().setValue(isSitemapVerifiedKey, "true");
+                }
             }
             Values v = new Values(ol.getTargetURL(), ol.getMetadata(),
                     Status.DISCOVERED);
