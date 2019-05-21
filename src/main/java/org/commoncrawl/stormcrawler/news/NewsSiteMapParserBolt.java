@@ -182,7 +182,14 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             }
         }
 
-        if (!(isNewsSitemap || isSitemapIndex)) {
+        if (isNewsSitemap || isSitemapIndex || isSitemapVerified) {
+            /*
+             * remove the isSitemap key from metadata to avoid that the default
+             * sitemap fetch interval is applied to news sitemaps, sitemap
+             * indexes and verified sitemaps
+             */
+            metadata.remove(isSitemapKey);
+        } else {
             if (isSitemap) {
                 collector.emit(Constants.StatusStreamName, tuple,
                         new Values(url, metadata, Status.FETCHED));

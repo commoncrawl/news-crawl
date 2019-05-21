@@ -68,7 +68,7 @@ config:
   # delay between successive requests to the same host
   # (be defensive, a delay of 5 sec. means about 1000 fetches per hour
   #  which should be enough even for large news sites)
-  fetcher.server.delay: 3.0
+  fetcher.server.delay: 5.0
 
   # generous max. crawl delay
   # (fetch content even if the robots.txt specifies a large host-specific crawl delay:
@@ -101,19 +101,25 @@ config:
   # - 10 years (-1 would not allow to distinguish the fetch time, required for clean-ups)
   fetchInterval.default: 5256000
   
-  # revisit a page with a fetch error after 2 hours (value in minutes)
-  fetchInterval.fetch.error: 120
+  # revisit a page with a transient fetch error after 48 hours (value in minutes)
+  # - choose a larger interval (2 days instead of 2 hours) to give the server
+  #   enough time to recover
+  # - this is important for seeds and sitemaps which may flip into error state
+  #   if the refetch interval is too short in case the server is unavailable for
+  #     (max.fetch.errors - 1) * fetchInterval.fetch.error
+  fetchInterval.fetch.error: 2880
   
   # revisit a page with an error after 3 month (value in minutes)
   fetchInterval.error: 133920
 
   # custom interval for feeds and sitemaps
 
-  # try to re-fetch failed feeds or sitemaps after 2 month
+  # try to re-fetch failed feeds or sitemaps after 3 days
+  fetchInterval.FETCH_ERROR.isFeed=true: 4320
+  fetchInterval.FETCH_ERROR.isSitemapNews=true: 4320
+  fetchInterval.FETCH_ERROR.isSitemapIndex=true: 4320
+  # try to re-fetch feeds or sitemaps with status 404 or equiv. after 2 months
   # (status is neither FETCHED, REDIRECTION, or DISCOVERED)
-  fetchInterval.FETCH_ERROR.isFeed=true: 86400
-  fetchInterval.FETCH_ERROR.isSitemapNews=true: 86400
-  fetchInterval.FETCH_ERROR.isSitemapIndex=true: 86400
   fetchInterval.ERROR.isFeed=true: 86400
   fetchInterval.ERROR.isSitemapNews=true: 86400
   fetchInterval.ERROR.isSitemapIndex=true: 86400
@@ -129,6 +135,7 @@ config:
 
   # news sitemaps may contain up to 1000 URLs, re-fetch daily
   fetchInterval.FETCHED.isSitemapNews=true: 1440
+  fetchInterval.FETCHED.isSitemapVerified=true: 1440
 
   # a sitemap index may contain a new link to a news sitemap
   # but usually more links to non-news sitemaps, re-fetch weekly
@@ -186,6 +193,7 @@ config:
    - isSitemap
    - isSitemapNews
    - isSitemapIndex
+   - isSitemapVerified
    - isFeed
    - numLinks
    - last-modified
@@ -195,6 +203,7 @@ config:
   # whether to track the URL path
   # (allows to identify which feeds and sitemaps contribute links)
   metadata.track.path: true
+  metadata.track.depth: false
 
   # HTTP 'User-Agent' request header
   # NOTE: must set these configuration properties to identify your bot!

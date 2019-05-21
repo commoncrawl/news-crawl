@@ -47,10 +47,10 @@ config:
   spout.reset.fetchdate.after: 1200
 
   es.status.max.buckets: 200
-  # max. URLs per bucket (= domain name): 30 sec. / 3 sec. fetch delay = 10
+  # max. URLs per bucket (= domain name): 30 sec. / 5 sec. fetch delay = 6
   # but set to a lower number for domains with longer crawl-delay
   # cf. also fetcher.max.queue.size and fetcher.max.urls.in.queues
-  es.status.max.urls.per.bucket: 6
+  es.status.max.urls.per.bucket: 5
   # field to group the URLs into buckets
   es.status.bucket.field: "metadata.hostname"
   # field to sort the URLs within a bucket
