@@ -83,9 +83,9 @@ function ____show_help() {
     echo "      bulk setting of next fetch time (or count/search to inspect impact before)"
     echo
     echo " index_size"
-    echo "      current size (number of documents) of the status index"
+    echo "      show current size (number of documents) of the status index"
     echo " index_size_gb"
-    echo "      current size (GB) of the status index"
+    echo "      show current size (storage in GiB) of the status index"
     echo
     echo "Environment variables"
     echo " ES_STATUS_URL  URL to query status index, default: ${__ES_STATUS_URL_DEFAULT}"
@@ -606,17 +606,20 @@ function __set_metadata_url () {
         }'
 }
 
+# get index statistics
 function __index_stats() {
-    $SHOW_COMMAND
     FILTER="${1:-.}"
+    $SHOW_COMMAND
     $CURL -XGET $ES_STATUS_URL'/_stats' \
           | jq "$FILTER"
 }
 
+# show index size (number of documents)
 function __index_size() {
     __index_stats ._all.primaries.docs.count
 }
 
+# show index size (storage in GiB)
 function __index_size_gb() {
     __index_stats "._all.primaries.store.size_in_bytes | (. / (1024*1024*1024))"
 }

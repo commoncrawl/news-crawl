@@ -30,7 +30,7 @@ config:
   # positive or negative filter parsable by the Lucene Query Parser
   # es.status.filterQuery: "-(metadata.hostname:stormcrawler.net)"
 
-  # time in secs for which the URLs will be considered for fetching after a ack of fail
+  # time in secs for which the URLs will be considered for fetching after a ack or fail
   # need a high value to avoid duplicates by URLs added multiple times to the fetcher
   # queues, should be close to
   #    fetcher.max.crawl.delay * fetcher.max.queue.size
@@ -44,7 +44,7 @@ config:
   # might be returned.
   # - should reset to avoid that a bucket with many URLs blocks incrementing the date to look
   #   for next fetches for a specific bucket. May happen if a news sitemap adds 1000s of URLs.
-  spout.reset.fetchdate.after: 1200
+  spout.reset.fetchdate.after: 240
 
   es.status.max.buckets: 200
   # max. URLs per bucket (= domain name): 30 sec. / 5 sec. fetch delay = 6
@@ -58,7 +58,7 @@ config:
   # field to sort the buckets
   es.status.global.sort.field: "nextFetchDate"
 
-    # CollapsingSpout : limits the deep paging by resetting the start offset for the ES query
+  # CollapsingSpout : limits the deep paging by resetting the start offset for the ES query
   es.status.max.start.offset: 500
 
   # AggregationSpout : sampling improves the performance on large crawls

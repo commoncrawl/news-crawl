@@ -61,10 +61,6 @@ config:
   # do not fail on unknown SSL certificates
   http.trust.everything: true
 
-  # use okhttp
-  http.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
-  https.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
-
   # delay between successive requests to the same host
   # (be defensive, a delay of 5 sec. means about 1000 fetches per hour
   #  which should be enough even for large news sites)
@@ -79,7 +75,7 @@ config:
   # limit the number of queued URLs
   # - avoid duplicate fetches (queues are not sets)
   fetcher.max.queue.size: 10
-  fetcher.max.urls.in.queues: 3000
+  fetcher.max.urls.in.queues: 6000
 
   # fetch Scheduler implementation
   scheduler.class: "com.digitalpebble.stormcrawler.persistence.AdaptiveScheduler"
@@ -118,6 +114,7 @@ config:
   fetchInterval.FETCH_ERROR.isFeed=true: 4320
   fetchInterval.FETCH_ERROR.isSitemapNews=true: 4320
   fetchInterval.FETCH_ERROR.isSitemapIndex=true: 4320
+
   # try to re-fetch feeds or sitemaps with status 404 or equiv. after 2 months
   # (status is neither FETCHED, REDIRECTION, or DISCOVERED)
   fetchInterval.ERROR.isFeed=true: 86400
