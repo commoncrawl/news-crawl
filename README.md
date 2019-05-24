@@ -1,6 +1,7 @@
 # NEWS-CRAWL
 
-Crawler for news feeds based on [StormCrawler](http://stormcrawler.net). Produces WARC files to be stored as part of the CommonCrawl dataset.
+Crawler for news feeds based on [StormCrawler](http://stormcrawler.net). Produces WARC files to be stored as part of the [Common Crawl](https://commoncrawl.org/). The data is hosted as [AWS Open Data Set](https://registry.opendata.aws/) – if you want to use the data and not the crawler software please read [the announcement of the news dataset](https://commoncrawl.org/2016/10/news-dataset-available/).
+
 
 Prerequisites
 ------------
