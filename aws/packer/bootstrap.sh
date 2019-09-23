@@ -27,7 +27,7 @@ sudo cp /tmp/install/etc/supervisor/supervisord.conf /etc/supervisor/supervisord
 #
 # see https://www.elastic.co/guide/en/elasticsearch/reference/master/rpm.html
 #
-ES_VERSION=7.0.0
+ES_VERSION=7.3.0
 sudo rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
 sudo bash -c 'cat >/etc/yum.repos.d/elasticsearch.repo <<"EOF"
 [elasticsearch-7.x]
@@ -79,7 +79,7 @@ ZOOKEEPER_VERSION=3.4.14
 wget -q -O - http://www-us.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz \
     | sudo tar -xzf - -C /opt
 ZOOKEEPER_HOME=/opt/zookeeper-$ZOOKEEPER_VERSION
-STORM_VERSION=1.2.2
+STORM_VERSION=1.2.3
 wget -q -O - http://www-us.apache.org/dist/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz \
     | sudo tar -xzf - -C /opt
 STORM_HOME=/opt/apache-storm-$STORM_VERSION
@@ -109,7 +109,7 @@ mkdir -p news-crawler/{conf,bin,lib,seeds}
 # seeds must be readable for user "storm"
 chmod a+rx news-crawler/seeds/
 chmod 644 news-crawler/seeds/*
-cp /tmp/install/news-crawler/lib/crawler-1.14.jar news-crawler/lib/
+cp /tmp/install/news-crawler/lib/crawler-1.15.jar news-crawler/lib/
 chmod u+x news-crawler/bin/*
 
 

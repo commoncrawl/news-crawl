@@ -4,14 +4,14 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.commoncrawl.stormcrawler.news</groupId>
 	<artifactId>crawler</artifactId>
-	<version>1.14</version>
+	<version>1.15</version>
 	<packaging>jar</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<storm-crawler.version>1.14</storm-crawler.version>
-		<storm-core.version>1.2.2</storm-core.version>
-		<jackson-databind.version>2.8.11.3</jackson-databind.version>
+		<storm-crawler.version>1.15</storm-crawler.version>
+		<storm-core.version>1.2.3</storm-core.version>
+		<jackson-databind.version>2.9.9.2</jackson-databind.version>
 		<crawler-commons.version>1.0</crawler-commons.version>
 		<mockito-all.version>1.10.8</mockito-all.version>
 		<wiremock.version>2.22.0</wiremock.version>
@@ -22,7 +22,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.2</version>
+				<version>3.8.1</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
@@ -32,7 +32,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.3.2</version>
+				<version>1.6.0</version>
 				<executions>
 					<execution>
 						<goals>
@@ -51,7 +51,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>1.3.3</version>
+				<version>3.2.1</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -101,7 +101,10 @@
 			<plugin>
 				<groupId>org.owasp</groupId>
 				<artifactId>dependency-check-maven</artifactId>
-				<version>3.3.2</version>
+				<version>5.2.2</version>
+				<configuration>
+					<skipSystemScope>true</skipSystemScope>
+				</configuration>
 				<executions>
 					<execution>
 						<goals>

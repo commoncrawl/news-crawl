@@ -24,7 +24,7 @@ RUN apt-get update -qq && \
 #
 # Elasticsearch and Kibana
 #
-ENV ES_VERSION=7.0.0
+ENV ES_VERSION=7.3.0
 RUN wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch \
 	| apt-key add -
 RUN echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" \
@@ -50,7 +50,7 @@ RUN sed -Ei 's@^path\.data: .*@path.data: /data/elasticsearch@' /etc/elasticsear
 #
 # Apache Storm
 #
-ENV STORM_VERSION=1.2.2
+ENV STORM_VERSION=1.2.3
 COPY downloads/apache-storm-$STORM_VERSION.tar.gz /tmp/apache-storm-$STORM_VERSION.tar.gz
 RUN tar -xzf /tmp/apache-storm-$STORM_VERSION.tar.gz -C /opt
 RUN rm /tmp/apache-storm-$STORM_VERSION.tar.gz
@@ -84,7 +84,7 @@ RUN mkdir news-crawler/ && \
     mkdir news-crawler/seeds/ && \
     chmod -R a+rx news-crawler/
 # add the news crawler uber-jar
-ADD target/crawler-1.14.jar news-crawler/lib/crawler.jar
+ADD target/crawler-1.15.jar news-crawler/lib/crawler.jar
 # and configuration files
 ADD conf/*.*        news-crawler/conf/
 ADD seeds/*.txt     news-crawler/seeds/
