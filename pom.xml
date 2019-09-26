@@ -118,6 +118,12 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>com.digitalpebble.stormcrawler</groupId>
+			<artifactId>storm-crawler-core</artifactId>
+			<version>${storm-crawler.version}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.apache.storm</groupId>
 			<artifactId>storm-core</artifactId>
 			<version>${storm-core.version}</version>
@@ -129,11 +135,6 @@
 			<version>${storm-core.version}</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.digitalpebble.stormcrawler</groupId>
-			<artifactId>storm-crawler-core</artifactId>
-			<version>${storm-crawler.version}</version>
-		</dependency>
 		<dependency>
 			<groupId>com.digitalpebble.stormcrawler</groupId>
 			<artifactId>storm-crawler-elasticsearch</artifactId>
