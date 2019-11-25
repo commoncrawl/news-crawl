@@ -11,7 +11,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<storm-crawler.version>1.15</storm-crawler.version>
 		<storm-core.version>1.2.3</storm-core.version>
-		<jackson-databind.version>2.9.9.2</jackson-databind.version>
+		<jackson-databind.version>2.10.1</jackson-databind.version>
 		<crawler-commons.version>1.0</crawler-commons.version>
 		<mockito-all.version>1.10.8</mockito-all.version>
 		<wiremock.version>2.22.0</wiremock.version>
