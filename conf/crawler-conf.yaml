@@ -72,6 +72,10 @@ config:
   #  about 1000 pages per day, enough for small news sites)
   fetcher.max.crawl.delay: 120
 
+  # use the larger default delay (fetcher.server.delay)
+  # in case a shorter crawl-delay is defined in the robots.txt
+  fetcher.server.delay.force: true
+
   # limit the number of queued URLs
   # - avoid duplicate fetches (queues are not sets)
   fetcher.max.queue.size: 10
