@@ -32,6 +32,10 @@ config:
 
   partition.url.mode: "byDomain"
 
+  # The maximum number of bytes for returned HTTP response bodies.
+  # The fetched page will be trimmed to 65KB in this case
+  # Set -1 to disable the limit.
+  # Content payload of WARC records is limit to 1 MiB:
   http.content.limit: 1048576
 
   # store partial fetches as trimmed content (some content has been fetched,
@@ -41,8 +45,13 @@ config:
   # store HTTP headers (required for WARC files)
   http.store.headers: true
 
-  urlfilters.config.file: "urlfilters.json"
+  # FetcherBolt queue dump => comment out to activate
+  # if a file exists on the worker machine with the corresponding port number
+  # the FetcherBolt will log the content of its internal queues to the logs
+  # fetcherbolt.queue.debug.filepath: "/tmp/fetcher-dump-{port}"
+
   parsefilters.config.file: "parsefilters.json"
+  urlfilters.config.file: "urlfilters.json"
   
   # time bucket to use for the metrics sent by the Fetcher
   fetcher.metrics.time.bucket.secs: 60
@@ -50,6 +59,9 @@ config:
   fetcher.threads.number: 80
 
   worker.heap.memory.mb: 4096
+  # override the JVM parameters for the workers
+  # topology.worker.childopts: "-Xmx2g -Djava.net.preferIPv4Stack=true"
+
 
   # increased network timeout (ms) for news sites from Asia and eastern Europe
   http.timeout: 30000
@@ -61,7 +73,7 @@ config:
   # do not fail on unknown SSL certificates
   http.trust.everything: true
 
-  # delay between successive requests to the same host
+  # delay between successive requests to the same host/domain
   # (be defensive, a delay of 5 sec. means about 1000 fetches per hour
   #  which should be enough even for large news sites)
   fetcher.server.delay: 5.0
