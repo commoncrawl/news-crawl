@@ -35,7 +35,6 @@ RUN apt-get update -qq && \
 		kibana=$ES_VERSION
 RUN ln -s /usr/share/elasticsearch/bin/elasticsearch /usr/bin/elasticsearch
 RUN ln -s /usr/share/kibana/bin/kibana /usr/bin/kibana
-RUN chown -R kibana:kibana /usr/share/kibana/
 USER root
 # system configuration, see https://www.elastic.co/guide/en/elasticsearch/reference/current/deb.html
 ADD etc/sysctl.d/60-elasticsearch.conf       /etc/sysctl.d/60-elasticsearch.conf
