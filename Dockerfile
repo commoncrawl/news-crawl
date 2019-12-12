@@ -69,8 +69,9 @@ RUN chmod -R 644 /etc/supervisor/conf.d/*.conf
 
 
 #
-# Storm crawler
+# Storm crawler / news crawler
 #
+ENV CRAWLER_VERSION=1.15
 RUN groupadd ubuntu && \
 	useradd --gid ubuntu --home-dir /home/ubuntu \
 			--create-home --shell /bin/bash ubuntu && \
@@ -84,7 +85,7 @@ RUN mkdir news-crawler/ && \
     mkdir news-crawler/seeds/ && \
     chmod -R a+rx news-crawler/
 # add the news crawler uber-jar
-ADD target/crawler-1.15.jar news-crawler/lib/crawler.jar
+ADD target/crawler-$CRAWLER_VERSION.jar news-crawler/lib/crawler.jar
 # and configuration files
 ADD conf/*.*        news-crawler/conf/
 ADD seeds/*.txt     news-crawler/seeds/
