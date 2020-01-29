@@ -109,7 +109,7 @@ mkdir -p news-crawler/{conf,bin,lib,seeds}
 # seeds must be readable for user "storm"
 chmod a+rx news-crawler/seeds/
 chmod 644 news-crawler/seeds/*
-cp /tmp/install/news-crawler/lib/crawler-1.15.jar news-crawler/lib/
+cp /tmp/install/news-crawler/lib/crawler-1.16.jar news-crawler/lib/
 chmod u+x news-crawler/bin/*
 
 

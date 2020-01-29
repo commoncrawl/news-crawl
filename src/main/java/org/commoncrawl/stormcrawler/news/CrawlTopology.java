@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.stormcrawler.warc.FileTimeSizeRotationPolicy;
 import com.digitalpebble.stormcrawler.warc.FileTimeSizeRotationPolicy.Units;
@@ -30,12 +31,15 @@ import com.digitalpebble.stormcrawler.ConfigurableTopology;
 import com.digitalpebble.stormcrawler.Constants;
 import com.digitalpebble.stormcrawler.bolt.FeedParserBolt;
 import com.digitalpebble.stormcrawler.bolt.FetcherBolt;
+import com.digitalpebble.stormcrawler.bolt.URLFilterBolt;
 import com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.AggregationSpout;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt;
 import com.digitalpebble.stormcrawler.indexing.DummyIndexer;
 import com.digitalpebble.stormcrawler.protocol.AbstractHttpProtocol;
+import com.digitalpebble.stormcrawler.spout.FileSpout;
 import com.digitalpebble.stormcrawler.util.ConfUtils;
+import com.digitalpebble.stormcrawler.util.URLStreamGrouping;
 import com.digitalpebble.stormcrawler.warc.WARCFileNameFormat;
 import com.digitalpebble.stormcrawler.warc.WARCHdfsBolt;
 
@@ -43,6 +47,9 @@ import com.digitalpebble.stormcrawler.warc.WARCHdfsBolt;
  * Dummy topology to play with the spouts and bolts on ElasticSearch
  */
 public class CrawlTopology extends ConfigurableTopology {
+
+    private static final org.slf4j.Logger LOG = LoggerFactory
+            .getLogger(CrawlTopology.class);
 
     public static void main(String[] args) throws Exception {
         ConfigurableTopology.start(new CrawlTopology(), args);
@@ -57,6 +64,17 @@ public class CrawlTopology extends ConfigurableTopology {
         // set to the real number of shards ONLY if es.status.routing is set to
         // true in the configuration
         int numShards = 16;
+
+        if (args.length >= 2) {
+            // arguments include seed directory and file pattern
+            LOG.info("Injecting seeds from {} by pattern {}", args[0], args[1]);
+            builder.setSpout("filespout",
+                    new FileSpout(args[0], args[1], true));
+            Fields key = new Fields("url");
+
+            builder.setBolt("filter", new URLFilterBolt()).fieldsGrouping(
+                    "filespout", Constants.StatusStreamName, key);
+        }
 
         builder.setSpout("spout", new AggregationSpout(), numShards);
 
@@ -87,7 +105,9 @@ public class CrawlTopology extends ConfigurableTopology {
                 .localOrShuffleGrouping("sitemap", Constants.StatusStreamName)
                 .localOrShuffleGrouping("feed", Constants.StatusStreamName)
                 .localOrShuffleGrouping("ssb", Constants.StatusStreamName)
-                .setNumTasks(numShards);
+                .setNumTasks(numShards)
+                .customGrouping("filter", Constants.StatusStreamName,
+                        new URLStreamGrouping());;
 
         return submit(conf, builder);
     }
@@ -102,7 +122,7 @@ public class CrawlTopology extends ConfigurableTopology {
         fileNameFormat.withPrefix(filePrefix);
 
         Map<String, String> fields = new LinkedHashMap<>();
-        fields.put("software:", "StormCrawler 1.15 http://stormcrawler.net/");
+        fields.put("software:", "StormCrawler 1.16 http://stormcrawler.net/");
         fields.put("description", "News crawl for Common Crawl");
         String userAgent = AbstractHttpProtocol.getAgentString(getConf());
         fields.put("http-header-user-agent", userAgent);

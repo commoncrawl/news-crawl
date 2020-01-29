@@ -45,7 +45,7 @@ components:
       - name: "put"
         args:
          - "software"
-         - "StormCrawler 1.15 http://stormcrawler.net/"
+         - "StormCrawler 1.16 http://stormcrawler.net/"
       - name: "put"
         args:
          - "description"
@@ -79,8 +79,18 @@ spouts:
   - id: "spout"
     className: "com.digitalpebble.stormcrawler.elasticsearch.persistence.AggregationSpout"
     parallelism: 16
+  - id: "filespout"
+    className: "com.digitalpebble.stormcrawler.spout.FileSpout"
+    parallelism: 1
+    constructorArgs:
+      - "/path/to/seeds/"
+      - "feeds.txt"
+      - true
 
 bolts:
+  - id: "filter"
+    className: "com.digitalpebble.stormcrawler.bolt.URLFilterBolt"
+    parallelism: 1
   - id: "partitioner"
     className: "com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt"
     parallelism: 1
@@ -172,4 +182,23 @@ streams:
     grouping:
       type: LOCAL_OR_SHUFFLE
       streamId: "status"
+
+  # part of the topology used to inject seeds
+
+  - from: "filespout"
+    to: "filter"
+    grouping:
+      type: FIELDS
+      args: ["url"]
+      streamId: "status"
+
+  - from: "filter"
+    to: "status"
+    grouping:
+      streamId: "status"
+      type: CUSTOM
+      customClass:
+        className: "com.digitalpebble.stormcrawler.util.URLStreamGrouping"
+        constructorArgs:
+          - "byDomain"
 

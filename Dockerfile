@@ -24,7 +24,7 @@ RUN apt-get update -qq && \
 #
 # Elasticsearch and Kibana
 #
-ENV ES_VERSION=7.3.0
+ENV ES_VERSION=7.5.0
 RUN wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch \
 	| apt-key add -
 RUN echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" \
@@ -70,7 +70,7 @@ RUN chmod -R 644 /etc/supervisor/conf.d/*.conf
 #
 # Storm crawler / news crawler
 #
-ENV CRAWLER_VERSION=1.15
+ENV CRAWLER_VERSION=1.16
 RUN groupadd ubuntu && \
 	useradd --gid ubuntu --home-dir /home/ubuntu \
 			--create-home --shell /bin/bash ubuntu && \
