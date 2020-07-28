@@ -26,11 +26,14 @@ import com.digitalpebble.stormcrawler.ConfigurableTopology;
 import com.digitalpebble.stormcrawler.Constants;
 import com.digitalpebble.stormcrawler.bolt.FetcherBolt;
 import com.digitalpebble.stormcrawler.bolt.JSoupParserBolt;
+import com.digitalpebble.stormcrawler.bolt.URLFilterBolt;
 import com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.AggregationSpout;
 import com.digitalpebble.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt;
 import com.digitalpebble.stormcrawler.indexing.DummyIndexer;
+import com.digitalpebble.stormcrawler.spout.FileSpout;
 import com.digitalpebble.stormcrawler.util.ConfUtils;
+import com.digitalpebble.stormcrawler.util.URLStreamGrouping;
 import com.digitalpebble.stormcrawler.warc.WARCHdfsBolt;
 
 /**
@@ -61,6 +64,17 @@ public class BootstrapTopology extends CrawlTopology {
         // set to the real number of shards ONLY if es.status.routing is set to
         // true in the configuration
         int numShards = 16;
+
+        if (args.length >= 2) {
+            // arguments include seed directory and file pattern
+            LOG.info("Injecting seeds from {} by pattern {}", args[0], args[1]);
+            builder.setSpout("filespout",
+                    new FileSpout(args[0], args[1], true));
+            Fields key = new Fields("url");
+
+            builder.setBolt("filter", new URLFilterBolt()).fieldsGrouping(
+                    "filespout", Constants.StatusStreamName, key);
+        }
 
         builder.setSpout("spout", new AggregationSpout(), numShards);
 
@@ -93,7 +107,9 @@ public class BootstrapTopology extends CrawlTopology {
                 .localOrShuffleGrouping("feed", Constants.StatusStreamName)
                 .localOrShuffleGrouping("parse", Constants.StatusStreamName)
                 .localOrShuffleGrouping("ssb", Constants.StatusStreamName)
-                .setNumTasks(numShards);
+                .setNumTasks(numShards)
+                .customGrouping("filter", Constants.StatusStreamName,
+                        new URLStreamGrouping());
 
         return submit(conf, builder);
     }
