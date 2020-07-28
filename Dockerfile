@@ -70,7 +70,7 @@ RUN chmod -R 644 /etc/supervisor/conf.d/*.conf
 #
 # Storm crawler / news crawler
 #
-ENV CRAWLER_VERSION=1.16
+ENV CRAWLER_VERSION=1.17
 RUN groupadd ubuntu && \
 	useradd --gid ubuntu --home-dir /home/ubuntu \
 			--create-home --shell /bin/bash ubuntu && \
