@@ -107,7 +107,7 @@ public class CrawlTopology extends ConfigurableTopology {
                 .localOrShuffleGrouping("ssb", Constants.StatusStreamName)
                 .setNumTasks(numShards)
                 .customGrouping("filter", Constants.StatusStreamName,
-                        new URLStreamGrouping());;
+                        new URLStreamGrouping());
 
         return submit(conf, builder);
     }
