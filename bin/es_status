@@ -30,6 +30,8 @@ function ____show_help() {
     echo " fetch_at_url <URL> <DATE>"
     echo "      set time of next fetch to DATE for URL (does not reset metadata)"
     echo "      (valid DATE formats include even \`tomorrow', \`third day', see \`man date')"
+    echo " set_metadata_url <URL> <METAFIELD> <METAVALUE>"
+    echo "      set metadata for URL"
     echo " inject_url <URL> <ROUTING> [<METAFIELD> <METAVALUE>]..."
     echo "      inject URL with metadata METAFIELD=METAVALUE"
     echo
@@ -271,6 +273,7 @@ function __id () {
 function __delete_id () {
     ID="$(____escape_id "$1")"
     ROUTING="$2"
+    shift 2 || { echo "Not enough arguments"; exit 1; }
     $SHOW_COMMAND
     $CURL -XDELETE "$ES_STATUS_URL/_doc/$ID?pretty&routing=$ROUTING"
 }
@@ -279,6 +282,7 @@ function __delete_id () {
 function __delete_url_with_routing () {
     URL="$1"
     ROUTING="$2"
+    shift 2 || { echo "Not enough arguments"; exit 1; }
     ID="$(echo -n "$URL" | sha256sum | cut -d' ' -f1)"
     ID="$(____escape_id "$ID")"
     $SHOW_COMMAND
@@ -533,7 +537,11 @@ function __fetch_at_url () {
     URL="$1"
     NEXTFETCHDATE="$(____date "$2")"
     SCRIPT='"script" : {
-          "inline": "ctx._source.nextFetchDate = \"'"$NEXTFETCHDATE"'\";"
+          "lang":   "painless",
+          "source": "ctx._source.nextFetchDate = params.nextfetchdate",
+          "params": {
+               "nextfetchdate": "'"$NEXTFETCHDATE"'"
+          }
         },'
     __update_by_query "$SCRIPT" '"match": {
             "url": "'"$URL"'"
@@ -583,7 +591,11 @@ function __fetch_at () {
         NEXTFETCHDATE="$(____date "$DATE")"
         SCRIPT="${SCRIPT//$'\n'/ }"
         SCRIPT='"script" : {
-          "inline": "ctx._source.nextFetchDate = \"'"$NEXTFETCHDATE"'\";"
+          "lang":   "painless",
+          "source": "ctx._source.nextFetchDate = params.nextfetchdate",
+          "params": {
+               "nextfetchdate": "'"$NEXTFETCHDATE"'"
+          }
         },'
         __update_by_query "$SCRIPT" "$QUERY"
     else
@@ -595,16 +607,21 @@ function __fetch_at () {
 # set metadata for URL
 function __set_metadata_url () {
     URL="$1"
-    METAFIELD="$2"
-    METAVALUE="$3"
+    META_NAME="$2"
+    META_VALUE="$3"
     shift 3 || { echo "Not enough arguments"; exit 1; }
     SCRIPT='"script" : {
-          "inline": "ctx._source.metadata[\"'"$METAFIELD"'\"] = [\"'"$METAVALUE"'\"];"
+          "lang":   "painless",
+          "source": "ctx._source.metadata.'"$META_NAME"' = params.metavalue",
+          "params": {
+               "metavalue": "'"$META_VALUE"'"
+          }
         },'
     __update_by_query "$SCRIPT" '"match": {
             "url": "'"$URL"'"
         }'
 }
+
 
 # get index statistics
 function __index_stats() {
