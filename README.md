@@ -1,26 +1,30 @@
 # NEWS-CRAWL
 
-Crawler for news based on [StormCrawler](https://stormcrawler.net). Produces WARC files to be stored as part of the [Common Crawl](https://commoncrawl.org/). The data is hosted as [AWS Open Data Set](https://registry.opendata.aws/) – if you want to use the data and not the crawler software please read [the announcement of the news dataset](https://commoncrawl.org/2016/10/news-dataset-available/).
+Crawler for news based on [StormCrawler](https://stormcrawler.net/). Produces WARC files to be stored as part of the [Common Crawl](https://commoncrawl.org/). The data is hosted as [AWS Open Data Set](https://registry.opendata.aws/) – if you want to use the data and not the crawler software please read [the announcement of the news dataset](https://commoncrawl.org/2016/10/news-dataset-available/).
 
 
 Prerequisites
-------------
+-------------
 
 * Install Elasticsearch 7.5.0 (ev. also Kibana)
 * Install Apache Storm 1.2.3
-* Clone and compile [StormCrawler](https://github.com/DigitalPebble/storm-crawler) with `mvn clean install`
 * Start Elasticsearch and Storm
 * Build ES indices by running `bin/ES_IndexInit.sh`
 
+Crawler Seeds
+-------------
+
+The crawler relies on [RSS](https://en.wikipedia.org/wiki/RSS)/[Atom](https://en.wikipedia.org/wiki/Atom_(Web_standard)) feeds and [news sitemaps](https://en.wikipedia.org/wiki/Sitemaps#Google_News_Sitemaps) to find links to news articles on news sites. A small collection of example seeds (feeds and sitemaps) is provided in [./seeds/](./seeds/). Adding support for news sites which do not provide a news feed or sitemap is an open issue, see [#41](//github.com/commoncrawl/news-crawl/issues/41).
+
 
 Configuration
-------------
+-------------
 
 The default configuration should work out-of-the-box. The only thing to do is to configure the user agent properties send in the HTTP request header. Open the file `conf/crawler-conf.yaml` in an editor and fill in the values for `http.agent.name` and all further properties starting with the `http.agent.` prefix.
 
 
 Run the crawl
-------------
+-------------
 
 Generate an uberjar:
 ``` sh
@@ -40,9 +44,9 @@ Alternatively, the topology can be run from the [crawler.flux](./conf/crawler.fl
 
 
 Monitor the crawl
-------------
+-----------------
 
-When the topology is running you can check that URLs have been injected and news are getting fetched on [http://localhost:9200/status/_search?pretty]. Or use StormCrawler's Kibana dashboards to monitor the crawling process. See instructions on [https://github.com/DigitalPebble/storm-crawler/tree/master/external/elasticsearch] to install the templates for Kibana.
+When the topology is running you can check that URLs have been injected and news are getting fetched on [http://localhost:9200/status/_search?pretty]. Or use StormCrawler's Kibana dashboards to monitor the crawling process. Please follow the instructions to install the templates for Kibana provided as part of [StormCrawler's Elasticsearch module documentation](//github.com/DigitalPebble/storm-crawler/tree/master/external/elasticsearch).
 
 There is also a shell script [bin/es_status](./bin/es_status) to get aggregated counts from the status index, and to add, delete or force a re-fetch of URLs. E.g., 
 ```
@@ -54,7 +58,7 @@ $> bin/es_status aggregate_status
 
 
 Run Crawl from Docker Container
--------------
+-------------------------------
 
 First, download Apache Storm 1.2.3. from the [download page](https://storm.apache.org/downloads.html) and place it in the directory `downloads`:
 ```
