@@ -1,16 +1,19 @@
 
 # Custom configuration for StormCrawler
-# This is used to override the default values from crawler-default.xml and provide additional ones 
+# This is used to override the default values from crawler-default.xml and provide additional ones
 # for your custom components.
 # Use this file with the parameter -conf when launching your extension of ConfigurableTopology.
 # This file does not contain all the key values but only the most frequently used ones. See crawler-default.xml for an extensive list.
 
-config: 
+config:
   topology.workers: 1
   # topology timeout also defines the total time allowed to fetch a single page
   topology.message.timeout.secs: 300
   topology.max.spout.pending: 100
   topology.debug: false
+
+  # override the JVM parameters for the workers
+  topology.worker.childopts: "-Xmx4g -Djava.net.preferIPv4Stack=true"
 
   topology.name: "NewsCrawl"
 
@@ -19,10 +22,10 @@ config:
     - com.digitalpebble.stormcrawler.Metadata
 
   topology.backpressure.enable: false
-  
+
   # set to 0 to deactivate debugging
   topology.eventlogger.executors: 0
-  
+
   #Metrics consumers:
   topology.metrics.consumer.register:
      - class: "org.apache.storm.metric.LoggingMetricsConsumer"
@@ -30,6 +33,7 @@ config:
      - class: "com.digitalpebble.stormcrawler.elasticsearch.metrics.MetricsConsumer"
        parallelism.hint: 1
 
+  # status index and fetcher queues are partitioned by domain
   partition.url.mode: "byDomain"
 
   # The maximum number of bytes for returned HTTP response bodies.
@@ -52,16 +56,11 @@ config:
 
   parsefilters.config.file: "parsefilters.json"
   urlfilters.config.file: "urlfilters.json"
-  
+
   # time bucket to use for the metrics sent by the Fetcher
   fetcher.metrics.time.bucket.secs: 60
 
   fetcher.threads.number: 80
-
-  worker.heap.memory.mb: 4096
-  # override the JVM parameters for the workers
-  # topology.worker.childopts: "-Xmx2g -Djava.net.preferIPv4Stack=true"
-
 
   # increased network timeout (ms) for news sites from Asia and eastern Europe
   http.timeout: 30000
@@ -117,7 +116,7 @@ config:
   #   (seeds / RSS feeds are revisited)
   # - 10 years (-1 would not allow to distinguish the fetch time, required for clean-ups)
   fetchInterval.default: 5256000
-  
+
   # revisit a page with a transient fetch error after 48 hours (value in minutes)
   # - choose a larger interval (2 days instead of 2 hours) to give the server
   #   enough time to recover
@@ -125,7 +124,7 @@ config:
   #   if the refetch interval is too short in case the server is unavailable for
   #     (max.fetch.errors - 1) * fetchInterval.fetch.error
   fetchInterval.fetch.error: 2880
-  
+
   # revisit a page with an error after 3 month (value in minutes)
   fetchInterval.error: 133920
 
@@ -197,7 +196,7 @@ config:
 
   # no cache
   #  - ES is running locally and should be fast
-  #  - not following links only accessing news feeds and sitemaps 
+  #  - not following links only accessing news feeds and sitemaps
   status.updater.use.cache: false
   status.updater.cache.spec: "maximumSize=250000,expireAfterAccess=4h"
 

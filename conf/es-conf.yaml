@@ -4,7 +4,7 @@ config:
   # ES metricsConsumer
   es.metrics.addresses: "http://localhost:9200"
   es.metrics.index.name: "metrics"
-  
+
   # ES spout and persistence bolt
   es.status.addresses: "http://localhost:9200"
   es.status.index.name: "status"
@@ -19,13 +19,15 @@ config:
   es.status.bulkActions: 500
   es.status.flushInterval: "5s"
   es.status.concurrentRequests: 1
-  
+
   ################
   # spout config #
   ################
-  
+
   # positive or negative filter parsable by the Lucene Query Parser
-  # es.status.filterQuery: "-(metadata.hostname:stormcrawler.net)"
+  # es.status.filterQuery:
+  #  - "-(metadata.hostname:stormcrawler.net)"
+  #  - "-(key:digitalpebble.com)"
 
   # time in secs for which the URLs will be considered for fetching after a ack or fail
   # need a high value to avoid duplicates by URLs added multiple times to the fetcher
