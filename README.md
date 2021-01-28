@@ -67,14 +67,17 @@ mkdir downloads
 wget -q -P downloads --timestamping http://www-us.apache.org/dist/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz
 ```
 
+Do not forget to create the uberjar (see above) which is included in the Docker image. Simply run:
+```
+mvn clean package
+```
+
 Then build the Docker image from the [Dockerfile](./Dockerfile):
 ```
 docker build -t newscrawler:1.17 .
 ```
 
-Note: the uberjar is included in the Docker image and needs to be built first (see above).
-
-Launch an interactive container:
+To launch an interactive container:
 ```
 docker run --net=host \
     -p 127.0.0.1:9200:9200 \
@@ -86,7 +89,7 @@ docker run --net=host \
 
 NOTE: don't forget to adapt the paths to mounted volumes used to persist data on the host.
 
-CAVEAT: Make sure that the Elasticsearch port 9200 is not already in use or mapped by a running ES instance. Otherwise ES commands may affect the running instance!
+CAVEAT: Make sure that the Elasticsearch port 9200 is not already in use or mapped by a running ES instance. Otherwise Elasticsearch commands may affect the running instance!
 
 The crawler is launched in the running container by the script
 ```

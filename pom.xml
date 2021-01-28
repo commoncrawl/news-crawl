@@ -152,6 +152,13 @@
 			<groupId>com.digitalpebble.stormcrawler</groupId>
 			<artifactId>storm-crawler-warc</artifactId>
 			<version>${storm-crawler.version}</version>
+			<exclusions>
+				<exclusion>
+					<!-- not available with Java 9 and higher -->
+					<groupId>jdk.tools</groupId>
+					<artifactId>jdk.tools</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- set version explicitly -->
