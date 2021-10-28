@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.slf4j.LoggerFactory;
@@ -100,14 +101,16 @@ public class CrawlTopology extends ConfigurableTopology {
         // don't get included - unless we want them too of course!
         builder.setBolt("warc", warcbolt).localOrShuffleGrouping("feed");
 
-        builder.setBolt("status", new StatusUpdaterBolt(), numWorkers)
+        BoltDeclarer statusBolt = builder.setBolt("status", new StatusUpdaterBolt(), numWorkers)
                 .localOrShuffleGrouping("fetch", Constants.StatusStreamName)
                 .localOrShuffleGrouping("sitemap", Constants.StatusStreamName)
                 .localOrShuffleGrouping("feed", Constants.StatusStreamName)
                 .localOrShuffleGrouping("ssb", Constants.StatusStreamName)
-                .setNumTasks(numShards)
-                .customGrouping("filter", Constants.StatusStreamName,
-                        new URLStreamGrouping());
+                .setNumTasks(numShards);
+        if (args.length >= 2) {
+            statusBolt.customGrouping("filter", Constants.StatusStreamName,
+                    new URLStreamGrouping());
+        }
 
         return submit(conf, builder);
     }
