@@ -81,7 +81,7 @@ config:
   # delay between successive requests to the same host/domain
   # (be defensive, a delay of 5 sec. means about 1000 fetches per hour
   #  which should be enough even for large news sites)
-  fetcher.server.delay: 5.0
+  fetcher.server.delay: 6.0
 
   # generous max. crawl delay
   # (fetch content even if the robots.txt specifies a large host-specific crawl delay:
