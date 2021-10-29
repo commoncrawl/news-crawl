@@ -33,7 +33,7 @@ mvn clean package
 
 And run ...
 ``` sh
-storm jar target/crawler-1.17.jar org.commoncrawl.stormcrawler.news.CrawlTopology -conf $PWD/conf/es-conf.yaml -conf $PWD/conf/crawler-conf.yaml $PWD/seeds/ feeds.txt
+storm jar target/crawler-1.18.jar org.commoncrawl.stormcrawler.news.CrawlTopology -conf $PWD/conf/es-conf.yaml -conf $PWD/conf/crawler-conf.yaml $PWD/seeds/ feeds.txt
 ```
 
 This will launch the crawl topology. It will also "inject" all URLs found in the file `./seeds/feeds.txt` in the status index. The URLs point to news feeds and sitemaps from which links to news articles are extracted and fetched. The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
@@ -74,7 +74,7 @@ mvn clean package
 
 Then build the Docker image from the [Dockerfile](./Dockerfile):
 ```
-docker build -t newscrawler:1.17 .
+docker build -t newscrawler:1.18 .
 ```
 
 To launch an interactive container:
@@ -84,7 +84,7 @@ docker run --net=host \
     -p 5601:5601 -p 8080:8080 \
     -v .../newscrawl/elasticsearch:/data/elasticsearch \
     -v .../newscrawl/warc:/data/warc \
-    --rm -i -t newscrawler:1.17 /bin/bash
+    --rm -i -t newscrawler:1.18 /bin/bash
 ```
 
 NOTE: don't forget to adapt the paths to mounted volumes used to persist data on the host.
