@@ -23,7 +23,7 @@ function ____show_help() {
     echo "      delete document/record by URL"
     echo " delete_url_with_routing <URL> <ROUTING>"
     echo "      delete document/record by URL with forced routing"
-    echo " reset_url [search|count|reset] <URL>"
+    echo " reset_url <URL>"
     echo "      reset by URL (resets status to DISCOVERED and removes fetch-relevant metadata)"
     echo " fetch_now_url <URL>"
     echo "      set time of next fetch to now for URL (does not reset metadata)"
@@ -518,9 +518,8 @@ function __reset_by_query () {
 
 # reset by URL
 function __reset_url () {
-    CMND="$1"
     URL="$2"
-    __reset_by_query "$CMND" '"match": {
+    __reset_by_query "reset" '"match": {
             "url": "'"$URL"'"
         }'
 }
