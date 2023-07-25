@@ -6,6 +6,7 @@ Crawler for news based on [StormCrawler](https://stormcrawler.net/). Produces WA
 Prerequisites
 -------------
 
+* Java 8
 * Install Elasticsearch 7.5.0 (ev. also Kibana)
 * Install Apache Storm 1.2.3
 * Start Elasticsearch and Storm
