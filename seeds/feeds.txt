@@ -25,6 +25,4 @@ https://www.lemonde.fr/livres/rss_full.xml	isFeed=true
 https://www.lemonde.fr/afrique/rss_full.xml	isFeed=true
 https://www.lemonde.fr/ameriques/rss_full.xml	isFeed=true
 https://www.cnn.com/sitemaps/cnn/news.xml	isSitemapNews=true
-https://www.ft.com/sitemaps/news.xml	isSitemapNews=true
-https://www.ft.com/?format=rss	isFeed=true
 https://www.bbc.com/sitemaps/https-index-com-news.xml	isSitemapNews=true

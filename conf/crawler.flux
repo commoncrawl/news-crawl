@@ -45,7 +45,7 @@ components:
       - name: "put"
         args:
          - "software"
-         - "StormCrawler 1.18 https://stormcrawler.net/"
+         - "StormCrawler 1.18.1 https://stormcrawler.net/"
       - name: "put"
         args:
          - "description"
@@ -91,6 +91,11 @@ bolts:
   - id: "filter"
     className: "com.digitalpebble.stormcrawler.bolt.URLFilterBolt"
     parallelism: 1
+  - id: "prefilter"
+    className: "org.commoncrawl.stormcrawler.news.PreFilterBolt"
+    parallelism: 1
+    constructorArgs:
+      - "pre-urlfilters.json"
   - id: "partitioner"
     className: "com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt"
     parallelism: 1
@@ -129,6 +134,11 @@ bolts:
 
 streams:
   - from: "spout"
+    to: "prefilter"
+    grouping:
+      type: SHUFFLE
+
+  - from: "prefilter"
     to: "partitioner"
     grouping:
       type: SHUFFLE
@@ -158,6 +168,12 @@ streams:
     to: "ssbolt"
     grouping:
       type: LOCAL_OR_SHUFFLE
+      
+  - from: "prefilter"
+    to: "status"
+    grouping:
+      type: LOCAL_OR_SHUFFLE
+      streamId: "status"
 
   - from: "fetcher"
     to: "status"

@@ -79,8 +79,8 @@ ZOOKEEPER_VERSION=3.4.14
 wget -q -O - http://www-us.apache.org/dist/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz \
     | sudo tar -xzf - -C /opt
 ZOOKEEPER_HOME=/opt/zookeeper-$ZOOKEEPER_VERSION
-STORM_VERSION=1.2.3
-wget -q -O - http://www-us.apache.org/dist/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz \
+STORM_VERSION=1.2.4
+wget -q -O - https://downloads.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz \
     | sudo tar -xzf - -C /opt
 STORM_HOME=/opt/apache-storm-$STORM_VERSION
 sudo groupadd storm

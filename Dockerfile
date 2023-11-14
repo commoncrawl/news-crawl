@@ -49,7 +49,7 @@ RUN sed -Ei 's@^path\.data: .*@path.data: /data/elasticsearch@' /etc/elasticsear
 #
 # Apache Storm
 #
-ENV STORM_VERSION=1.2.3
+ENV STORM_VERSION=1.2.4
 COPY downloads/apache-storm-$STORM_VERSION.tar.gz /tmp/apache-storm-$STORM_VERSION.tar.gz
 RUN tar -xzf /tmp/apache-storm-$STORM_VERSION.tar.gz -C /opt
 RUN rm /tmp/apache-storm-$STORM_VERSION.tar.gz
@@ -70,7 +70,7 @@ RUN chmod -R 644 /etc/supervisor/conf.d/*.conf
 #
 # Storm crawler / news crawler
 #
-ENV CRAWLER_VERSION=1.18
+ENV CRAWLER_VERSION=1.18.1
 RUN groupadd ubuntu && \
 	useradd --gid ubuntu --home-dir /home/ubuntu \
 			--create-home --shell /bin/bash ubuntu && \

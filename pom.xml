@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.commoncrawl.stormcrawler.news</groupId>
 	<artifactId>crawler</artifactId>
-	<version>1.18</version>
+	<version>1.18.1</version>
 	<packaging>jar</packaging>
 	<licenses>
 		<license>
@@ -19,6 +19,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<storm-crawler.version>1.18</storm-crawler.version>
 		<storm-core.version>1.2.3</storm-core.version>
+		<aws.version>1.12.467</aws.version>
 		<jackson-databind.version>2.11.1</jackson-databind.version>
 		<crawler-commons.version>1.1</crawler-commons.version>
 		<mockito-all.version>1.10.19</mockito-all.version>
@@ -174,11 +175,17 @@
 			<version>${crawler-commons.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-s3</artifactId>
+			<version>${aws.version}</version>
+		</dependency>
+
 		<!-- test dependencies -->
 		<dependency>
 			<groupId>com.digitalpebble.stormcrawler</groupId>
 			<artifactId>storm-crawler-core</artifactId>
-			<version>${project.version}</version>
+			<version>${storm-crawler.version}</version>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>

@@ -246,4 +246,3 @@ config:
   # but latest after one day
   warc.rotation.policy.max-minutes: 1440
 
-

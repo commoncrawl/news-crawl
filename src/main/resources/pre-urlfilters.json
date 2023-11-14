@@ -1,0 +1,10 @@
+{
+  "com.digitalpebble.stormcrawler.filtering.URLFilters": [
+    {
+      "class": "org.commoncrawl.stormcrawler.filter.FastURLFilter",
+      "params": {
+        "file": "fast-urlfilter.txt"
+      }
+    }
+  ]
+}

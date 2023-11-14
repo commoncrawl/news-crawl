@@ -8,7 +8,7 @@ Prerequisites
 
 * Java 8
 * Install Elasticsearch 7.5.0 (ev. also Kibana)
-* Install Apache Storm 1.2.3
+* Install Apache Storm 1.2.4
 * Start Elasticsearch and Storm
 * Build ES indices by running `bin/ES_IndexInit.sh`
 
@@ -34,14 +34,14 @@ mvn clean package
 
 And run ...
 ``` sh
-storm jar target/crawler-1.18.jar org.commoncrawl.stormcrawler.news.CrawlTopology -conf $PWD/conf/es-conf.yaml -conf $PWD/conf/crawler-conf.yaml $PWD/seeds/ feeds.txt
+storm jar target/crawler-1.18.1.jar org.commoncrawl.stormcrawler.news.CrawlTopology -conf $PWD/conf/es-conf.yaml -conf $PWD/conf/crawler-conf.yaml $PWD/seeds/ feeds.txt
 ```
 
 This will launch the crawl topology. It will also "inject" all URLs found in the file `./seeds/feeds.txt` in the status index. The URLs point to news feeds and sitemaps from which links to news articles are extracted and fetched. The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
 
 Of course, it's also possible to add (or remove) the seeds (feeds and sitemaps) using the Elasticsearch API. In this case, the can topology can be run without the last two arguments.
 
-Alternatively, the topology can be run from the [crawler.flux](./conf/crawler.flux), please see the [Storm Flux documentation](https://storm.apache.org/releases/1.2.3/flux.html). Make sure to adapt the Flux definition to your needs!
+Alternatively, the topology can be run from the [crawler.flux](./conf/crawler.flux), please see the [Storm Flux documentation](https://storm.apache.org/releases/1.2.4/flux.html). Make sure to adapt the Flux definition to your needs!
 
 
 Monitor the crawl
@@ -50,6 +50,7 @@ Monitor the crawl
 When the topology is running you can check that URLs have been injected and news are getting fetched on [http://localhost:9200/status/_search?pretty]. Or use StormCrawler's Kibana dashboards to monitor the crawling process. Please follow the instructions to install the templates for Kibana provided as part of [StormCrawler's Elasticsearch module documentation](//github.com/DigitalPebble/storm-crawler/tree/master/external/elasticsearch).
 
 There is also a shell script [bin/es_status](./bin/es_status) to get aggregated counts from the status index, and to add, delete or force a re-fetch of URLs. E.g., 
+
 ```
 $> bin/es_status aggregate_status
 3824    DISCOVERED
@@ -61,38 +62,43 @@ $> bin/es_status aggregate_status
 Run Crawl from Docker Container
 -------------------------------
 
-First, download Apache Storm 1.2.3. from the [download page](https://storm.apache.org/downloads.html) and place it in the directory `downloads`:
+First, download Apache Storm 1.2.4. from the [download page](https://storm.apache.org/downloads.html) and place it in the directory `downloads`:
+
 ```
-STORM_VERSION=1.2.3
+STORM_VERSION=1.2.4
 mkdir downloads
-wget -q -P downloads --timestamping http://www-us.apache.org/dist/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz
+wget -q -P downloads --timestamping https://downloads.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz
 ```
 
 Do not forget to create the uberjar (see above) which is included in the Docker image. Simply run:
+
 ```
 mvn clean package
 ```
 
 Then build the Docker image from the [Dockerfile](./Dockerfile):
+
+Note: the uberjar is included in the Docker image and needs to be built first (see above).
+
 ```
-docker build -t newscrawler:1.18 .
+docker build -t newscrawler:1.18.1 .
 ```
 
 To launch an interactive container:
+
 ```
 docker run --net=host \
-    -p 127.0.0.1:9200:9200 \
-    -p 5601:5601 -p 8080:8080 \
-    -v .../newscrawl/elasticsearch:/data/elasticsearch \
-    -v .../newscrawl/warc:/data/warc \
-    --rm -i -t newscrawler:1.18 /bin/bash
+    -v $PWD/data/elasticsearch:/data/elasticsearch \
+    -v $PWD/data/warc:/data/warc \
+    --rm --name newscrawler -i -t newscrawler:1.18.1 /bin/bash
 ```
 
-NOTE: don't forget to adapt the paths to mounted volumes used to persist data on the host.
+NOTE: don't forget to adapt the paths to mounted volumes used to persist data on the host. Make sure to add the user agent configuration in conf/crawler-conf.yaml.
 
 CAVEAT: Make sure that the Elasticsearch port 9200 is not already in use or mapped by a running ES instance. Otherwise Elasticsearch commands may affect the running instance!
 
 The crawler is launched in the running container by the script
+
 ```
 /home/ubuntu/news-crawler/bin/run-crawler.sh
 ```

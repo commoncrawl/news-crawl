@@ -1,0 +1,16 @@
+###
+# Exclude localhost, see also more sophisticated rule in regex-urlfilter.txt
+Host localhost
+  DenyPath .*
+Host 127.0.0.1
+  DenyPath .*
+
+Domain domainnotallowed.com
+  DenyPath .*
+
+Domain partiallyallowed.com
+  DenyPath /verbotten
+
+Host no.go.com
+  DenyPath .*
+
