@@ -20,6 +20,7 @@ config:
   # mandatory when using Flux
   topology.kryo.register:
     - com.digitalpebble.stormcrawler.Metadata
+    - com.digitalpebble.stormcrawler.persistence.Status
 
   topology.backpressure.enable: false
 
@@ -62,6 +63,10 @@ config:
 
   fetcher.threads.number: 80
 
+  worker.heap.memory.mb: 4096
+  # override the JVM parameters for the workers
+  # topology.worker.childopts: "-Xmx2g -Djava.net.preferIPv4Stack=true"
+
   # increased network timeout (ms) for news sites from Asia and eastern Europe
   http.timeout: 30000
 
@@ -69,12 +74,6 @@ config:
   http.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
   https.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
 
-  # the http/https protocol versions to use, in order of preference
-  # - must use HTTP/1.1 until WARC writer can handle HTTP/2
-  # - okhttp does not support HTTP/1.0 requests (it supports responses however)
-  http.protocol.versions:
-  # - "h2"
-  - "http/1.1"
   # do not fail on unknown SSL certificates
   http.trust.everything: true
 

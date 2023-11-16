@@ -111,7 +111,7 @@ import com.google.common.collect.Multimap;
  * The rules file is defined via the property <code>urlfilter.fast.file</code>,
  * the default name is <code>fast-urlfilter.txt</code>.
  */
-public class FastURLFilter implements URLFilter, JSONResource {
+public class FastURLFilter  extends URLFilter implements JSONResource {
 
     protected static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 

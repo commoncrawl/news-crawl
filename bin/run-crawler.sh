@@ -4,13 +4,17 @@
 chown -R elasticsearch:elasticsearch /data/elasticsearch
 chown -R storm:storm /data/warc
 
-export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+# export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 # as root
 /usr/bin/supervisord
 
-# wait until Storm ad Elasticsearch are running
+# wait until Storm and Elasticsearch are running
 sleep 60
+
+mkdir /tmp/seeds
+cp -rf /home/ubuntu/news-crawler/seeds /tmp/
+chmod -R a+r /tmp/seeds
 
 # start the news crawler as user ubuntu
 sudo -iu ubuntu /bin/bash <<"EOF"
@@ -27,8 +31,8 @@ sleep 10
 STORMCRAWLER="storm jar $PWD/lib/crawler.jar"
 
 # run the crawler
-$STORMCRAWLER org.commoncrawl.stormcrawler.news.CrawlTopology \
-	$PWD/seeds '*' -conf $PWD/conf/es-conf.yaml -conf $PWD/conf/crawler-conf.yaml
+$STORMCRAWLER -- org.commoncrawl.stormcrawler.news.CrawlTopology \
+	/tmp/seeds '*' -conf $PWD/conf/es-conf.yaml -conf $PWD/conf/crawler-conf.yaml
 # alternatively running the flux
 #$STORMCRAWLER org.apache.storm.flux.Flux --remote $PWD/conf/crawler.flux
 # suppress warnings about malformed XML in sitemaps

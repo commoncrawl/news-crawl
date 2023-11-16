@@ -6,9 +6,8 @@ Crawler for news based on [StormCrawler](https://stormcrawler.net/). Produces WA
 Prerequisites
 -------------
 
-* Java 8
-* Install Elasticsearch 7.5.0 (ev. also Kibana)
-* Install Apache Storm 1.2.4
+* Install Elasticsearch 7.10.2 (ev. also Kibana)
+* Install Apache Storm 2.5.0
 * Start Elasticsearch and Storm
 * Build ES indices by running `bin/ES_IndexInit.sh`
 
@@ -34,15 +33,16 @@ mvn clean package
 
 And run ...
 ``` sh
-storm jar target/crawler-1.18.1.jar org.commoncrawl.stormcrawler.news.CrawlTopology -conf $PWD/conf/es-conf.yaml -conf $PWD/conf/crawler-conf.yaml $PWD/seeds/ feeds.txt
+storm local target/crawler-2.10.0.jar --local-ttl 60 -- org.commoncrawl.stormcrawler.news.CrawlTopology -conf $PWD/conf/es-conf.yaml -conf $PWD/conf/crawler-conf.yaml $PWD/seeds/ feeds.txt
 ```
 
-This will launch the crawl topology. It will also "inject" all URLs found in the file `./seeds/feeds.txt` in the status index. The URLs point to news feeds and sitemaps from which links to news articles are extracted and fetched. The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
+This will launch the crawl topology in local mode for 60 seconds. It will also "inject" all URLs found in the file `./seeds/feeds.txt` in the status index. The URLs point to news feeds and sitemaps from which links to news articles are extracted and fetched. The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
 
 Of course, it's also possible to add (or remove) the seeds (feeds and sitemaps) using the Elasticsearch API. In this case, the can topology can be run without the last two arguments.
 
-Alternatively, the topology can be run from the [crawler.flux](./conf/crawler.flux), please see the [Storm Flux documentation](https://storm.apache.org/releases/1.2.4/flux.html). Make sure to adapt the Flux definition to your needs!
+Alternatively, the topology can be run from the [crawler.flux](./conf/crawler.flux), please see the [Storm Flux documentation](https://storm.apache.org/releases/2.5.0/flux.html). Make sure to adapt the Flux definition to your needs!
 
+In production, you should use `storm jar ...` to run the topology in distributed mode and continuously (no time limit) including the Storm UI and logging.
 
 Monitor the crawl
 -----------------
@@ -62,10 +62,9 @@ $> bin/es_status aggregate_status
 Run Crawl from Docker Container
 -------------------------------
 
-First, download Apache Storm 1.2.4. from the [download page](https://storm.apache.org/downloads.html) and place it in the directory `downloads`:
-
+First, download Apache Storm 2.5.0. from the [download page](https://storm.apache.org/downloads.html) and place it in the directory `downloads`:
 ```
-STORM_VERSION=1.2.4
+STORM_VERSION=2.5.0
 mkdir downloads
 wget -q -P downloads --timestamping https://downloads.apache.org/storm/apache-storm-$STORM_VERSION/apache-storm-$STORM_VERSION.tar.gz
 ```
@@ -81,7 +80,7 @@ Then build the Docker image from the [Dockerfile](./Dockerfile):
 Note: the uberjar is included in the Docker image and needs to be built first (see above).
 
 ```
-docker build -t newscrawler:1.18.1 .
+docker build -t newscrawler:2.10.0 .
 ```
 
 To launch an interactive container:
@@ -90,14 +89,14 @@ To launch an interactive container:
 docker run --net=host \
     -v $PWD/data/elasticsearch:/data/elasticsearch \
     -v $PWD/data/warc:/data/warc \
-    --rm --name newscrawler -i -t newscrawler:1.18.1 /bin/bash
+    --rm --name newscrawler -i -t newscrawler:2.10.0 /bin/bash
 ```
 
 NOTE: don't forget to adapt the paths to mounted volumes used to persist data on the host. Make sure to add the user agent configuration in conf/crawler-conf.yaml.
 
 CAVEAT: Make sure that the Elasticsearch port 9200 is not already in use or mapped by a running ES instance. Otherwise Elasticsearch commands may affect the running instance!
 
-The crawler is launched in the running container by the script
+Once you are logged onto the Docker container, start the services and crawl with 
 
 ```
 /home/ubuntu/news-crawler/bin/run-crawler.sh

@@ -45,7 +45,7 @@ components:
       - name: "put"
         args:
          - "software"
-         - "StormCrawler 1.18.1 https://stormcrawler.net/"
+         - "StormCrawler 2.10 https://stormcrawler.net/"
       - name: "put"
         args:
          - "description"

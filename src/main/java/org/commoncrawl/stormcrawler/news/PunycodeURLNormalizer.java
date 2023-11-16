@@ -22,7 +22,7 @@ import com.digitalpebble.stormcrawler.Metadata;
 import com.digitalpebble.stormcrawler.filtering.URLFilter;
 import com.fasterxml.jackson.databind.JsonNode;
 
-public class PunycodeURLNormalizer implements URLFilter {
+public class PunycodeURLNormalizer extends URLFilter {
 
     @Override
     public void configure(Map stormConf, JsonNode filterParams) {

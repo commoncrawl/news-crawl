@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.commoncrawl.stormcrawler.news</groupId>
 	<artifactId>crawler</artifactId>
-	<version>1.18.1</version>
+	<version>2.10.0</version>
 	<packaging>jar</packaging>
 	<licenses>
 		<license>
@@ -17,13 +17,14 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<storm-crawler.version>1.18</storm-crawler.version>
-		<storm-core.version>1.2.3</storm-core.version>
+		<stormcrawler.version>2.10</stormcrawler.version>
+		<storm.version>2.5.0</storm.version>
 		<aws.version>1.12.467</aws.version>
 		<jackson-databind.version>2.11.1</jackson-databind.version>
 		<crawler-commons.version>1.1</crawler-commons.version>
-		<mockito-all.version>1.10.19</mockito-all.version>
+		<mockito.version>5.5.0</mockito.version>
 		<wiremock.version>2.26.3</wiremock.version>
+		<junit.version>4.13</junit.version>
 	</properties>
 
 	<build>
@@ -31,17 +32,16 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
+				<version>3.11.0</version>
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>11</source>
+					<target>11</target>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.6.0</version>
+				<version>3.1.0</version>
 				<executions>
 					<execution>
 						<goals>
@@ -56,11 +56,10 @@
 					<classpathScope>compile</classpathScope>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.2.1</version>
+				<version>3.5.0</version>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -129,30 +128,30 @@
 		<dependency>
 			<groupId>com.digitalpebble.stormcrawler</groupId>
 			<artifactId>storm-crawler-core</artifactId>
-			<version>${storm-crawler.version}</version>
+			<version>${stormcrawler.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.apache.storm</groupId>
-			<artifactId>storm-core</artifactId>
-			<version>${storm-core.version}</version>
+			<artifactId>storm-client</artifactId>
+			<version>${storm.version}</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.storm</groupId>
 			<artifactId>flux-core</artifactId>
-			<version>${storm-core.version}</version>
+			<version>${storm.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.digitalpebble.stormcrawler</groupId>
 			<artifactId>storm-crawler-elasticsearch</artifactId>
-			<version>${storm-crawler.version}</version>
+			<version>${stormcrawler.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.digitalpebble.stormcrawler</groupId>
 			<artifactId>storm-crawler-warc</artifactId>
-			<version>${storm-crawler.version}</version>
+			<version>${stormcrawler.version}</version>
 			<exclusions>
 				<exclusion>
 					<!-- not available with Java 9 and higher -->
@@ -185,15 +184,15 @@
 		<dependency>
 			<groupId>com.digitalpebble.stormcrawler</groupId>
 			<artifactId>storm-crawler-core</artifactId>
-			<version>${storm-crawler.version}</version>
+			<version>${stormcrawler.version}</version>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.mockito</groupId>
-			<artifactId>mockito-all</artifactId>
-			<version>${mockito-all.version}</version>
+			<artifactId>mockito-core</artifactId>
+			<version>${mockito.version}</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -203,5 +202,22 @@
 			<version>${wiremock.version}</version>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>commons-io</groupId>
+				<artifactId>commons-io</artifactId>
+				<version>2.11.0</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
 </project>

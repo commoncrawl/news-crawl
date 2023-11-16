@@ -1,8 +1,8 @@
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
 RUN apt-get update -qq && \
 	apt-get upgrade -yq && \
-	apt-mark hold openjdk-11-jre-headless && \
+#	apt-mark hold openjdk-11-jre-headless && \
 	apt-get install -yq --no-install-recommends \
 		apt-transport-https \
 		apt-utils \
@@ -13,18 +13,18 @@ RUN apt-get update -qq && \
 		jq \
 		less \
 		maven \
-		openjdk-8-jdk-headless \
+#		openjdk-8-jdk-headless \
 		sudo \
 		supervisor \
 		wget \
 		tar \
-		vim \
-		zookeeperd
+		vim 
+#		zookeeperd
 
 #
 # Elasticsearch and Kibana
 #
-ENV ES_VERSION=7.5.0
+ENV ES_VERSION=7.10.2
 RUN wget -qO - https://artifacts.elastic.co/GPG-KEY-elasticsearch \
 	| apt-key add -
 RUN echo "deb https://artifacts.elastic.co/packages/7.x/apt stable main" \
@@ -46,10 +46,22 @@ ENV ES_HEAP_SIZE=20g
 RUN sed -Ei 's@^path\.data: .*@path.data: /data/elasticsearch@' /etc/elasticsearch/elasticsearch.yml
 # TODO: enable updates via scripting
 
+
+# Zookeeper
+
+ENV ZOOKEEPER_VERSION=3.8.3
+RUN wget -q -O - https://downloads.apache.org/zookeeper/zookeeper-$ZOOKEEPER_VERSION/apache-zookeeper-$ZOOKEEPER_VERSION-bin.tar.gz \
+    | sudo tar -xzf - -C /opt
+ENV ZOOKEEPER_HOME=/opt/apache-zookeeper-$ZOOKEEPER_VERSION-bin
+RUN ln -s $ZOOKEEPER_HOME/conf/zoo_sample.cfg $ZOOKEEPER_HOME/conf/zoo.cfg
+# prevent ZK's admin UI to run on 8080
+RUN echo "admin.enableServer=false" >> $ZOOKEEPER_HOME/conf/zoo.cfg
+RUN ln -s $ZOOKEEPER_HOME /usr/share/zookeeper
+
 #
 # Apache Storm
 #
-ENV STORM_VERSION=1.2.4
+ENV STORM_VERSION=2.5.0
 COPY downloads/apache-storm-$STORM_VERSION.tar.gz /tmp/apache-storm-$STORM_VERSION.tar.gz
 RUN tar -xzf /tmp/apache-storm-$STORM_VERSION.tar.gz -C /opt
 RUN rm /tmp/apache-storm-$STORM_VERSION.tar.gz
@@ -62,6 +74,7 @@ RUN groupadd storm && \
 	chown -R storm:storm /var/log/storm
 RUN ln -s /var/log/storm $STORM_HOME/logs
 RUN ln -s $STORM_HOME/bin/storm /usr/bin/storm
+
 ADD etc/supervisor/conf.d/storm-*.conf   /etc/supervisor/conf.d/
 ADD etc/supervisor/conf.d/zookeeper.conf /etc/supervisor/conf.d/
 RUN chmod -R 644 /etc/supervisor/conf.d/*.conf
@@ -70,7 +83,7 @@ RUN chmod -R 644 /etc/supervisor/conf.d/*.conf
 #
 # Storm crawler / news crawler
 #
-ENV CRAWLER_VERSION=1.18.1
+ENV CRAWLER_VERSION=2.10.0
 RUN groupadd ubuntu && \
 	useradd --gid ubuntu --home-dir /home/ubuntu \
 			--create-home --shell /bin/bash ubuntu && \

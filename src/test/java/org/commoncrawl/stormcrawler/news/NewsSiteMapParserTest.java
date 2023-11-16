@@ -26,70 +26,61 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.storm.task.OutputCollector;
 import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.digitalpebble.stormcrawler.Metadata;
-import com.digitalpebble.stormcrawler.TestOutputCollector;
-import com.digitalpebble.stormcrawler.TestUtil;
 import com.digitalpebble.stormcrawler.parse.Outlink;
+import com.digitalpebble.stormcrawler.parse.ParsingTester;
 
 import crawlercommons.sitemaps.UnknownFormatException;
 
-public class NewsSiteMapParserTest {
-
-    NewsSiteMapParserBolt bolt;
+public class NewsSiteMapParserTest extends ParsingTester {
 
     @Before
-    public void setup() {
-        bolt = new NewsSiteMapParserBolt();
-        Map<String, Object> config = new HashMap<>();
-        config.put("sitemap.sniffContent", true);
-        // allow items published during the last week
-        config.put("sitemap.filter.hours.since.modified", 168);
-        bolt.prepare(config, TestUtil.getMockedTopologyContext(),
-                new OutputCollector(new TestOutputCollector()));
+    public void setupParserBolt() {
+	setupParserBolt(new NewsSiteMapParserBolt());
+	Map<String, Object> config = new HashMap<>();
+	config.put("sitemap.sniffContent", true);
+	// allow items published during the last week
+	config.put("sitemap.filter.hours.since.modified", 168);
+	prepareParserBolt("test.parsefilters.json", config);
     }
 
     @Test
     public void testSiteMapParser() throws IOException, UnknownFormatException {
-        String url = "https://example.org/sitemap-news.xml";
-        byte[] content = readContent("sitemap-news.xml");
-        String contentType = "";
-        Metadata parentMetadata = new Metadata();
-        List<Outlink> links = new ArrayList<>();
+	String url = "https://example.org/sitemap-news.xml";
+	byte[] content = readContent("sitemap-news.xml");
+	String contentType = "";
+	Metadata parentMetadata = new Metadata();
+	List<Outlink> links = new ArrayList<>();
 
-        SitemapType type = bolt.detectContent(url, content);
-        assertEquals(SitemapType.NEWS, type);
+	SitemapType type = ((NewsSiteMapParserBolt) bolt).detectContent(url, content);
+	assertEquals(SitemapType.NEWS, type);
 
-        bolt.parseSiteMap(url, content, contentType, parentMetadata, links);
+	((NewsSiteMapParserBolt) bolt).parseSiteMap(url, content, contentType, parentMetadata, links);
 
-        // unmodified sitemap:
-        // - publication date is far in the past, link should be skipped
-        // <news:publication_date>2008-12-23</news:publication_date>
-        assertEquals("Outdated link not skipped", 0, links.size());
+	// unmodified sitemap:
+	// - publication date is far in the past, link should be skipped
+	// <news:publication_date>2008-12-23</news:publication_date>
+	assertEquals("Outdated link not skipped", 0, links.size());
 
-        // now set the publication date to yesterday
-        LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
-        content = (new String(content, StandardCharsets.UTF_8)).replace(
-                "<news:publication_date>2008-12-23</news:publication_date>",
-                "<news:publication_date>"
-                        + yesterday.format(
-                                DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                        + "</news:publication_date>")
-                .getBytes(StandardCharsets.UTF_8);
-        bolt.parseSiteMap(url, content, contentType, parentMetadata, links);
-        assertEquals(
-                "Expected one <loc> and one additional <xhtml:link> link - image links are ignored",
-                2, links.size());
+	// now set the publication date to yesterday
+	LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+	content = (new String(content, StandardCharsets.UTF_8))
+		.replace("<news:publication_date>2008-12-23</news:publication_date>", "<news:publication_date>"
+			+ yesterday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "</news:publication_date>")
+		.getBytes(StandardCharsets.UTF_8);
+	((NewsSiteMapParserBolt) bolt).parseSiteMap(url, content, contentType, parentMetadata, links);
+
+	assertEquals("Expected one <loc> and one additional <xhtml:link> link - image links are ignored", 2,
+		links.size());
     }
 
     protected byte[] readContent(String filename) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        IOUtils.copy(getClass().getClassLoader().getResourceAsStream(filename),
-                baos);
-        return baos.toByteArray();
+	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	IOUtils.copy(getClass().getClassLoader().getResourceAsStream(filename), baos);
+	return baos.toByteArray();
     }
 }
