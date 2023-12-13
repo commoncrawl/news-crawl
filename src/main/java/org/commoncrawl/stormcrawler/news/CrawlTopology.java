@@ -95,16 +95,20 @@ public class CrawlTopology extends ConfigurableTopology {
 	// take it from feed default output so that the feed files themselves
 	// don't get included - unless we want them too of course!
 	builder.setBolt("warc", warcbolt, numWorkers).localOrShuffleGrouping("feed");
+	
+	final Fields furl = new Fields("url");
 
 	BoltDeclarer statusBolt = builder.setBolt("status", new StatusUpdaterBolt(), numWorkers)
-		.localOrShuffleGrouping("fetch", Constants.StatusStreamName)
-		.localOrShuffleGrouping("sitemap", Constants.StatusStreamName)
-		.localOrShuffleGrouping("feed", Constants.StatusStreamName)
-		.localOrShuffleGrouping("ssb", Constants.StatusStreamName)
-		.localOrShuffleGrouping("prefilter", Constants.StatusStreamName).setNumTasks(numShards);
+		.fieldsGrouping("fetch", Constants.StatusStreamName, furl)
+		.fieldsGrouping("sitemap", Constants.StatusStreamName, furl)
+		.fieldsGrouping("feed", Constants.StatusStreamName, furl)
+		.fieldsGrouping("ssb", Constants.StatusStreamName, furl)
+		.fieldsGrouping("prefilter", Constants.StatusStreamName, furl);
+	
 	if (args.length >= 2) {
 	    statusBolt.customGrouping("filter", Constants.StatusStreamName, new URLStreamGrouping());
 	}
+	statusBolt.setNumTasks(numShards);
 
 	return submit(conf, builder);
     }
