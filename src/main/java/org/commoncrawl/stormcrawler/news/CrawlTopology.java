@@ -94,7 +94,7 @@ public class CrawlTopology extends ConfigurableTopology {
 
 	// take it from feed default output so that the feed files themselves
 	// don't get included - unless we want them too of course!
-	builder.setBolt("warc", warcbolt).localOrShuffleGrouping("feed");
+	builder.setBolt("warc", warcbolt, numWorkers).localOrShuffleGrouping("feed");
 
 	BoltDeclarer statusBolt = builder.setBolt("status", new StatusUpdaterBolt(), numWorkers)
 		.localOrShuffleGrouping("fetch", Constants.StatusStreamName)
