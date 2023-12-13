@@ -172,31 +172,36 @@ streams:
   - from: "prefilter"
     to: "status"
     grouping:
-      type: LOCAL_OR_SHUFFLE
+      type: FIELDS
+      args: ["url"]
       streamId: "status"
 
   - from: "fetcher"
     to: "status"
     grouping:
-      type: LOCAL_OR_SHUFFLE
+      type: FIELDS
+      args: ["url"]
       streamId: "status"
 
   - from: "sitemap"
     to: "status"
     grouping:
-      type: LOCAL_OR_SHUFFLE
+      type: FIELDS
+      args: ["url"]
       streamId: "status"
 
   - from: "feed"
     to: "status"
     grouping:
-      type: LOCAL_OR_SHUFFLE
+      type: FIELDS
+      args: ["url"]
       streamId: "status"
 
   - from: "ssbolt"
     to: "status"
     grouping:
-      type: LOCAL_OR_SHUFFLE
+      type: FIELDS
+      args: ["url"]
       streamId: "status"
 
   # part of the topology used to inject seeds
