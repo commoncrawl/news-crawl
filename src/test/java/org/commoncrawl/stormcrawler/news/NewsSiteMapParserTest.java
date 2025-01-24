@@ -14,6 +14,7 @@
 package org.commoncrawl.stormcrawler.news;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -83,4 +84,16 @@ public class NewsSiteMapParserTest extends ParsingTester {
 	IOUtils.copy(getClass().getClassLoader().getResourceAsStream(filename), baos);
 	return baos.toByteArray();
     }
+
+	@Test
+     public void testFeedWithSitemapNamespace() throws IOException, UnknownFormatException {
+         String url = "https://example.org/feed.xml";
+		byte[] content = readContent("feed-with-sitemap-namespace.xml");
+         SitemapType type = ((NewsSiteMapParserBolt) bolt).detectContent(url, content);
+         assertNotEquals("RSS feed with sitemap namespace should not be detected as sitemap",
+                 SitemapType.NEWS, type);
+         assertNotEquals("RSS feed with sitemap namespace should not be detected as sitemap",
+                 SitemapType.SITEMAP, type);
+     }
+
 }

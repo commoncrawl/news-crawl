@@ -1,0 +1,238 @@
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sitemap="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:wordzilla="http://www.cadenhead.org/workbench/wordzilla/namespace" version="2.0">
+<channel>
+<title>Drudge Retort</title>
+<link>https://drudge.com/</link>
+<description>The Other Side of the News</description>
+<language>en-us</language>
+<docs>http://www.rssboard.org/rss-specification</docs>
+<generator>Wordzilla/0.58</generator>
+<ttl>10</ttl>
+<atom:link rel="self" href="https://drudge.com/feed/News" type="application/rss+xml"/>
+<atom:link rel="hub" href="http://pubsubhubbub.appspot.com"/>
+<item>
+<title>Two Police Organization Speak Out on Pardons</title>
+<link>https://drudge.com/news/280939/two-police-organization-speak-out-pardons</link>
+<wordzilla:destination>https://www.police1.com/union/fop-iacp-on-presidential-pardons-attacks-on-leos-are-attacks-on-society</wordzilla:destination>
+<description>The statement followed Trump's pardon of 1,500 individuals involved in the Jan. 6 Capitol attack and Biden's granting of clemency to the convicted killer of two FBI agents</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:dtwphuxvtvimwtra5yh4ujt4/app.bsky.feed.post/3lggnzvbpzc2o" data-bluesky-cid="bafyreia2kepdedz4fz4p2fwac3e3wxpcgwmdznekaftszevyqmtuzqythm"><p lang="">At an emotional news conference in the Capitol, two police officers who fought rioters at the U.S. Capitol on Jan. 6, 2021, said they are angry and exhausted but will continue to speak out after President Donald Trump pardoned their attackers. <br><br><a href="https://bsky.app/profile/did:plc:dtwphuxvtvimwtra5yh4ujt4/post/3lggnzvbpzc2o?ref_src=embed">[image or embed]</a></p> -- PBS News (<a href="https://bsky.app/profile/did:plc:dtwphuxvtvimwtra5yh4ujt4?ref_src=embed">@pbsnews.bsky.social</a>) <a href="https://bsky.app/profile/did:plc:dtwphuxvtvimwtra5yh4ujt4/post/3lggnzvbpzc2o?ref_src=embed">January 23, 2025 at 2:55 PM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Fri, 24 Jan 2025 15:32:41 -0500</pubDate>
+<dc:creator>tfdnihilist</dc:creator>
+<comments>https://drudge.com/news/280939/two-police-organization-speak-out-pardons#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280939</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280939</wordzilla:id>
+</item>
+<item>
+<title>A New Trump Tower of Corruption</title>
+<link>https://drudge.com/news/280908/new-trump-tower-corruption</link>
+<wordzilla:destination>https://popular.info/p/a-new-trump-tower-of-corruption</wordzilla:destination>
+<description>Popular Information takes a deep dive into the business of Trump's son-in-law Jared Kushner. The article does a great job of laying out the $2 billion in funding Kushner raised from Saudi Arabia and how that money intersects with President Trump. "Bloomberg and Semafor were the only two major media outlets that covered Kushner's new partnership with the Trump Organization. Foreign governments financing a major development by a company owned by the future president days before the inauguration is newsworthy. "</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:u3pbf6ewkvh7gbkgu4lbkt5n/app.bsky.feed.post/3lgeolql3os2y" data-bluesky-cid="bafyreifuizlghkys3lmmvydqng6pht2gw4chfymzp35y3b3idsjnl3c4ne"><p lang="en">President Trump&#x27;s son-in-law, Jared Kushner, was a top White House official during Trump&#x27;s first term. After exiting the White House, Kushner launched a private equity firm, Affinity Partners. Kushner raised $2 billion from the government of Saudi Arabia.<br><br><a href="https://bsky.app/profile/did:plc:u3pbf6ewkvh7gbkgu4lbkt5n/post/3lgeolql3os2y?ref_src=embed">[image or embed]</a></p> -- Popular Information (<a href="https://bsky.app/profile/did:plc:u3pbf6ewkvh7gbkgu4lbkt5n?ref_src=embed">@popular.info</a>) <a href="https://bsky.app/profile/did:plc:u3pbf6ewkvh7gbkgu4lbkt5n/post/3lgeolql3os2y?ref_src=embed">January 22, 2025 at 8:00 PM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Fri, 24 Jan 2025 14:33:17 -0500</pubDate>
+<dc:creator>reinheitsgebot</dc:creator>
+<comments>https://drudge.com/news/280908/new-trump-tower-corruption#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280908</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280908</wordzilla:id>
+</item>
+<item>
+<title>Man who got Jan. 6 Pardon Arrested on Federal Gun Charge</title>
+<link>https://drudge.com/news/280914/man-got-jan-6-pardon-arrested</link>
+<wordzilla:destination>https://www.newsbreak.com/share/3772850534887-florida-man-who-got-jan-6-pardon-arrested-on-federal-gun-charge?_f=app_share&pd=0AB7rF0E&lang=en_US&send_time=1737580806&trans_data=%7B%22platform%22%3A0%2C%22cv%22%3A%2225.3.0.29%22%2C%22languages%22%3A%22en%</wordzilla:destination>
+<description>On Tuesday, Daniel Ball's case tied to the Jan. 6, 2021, Capitol attack was formally dismissed after he received a full pardon from President Trump. But by Wednesday, Ball was arrested once more on a pending federal gun charge .</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:euynv325eix7glyek377orak/app.bsky.feed.post/3lgdrbvpanj2x" data-bluesky-cid="bafyreihxvv424ujvshwohu3japlkmaznhmodd7ay43sn4prd4ppbhessma"><p lang="en">JUST IN: A day after his Jan. 6 case was dismissed, Daniel BALL was arrested for pending federal gun charges -- the first arrest initiated by the Trump-led Washington Field Office.<br><br><a href="https://bsky.app/profile/did:plc:euynv325eix7glyek377orak/post/3lgdrbvpanj2x?ref_src=embed">[image or embed]</a></p> -- Kyle Cheney (<a href="https://bsky.app/profile/did:plc:euynv325eix7glyek377orak?ref_src=embed">@kyledcheney.bsky.social</a>) <a href="https://bsky.app/profile/did:plc:euynv325eix7glyek377orak/post/3lgdrbvpanj2x?ref_src=embed">January 22, 2025 at 11:16 AM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Fri, 24 Jan 2025 13:32:02 -0500</pubDate>
+<dc:creator>Doc_Sarvis</dc:creator>
+<comments>https://drudge.com/news/280914/man-got-jan-6-pardon-arrested#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280914</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280914</wordzilla:id>
+</item>
+<item>
+<title>Idaho Bill Proposes Firing Squad to Execute Prisoners</title>
+<link>https://drudge.com/news/280913/idaho-bill-proposes-firing-squad-execute</link>
+<wordzilla:destination>https://www.idahostatesman.com/news/northwest/idaho/article298915055.html</wordzilla:destination>
+<description>State Rep. Bruce Skaug (R-Nampa) introduced the bill which would make Idaho the only US state to give preference to a firing squad.</description>
+<wordzilla:extended><p><img src=https://s3.amazonaws.com/ballotpedia-api4/files/thumbs/200/300/Bruce_Skaug_20230531_084627.jpg></p> <b>Humanitarian, all-round good guy, and Colonel Sanders doppelganger State Rep. Bruce Skaug (R-Nampa) who introduced the firing squad bill is my nomination for worst person in the world. (Undated photo via the public domain).</b></wordzilla:extended>
+<pubDate>Fri, 24 Jan 2025 12:32:30 -0500</pubDate>
+<dc:creator>C0RI0LANUS</dc:creator>
+<comments>https://drudge.com/news/280913/idaho-bill-proposes-firing-squad-execute#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280913</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280913</wordzilla:id>
+</item>
+<item>
+<title>Antioch School Shooting: Suspect, 17, Posted Alt-right Paraphernalia</title>
+<link>https://drudge.com/news/280945/antioch-school-shooting-suspect-17-posted</link>
+<wordzilla:destination>https://www.tennessean.com/story/news/crime/2025/01/22/nashville-shooting-antioch-shooter-solomon-henderson/77885658007/</wordzilla:destination>
+<description>Two students are dead and one injured after a 17-year-old male student armed with a handgun opened fire in the cafeteria of Antioch High School in Nashville on Wednesday morning.</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:jmte4w4x7ukciit6lci6ziau/app.bsky.feed.post/3lggidkahxk2c" data-bluesky-cid="bafyreicqv3maarwwhzlgxkhk3lx4hjtyts5fdoxibio66stjndxz6satcq"><p lang="en">Pages of writings from 17-year-old Solomon Henderson, the alleged shooter at Antioch High School, reportedly read he &quot;was ashamed to be Black,&quot; was inspired by Candace Owens and listed off racist and anti-Semitic slurs<br><br><a href="https://bsky.app/profile/did:plc:jmte4w4x7ukciit6lci6ziau/post/3lggidkahxk2c?ref_src=embed">[image or embed]</a></p> -- Phil Lewis (<a href="https://bsky.app/profile/did:plc:jmte4w4x7ukciit6lci6ziau?ref_src=embed">@phillewis.bsky.social</a>) <a href="https://bsky.app/profile/did:plc:jmte4w4x7ukciit6lci6ziau/post/3lggidkahxk2c?ref_src=embed">January 23, 2025 at 1:14 PM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Fri, 24 Jan 2025 12:14:26 -0500</pubDate>
+<dc:creator>retort</dc:creator>
+<comments>https://drudge.com/news/280945/antioch-school-shooting-suspect-17-posted#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280945</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280945</wordzilla:id>
+</item>
+<item>
+<title>We Are All Women Now</title>
+<link>https://drudge.com/news/280905/we-all-women-now</link>
+<wordzilla:destination>http://www.rawstory.com/2017/01/betting-website-gives-trump-4-1-odds-of-being-impeached-within-six-months/</wordzilla:destination>
+<description>In attempting to ban transgender people, Donald Trump issued an executive order that directs federal agencies to recognize gender as immutable and defined at conception. One of the many problems with that idea is that male sexual development doesn't begin until about a month and half into pregnancy. We are all female at conception.</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:csvfujr54z5uhdgnzeql3rax/app.bsky.feed.post/3lggfliky2s2k" data-bluesky-cid="bafyreidfbsdctcwv4qp7f4tnyq4d2ulz2cu7aibo6wa2ouaoqxchdz4iwi"><p lang="en">Since we are now, by federal law, the gender we were at conception. We are all female. I will now refer to everyone as she/her. Wear it proudly.<br><br><a href="https://bsky.app/profile/did:plc:csvfujr54z5uhdgnzeql3rax/post/3lggfliky2s2k?ref_src=embed">[image or embed]</a></p> -- Avra Cadaver (<a href="https://bsky.app/profile/did:plc:csvfujr54z5uhdgnzeql3rax?ref_src=embed">@avracadaver.bsky.social</a>) <a href="https://bsky.app/profile/did:plc:csvfujr54z5uhdgnzeql3rax/post/3lggfliky2s2k?ref_src=embed">January 23, 2025 at 12:24 PM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Fri, 24 Jan 2025 10:31:15 -0500</pubDate>
+<dc:creator>johnny_hotsauce</dc:creator>
+<comments>https://drudge.com/news/280905/we-all-women-now#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280905</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280905</wordzilla:id>
+</item>
+<item>
+<title>Federal Judges in Jan. 6 Cases Slam Trump's Pardons</title>
+<link>https://drudge.com/news/280904/federal-judges-jan-6-cases-slam-trumps</link>
+<wordzilla:destination>https://www.politico.com/news/2025/01/22/trump-pardons-jan-6-federal-judge-00199948</wordzilla:destination>
+<description>A prominent federal judge on Wednesday ripped President Donald Trump's mass clemency for Jan. 6 rioters, saying the justification he offered in his proclamation " to correct an "injustice" and trigger a "national reconciliation" " was "flatly wrong" and a "revisionist myth."</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:ldb6hx3aef2vhrctg2xdepjw/app.bsky.feed.post/3lgehgq6aic2m" data-bluesky-cid="bafyreie3u43vljhidwpnj7ssyqhb2van4b7k2jjv3ntpbvfnxpgrcv6irq"><p lang="en">Judges pushing back against Trump Jan. 6 pardons www.nytimes.com/2025/01/22/u ... <br><br><a href="https://bsky.app/profile/did:plc:ldb6hx3aef2vhrctg2xdepjw/post/3lgehgq6aic2m?ref_src=embed">[image or embed]</a></p> -- Philip Gourevitch (<a href="https://bsky.app/profile/did:plc:ldb6hx3aef2vhrctg2xdepjw?ref_src=embed">@pgourevitch.bsky.social</a>) <a href="https://bsky.app/profile/did:plc:ldb6hx3aef2vhrctg2xdepjw/post/3lgehgq6aic2m?ref_src=embed">January 22, 2025 at 5:52 PM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Fri, 24 Jan 2025 09:30:10 -0500</pubDate>
+<dc:creator>Corky</dc:creator>
+<comments>https://drudge.com/news/280904/federal-judges-jan-6-cases-slam-trumps#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280904</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280904</wordzilla:id>
+</item>
+<item>
+<title>Tax the rich -- do it now -- Start with me</title>
+<link>https://drudge.com/news/280938/tax-rich-do-now-start-me</link>
+<wordzilla:destination>https://www.theguardian.com/commentisfree/2025/jan/23/tax-the-rich-extreme-wealth-dale-vince?utm_source=dlvr.it&utm_medium=bluesky&CMP=bsky_gu</wordzilla:destination>
+<description>Multi-millionaire Dale Vince, a green energy industrialist and campaigner, points to America as a warning: "Across the Atlantic, we see more clearly than ever what happens when the extreme wealth of super-rich men becomes an attack on the public good"</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:vovinwhtulbsx4mwfw26r5ni/app.bsky.feed.post/3lgfsmzpfdh2y" data-bluesky-cid="bafyreidqo3coghqorrsfyd5xueovzrbgnpk77so4cz7dcpxgzeqw7jkunu"><p lang="">Tax the rich - do it now. Start with me | Dale Vince<br><br><a href="https://bsky.app/profile/did:plc:vovinwhtulbsx4mwfw26r5ni/post/3lgfsmzpfdh2y?ref_src=embed">[image or embed]</a></p> -- The Guardian (<a href="https://bsky.app/profile/did:plc:vovinwhtulbsx4mwfw26r5ni?ref_src=embed">@theguardian.com</a>) <a href="https://bsky.app/profile/did:plc:vovinwhtulbsx4mwfw26r5ni/post/3lgfsmzpfdh2y?ref_src=embed">January 23, 2025 at 6:45 AM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Fri, 24 Jan 2025 08:16:37 -0500</pubDate>
+<dc:creator>retort</dc:creator>
+<comments>https://drudge.com/news/280938/tax-rich-do-now-start-me#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280938</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280938</wordzilla:id>
+</item>
+<item>
+<title>Trump's Betrayal of Jan. 6's True Hero Is Shame for the Ages</title>
+<link>https://drudge.com/news/280923/trumps-betrayal-jan-6s-true-hero</link>
+<wordzilla:destination>https://www.thedailybeast.com/fallen-jan-6-officers-story-gets-a-shameful-coda-thanks-to-trump/</wordzilla:destination>
+<description>The Daily Beast's Michael Daly writes about the death of Capitol Officer Brian Sicknick after Jan. 6 and the impact Trump's pardons has on the officer's legacy.</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:xzlvsk4ty7ecwigbjpxah6yb/app.bsky.feed.post/3lgchkv7ybk24" data-bluesky-cid="bafyreig7dewdnxrdnyip3gg3xvcdvhcwsg3gapgq55imt6un2pmgo2rvwm"><p lang="en">Donald Trump never had the day in court that U.S. Capitol Police officer Brian Sicknick's mother had hoped for. And now the men who beat and bear sprayed her son will walk free, thanks to the newly inaugurated president.<br><br><a href="https://bsky.app/profile/did:plc:xzlvsk4ty7ecwigbjpxah6yb/post/3lgchkv7ybk24?ref_src=embed">[image or embed]</a></p> -- The Daily Beast (<a href="https://bsky.app/profile/did:plc:xzlvsk4ty7ecwigbjpxah6yb?ref_src=embed">@thedailybeast.bsky.social</a>) <a href="https://bsky.app/profile/did:plc:xzlvsk4ty7ecwigbjpxah6yb/post/3lgchkv7ybk24?ref_src=embed">January 21, 2025 at 10:49 PM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Thu, 23 Jan 2025 22:32:25 -0500</pubDate>
+<dc:creator>reinheitsgebot</dc:creator>
+<comments>https://drudge.com/news/280923/trumps-betrayal-jan-6s-true-hero#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280923</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280923</wordzilla:id>
+</item>
+<item>
+<title>More Bishops Raise Concerns About Top Trump Policy</title>
+<link>https://drudge.com/news/280927/more-bishops-raise-concerns-top-trump</link>
+<wordzilla:destination>https://www.rawstory.com/trump-deportations-2670914816/</wordzilla:destination>
+<description>Bishop Mariann Edgar Budde isn't the only religious leader leveling criticism at President Donald Trump this week.</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:wvz6vzgmzkh3ffkohkke5ffj/app.bsky.feed.post/3lgflfrlbo22x" data-bluesky-cid="bafyreibjjybcwscz7amm5isi5bytew6juvabf6r3rnrjuits55j5qgzvyq"><p lang="en">A Pastor&#x27;s Powerful Plea For &#x27;Mercy&#x27; Drew Trump&#x27;s Ire -- And Faith Leaders Have Something To Say www.yahoo.com/news/pastors ... #religion #religionnewsblog #donaldtrump #trumpcult<br><br><a href="https://bsky.app/profile/did:plc:wvz6vzgmzkh3ffkohkke5ffj/post/3lgflfrlbo22x?ref_src=embed">[image or embed]</a></p> -- Religion News (<a href="https://bsky.app/profile/did:plc:wvz6vzgmzkh3ffkohkke5ffj?ref_src=embed">@religionnewsblog.com</a>) <a href="https://bsky.app/profile/did:plc:wvz6vzgmzkh3ffkohkke5ffj/post/3lgflfrlbo22x?ref_src=embed">January 23, 2025 at 4:36 AM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Thu, 23 Jan 2025 21:32:01 -0500</pubDate>
+<dc:creator>Corky</dc:creator>
+<comments>https://drudge.com/news/280927/more-bishops-raise-concerns-top-trump#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280927</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280927</wordzilla:id>
+</item>
+<item>
+<title>House Republicans Announce New Subcommittee to Investigate Jan. 6</title>
+<link>https://drudge.com/news/280901/house-republicans-announce-new-subcommittee</link>
+<wordzilla:destination>https://www.nbcnews.com/politics/congress/house-republicans-new-subcommittee-investigate-jan-6-rcna188808</wordzilla:destination>
+<description>House Speaker Mike Johnson, R-La., announced Wednesday the creation of a new select subcommittee to investigate events before and after Jan. 6, 2021.</description>
+<wordzilla:extended>The subcommittee's mission is to "uncover the full truth that is owed to the American people," Johnson said.</wordzilla:extended>
+<pubDate>Thu, 23 Jan 2025 20:30:17 -0500</pubDate>
+<dc:creator>Corky</dc:creator>
+<comments>https://drudge.com/news/280901/house-republicans-announce-new-subcommittee#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280901</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280901</wordzilla:id>
+</item>
+<item>
+<title>Trump Executive Orders Threaten Healthcare of Millions</title>
+<link>https://drudge.com/news/280920/trump-executive-orders-threaten-healthcare</link>
+<wordzilla:destination>https://www.theguardian.com/us-news/2025/jan/22/trump-executive-orders-healthcare</wordzilla:destination>
+<description>Amid a flurry of executive orders, some of which were signed live on TV on inauguration night, the US president issued several orders that repeal Biden-era directives that had expanded healthcare access and options for lower-income and middle-class Americans.</description>
+<wordzilla:extended>Those orders are expected to affect the medical insurance coverage for upwards of 20 million people in the US.</wordzilla:extended>
+<pubDate>Thu, 23 Jan 2025 19:33:59 -0500</pubDate>
+<dc:creator>Corky</dc:creator>
+<comments>https://drudge.com/news/280920/trump-executive-orders-threaten-healthcare#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280920</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280920</wordzilla:id>
+</item>
+<item>
+<title>Trump Pardons DC Police Officers Convicted in Fatal 2020 Pursuit</title>
+<link>https://drudge.com/news/280903/trump-pardons-dc-police-officers-convicted</link>
+<wordzilla:destination>https://wtop.com/dc/2025/01/two-dc-police-officers-may-receive-a-pardon-after-convictions-related-to-a-murder-while-on-duty/</wordzilla:destination>
+<description>President Donald Trump has pardoned two D.C. police officers who were convicted after one chased a man riding a moped, which ultimately led to his death, and the other helped cover it up.</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:wmho6q2uiyktkam3jsvrms3s/app.bsky.feed.post/3lggta3shz22p" data-bluesky-cid="bafyreieftooold2daxn5nnrrdnotxtndko2pxzxsfb5xi3b5flwju3fise"><p lang="en">NEW: President Trump issued pardons to two Washington, D.C., police officers who were convicted for their roles in a deadly chase of a young man on a moped in 2020 and subsequent cover-up, a case that led to protests in the nation's capital.<br><br><a href="https://bsky.app/profile/did:plc:wmho6q2uiyktkam3jsvrms3s/post/3lggta3shz22p?ref_src=embed">[image or embed]</a></p> -- NBC News (<a href="https://bsky.app/profile/did:plc:wmho6q2uiyktkam3jsvrms3s?ref_src=embed">@nbcnews.com</a>) <a href="https://bsky.app/profile/did:plc:wmho6q2uiyktkam3jsvrms3s/post/3lggta3shz22p?ref_src=embed">January 23, 2025 at 4:28 PM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Thu, 23 Jan 2025 18:30:35 -0500</pubDate>
+<dc:creator>Dbt2</dc:creator>
+<comments>https://drudge.com/news/280903/trump-pardons-dc-police-officers-convicted#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280903</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280903</wordzilla:id>
+</item>
+<item>
+<title>Fed Judge Halts Trump Order Ending Birthright Citizenship</title>
+<link>https://drudge.com/news/280924/fed-judge-halts-trump-order-ending</link>
+<wordzilla:destination>https://www.wbaltv.com/article/judge-blocks-trump-birthright-citizenship-order/63529882</wordzilla:destination>
+<description>A federal judge on Thursday temporarily blocked President Donald Trump's executive order ending the constitutional guarantee of birthright citizenship regardless of the parents' immigration status.</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:nl32untxngcg74dl3w7scd74/app.bsky.feed.post/3lgbpaaoe272w" data-bluesky-cid="bafyreihcms3ygulu4z6rwpl22qqh6tza7kjwu3obrsg4nkgbx4rxlpzb6i"><p lang="">A swath of Democratic-led states and civil rights groups have filed the first lawsuits challenging Trump&#x27;s executive orders, including one that seeks to roll back birthright citizenship in the US.<br><br><a href="https://bsky.app/profile/did:plc:nl32untxngcg74dl3w7scd74/post/3lgbpaaoe272w?ref_src=embed">[image or embed]</a></p> -- Guardian US (<a href="https://bsky.app/profile/did:plc:nl32untxngcg74dl3w7scd74?ref_src=embed">@us.theguardian.com</a>) <a href="https://bsky.app/profile/did:plc:nl32untxngcg74dl3w7scd74/post/3lgbpaaoe272w?ref_src=embed">January 21, 2025 at 3:34 PM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Thu, 23 Jan 2025 15:32:34 -0500</pubDate>
+<dc:creator>Corky</dc:creator>
+<comments>https://drudge.com/news/280924/fed-judge-halts-trump-order-ending#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280924</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280924</wordzilla:id>
+</item>
+<item>
+<title>Trump's Immigration Plans Already Wrecking the Food Industry</title>
+<link>https://drudge.com/news/280918/trumps-immigration-plans-already-wrecking</link>
+<wordzilla:destination>https://newrepublic.com/post/190555/donald-trump-immigration-deportations-farm-workers</wordzilla:destination>
+<description>Fear of increased ICE raids have already negatively affected the nation's agricultural sector, causing alarm that food prices could skyrocket in the near future as a result of Donald Trump's aggressive immigration policies.</description>
+<wordzilla:extended><blockquote class="bluesky-embed" data-bluesky-uri="at://did:plc:4fjlxgdpuqxfqnzvvbj56q5f/app.bsky.feed.post/3lgejbmpg4c2t" data-bluesky-cid="bafyreigwwtrcmnfgv534pnwg7p6uv2zregtanwc3d3zps372f3v2kdr56y"><p lang="en">&quot;If this is the new normal, this is absolute economic devastation.&quot;<br><br><a href="https://bsky.app/profile/did:plc:4fjlxgdpuqxfqnzvvbj56q5f/post/3lgejbmpg4c2t?ref_src=embed">[image or embed]</a></p> -- Raw Story (<a href="https://bsky.app/profile/did:plc:4fjlxgdpuqxfqnzvvbj56q5f?ref_src=embed">@rawstory.com</a>) <a href="https://bsky.app/profile/did:plc:4fjlxgdpuqxfqnzvvbj56q5f/post/3lgejbmpg4c2t?ref_src=embed">January 22, 2025 at 6:25 PM</a></blockquote><script async src="https://embed.bsky.app/static/embed.js" charset="utf-8"></script></wordzilla:extended>
+<pubDate>Thu, 23 Jan 2025 13:33:55 -0500</pubDate>
+<dc:creator>qcp</dc:creator>
+<comments>https://drudge.com/news/280918/trumps-immigration-plans-already-wrecking#discuss</comments>
+<guid isPermaLink="false">tag:drudge.com,2005:weblog.280918</guid>
+<category>news,</category>
+<sitemap:priority>0.5</sitemap:priority>
+<sitemap:changefreq>daily</sitemap:changefreq>
+<wordzilla:id>280918</wordzilla:id>
+</item>
+</channel>
+</rss>
