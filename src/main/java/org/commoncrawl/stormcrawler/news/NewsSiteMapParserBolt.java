@@ -32,6 +32,7 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.commoncrawl.stormcrawler.news.bootstrap.FeedDetectorBolt;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.stormcrawler.Constants;
@@ -119,6 +120,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     }
 
     private static ContentDetector contentDetector;
+    private static ContentDetector rssContentDetector;
 
     private boolean strictModeSitemaps = false;
     private boolean allowPartialSitemaps = true;
@@ -281,6 +283,12 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         // try to detect content based on the first n bytes
         // works for XML and non-compressed documents
         // TODO: implement check for compressed XML
+        // First check if it's an RSS or atom feed - if so, return null
+        if (rssContentDetector.getFirstMatch(content) >= 0) {
+            LOG.info("{} detected as feed - skipping", url);
+            return null;
+        }
+
         int match = contentDetector.getFirstMatch(content);
         if (match >= 0) {
             // a sitemap, need to detect type of sitemap
@@ -484,6 +492,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 1024);
         contentDetector = new ContentDetector(
                 NewsSiteMapParserBolt.contentClues, maxOffsetGuess);
+        rssContentDetector = new ContentDetector(
+                FeedDetectorBolt.contentClues, maxOffsetGuess);
         averagedMetrics = context.registerMetric(
                 "news_sitemap_average_processing_time",
                 new ReducedMetric(new MeanReducer()), 30);
