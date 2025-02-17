@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sitemap="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:wordzilla="http://www.cadenhead.org/workbench/wordzilla/namespace" version="2.0">
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sitemap="http://www.sitemaps.org/schemas/sitemap/0.9" version="2.0">
 <channel>
 <title>Lorem Ipsum Feed</title>
 <link>https://example.com/</link>
@@ -12,7 +12,6 @@
 <item>
 <title>Lorem Ipsum Dolor Sit Amet</title>
 <link>https://example.com/lorem/123</link>
-<wordzilla:destination>https://lorem.com/ipsum</wordzilla:destination>
 <description>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</description>
 <pubDate>Fri, 24 Jan 2025 15:32:41 -0500</pubDate>
 <dc:creator>loremwriter</dc:creator>
@@ -21,12 +20,10 @@
 <category>lorem,</category>
 <sitemap:priority>0.5</sitemap:priority>
 <sitemap:changefreq>daily</sitemap:changefreq>
-<wordzilla:id>123</wordzilla:id>
 </item>
 <item>
 <title>Consectetur Adipiscing Elit</title>
 <link>https://example.com/lorem/456</link>
-<wordzilla:destination>https://lorem.com/consectetur</wordzilla:destination>
 <description>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</description>
 <pubDate>Fri, 24 Jan 2025 14:33:17 -0500</pubDate>
 <dc:creator>ipsumwriter</dc:creator>
@@ -35,7 +32,6 @@
 <category>ipsum,</category>
 <sitemap:priority>0.5</sitemap:priority>
 <sitemap:changefreq>daily</sitemap:changefreq>
-<wordzilla:id>456</wordzilla:id>
 </item>
 </channel>
 </rss>
