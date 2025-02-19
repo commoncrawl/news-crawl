@@ -20,6 +20,7 @@ package org.commoncrawl.stormcrawler.news.bootstrap;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.commoncrawl.stormcrawler.news.CrawlTopology;
+import org.commoncrawl.stormcrawler.news.FeedDetectorBolt;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.stormcrawler.ConfigurableTopology;
