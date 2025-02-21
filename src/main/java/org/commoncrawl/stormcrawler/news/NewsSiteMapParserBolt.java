@@ -16,6 +16,7 @@ package org.commoncrawl.stormcrawler.news;
 import static com.digitalpebble.stormcrawler.Constants.StatusStreamName;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -25,7 +26,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.digitalpebble.stormcrawler.protocol.Protocol;
+import com.digitalpebble.stormcrawler.protocol.ProtocolFactory;
+import crawlercommons.robots.BaseRobotRules;
 import org.apache.commons.lang.StringUtils;
+import org.apache.storm.Config;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.task.OutputCollector;
@@ -68,6 +73,15 @@ import crawlercommons.sitemaps.extension.NewsAttributes;
  */
 @SuppressWarnings("serial")
 public class NewsSiteMapParserBolt extends SiteMapParserBolt {
+    public ProtocolFactory getProtocolFactory() {
+        return protocolFactory;
+    }
+
+    public void setProtocolFactory(ProtocolFactory protocolFactory) {
+        this.protocolFactory = protocolFactory;
+    }
+
+    private ProtocolFactory protocolFactory;
     // TODO:
     //    this is a modified copy of c.d.s.bolt.SiteMapParserBolt
     //    - make parent class extensible and overridable
@@ -257,6 +271,29 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
         // send outlinks to status stream
         for (Outlink ol : outlinks) {
+            try {
+                if (!crossSubmitCheck(ol, url)) {
+                    String errorMessage = String.format("Cross Submit check failed for %s in %s", ol.getTargetURL(), url);
+                    LOG.error(errorMessage);
+                    ol.getMetadata().setValue(Constants.STATUS_ERROR_SOURCE,
+                            "cross submit check");
+                    ol.getMetadata().setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
+                    Values v = new Values(ol.getTargetURL(), ol.getMetadata(),
+                        Status.ERROR);
+                    collector.emit(StatusStreamName, tuple, v);
+                    continue;
+                }
+            } catch (MalformedURLException e) {
+                String errorMessage = String.format("Malformed URL in outlink %s: %s", url, e);
+                LOG.error(errorMessage);
+                ol.getMetadata().setValue(Constants.STATUS_ERROR_SOURCE,
+                        "cross submit check");
+                ol.getMetadata().setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
+                Values v = new Values(ol.getTargetURL(), ol.getMetadata(),
+                    Status.ERROR);
+                collector.emit(StatusStreamName, tuple, v);
+            }
+
             if (isSitemapIndex) {
                 ol.getMetadata().setValue(isSitemapKey, "true");
                 if (isSitemapVerified) {
@@ -276,6 +313,40 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         collector.emit(Constants.StatusStreamName, tuple, new Values(url,
                 metadata, Status.FETCHED));
         collector.ack(tuple);
+    }
+
+    /**
+     * Checks whether a sitemap URL is allowed to submit URLs for another host.
+     * If the sitemap and target URLs are on the same host, submission is allowed.
+     * For cross-host submissions, checks robots.txt rules of the target host.
+     *
+     * @param ol The outlink containing the target URL to check
+     * @param sitemap The URL of the sitemap
+     * @return true if submission is allowed, false otherwise
+     * @throws MalformedURLException if URLs are malformed
+     */
+    public boolean crossSubmitCheck(Outlink ol, String sitemap ) throws MalformedURLException{
+
+        URL targetURL;
+        URL sitemapURL;
+        sitemapURL = new URL(sitemap);
+
+        targetURL = new URL(ol.getTargetURL());
+        if (targetURL.getHost().equals(sitemapURL.getHost())) {
+            // same host, no need to check robots.txt
+            return true;
+        }
+        else {
+            Protocol protocol = protocolFactory.getProtocol(targetURL);
+            BaseRobotRules rules = protocol.getRobotRules(ol.getTargetURL());
+            if (rules != null) {
+                return rules.getSitemaps().contains(sitemapURL.toString()) && rules.isAllowed(targetURL.toString());
+            }
+            else {
+                // no robots.txt and a cross submit host, so disallow
+                return false;
+            }
+        }
     }
 
     public SitemapType detectContent(String url, byte[] content) {
@@ -482,11 +553,14 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     public void prepare(Map stormConf, TopologyContext context,
             OutputCollector collector) {
         super.prepare(stormConf, context, collector);
+        Config conf = new Config();
+        conf.putAll(stormConf);
         sniffContent = ConfUtils.getBoolean(stormConf,
                 "sitemap.sniffContent", false);
         filterHoursSinceModified = ConfUtils.getInt(stormConf,
                 "sitemap.filter.hours.since.modified", -1);
         parseFilters = ParseFilters.fromConf(stormConf);
+        protocolFactory = ProtocolFactory.getInstance(conf);
         int maxOffsetGuess = ConfUtils.getInt(stormConf, "sitemap.offset.guess",
                 1024);
         contentDetector = new ContentDetector(
