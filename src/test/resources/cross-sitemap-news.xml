@@ -28,7 +28,7 @@
     </news:news>
     <!-- ignore image links -->
     <image:image>
-      <image:loc>http://example.org/image.jpg</image:loc>
+      <image:loc>http://www.example.org/image.jpg</image:loc>
     </image:image>
     <image:image>
       <image:loc>http://example.org/photo.jpg</image:loc>
@@ -39,8 +39,26 @@
     </image:image>
     <!-- include alternate language links -->
   </url>
-  <url>
+    <url>
     <loc>http://www.example.net/ads/sponsored-content.html</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Example News</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:genres>Advertisement, Sponsored</news:genres>
+      <news:publication_date>2008-12-23</news:publication_date>
+      <news:title>Special Holiday Deals from Our Partners</news:title>
+      <news:keywords>sponsored, advertisement, deals, holiday</news:keywords>
+    </news:news>
+    <image:image>
+      <image:loc>http://www.example.net/ads/promo-banner.jpg</image:loc>
+      <image:caption>Holiday Season Special Offers</image:caption>
+      <image:title>Promotional Banner</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>http://www.example.com/sports/news1.html</loc>
     <news:news>
       <news:publication>
         <news:name>Example News</news:name>

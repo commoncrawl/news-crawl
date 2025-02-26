@@ -28,6 +28,7 @@ import java.util.Map;
 
 import com.digitalpebble.stormcrawler.protocol.Protocol;
 import com.digitalpebble.stormcrawler.protocol.ProtocolFactory;
+import com.digitalpebble.stormcrawler.util.MetadataTransfer;
 import crawlercommons.robots.BaseRobotRules;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
@@ -80,6 +81,16 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     public void setProtocolFactory(ProtocolFactory protocolFactory) {
         this.protocolFactory = protocolFactory;
     }
+
+    public MetadataTransfer getMetadataTransfer() {
+        return metadataTransfer;
+    }
+
+    public void setMetadataTransfer(MetadataTransfer metadataTransfer) {
+        this.metadataTransfer = metadataTransfer;
+    }
+
+    private MetadataTransfer metadataTransfer;
 
     private ProtocolFactory protocolFactory;
     // TODO:
@@ -272,7 +283,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         // send outlinks to status stream
         for (Outlink ol : outlinks) {
             try {
-                if (!crossSubmitCheck(ol, url)) {
+                if (!crossSubmitCheck(ol, url, metadata)) {
+
                     String errorMessage = String.format("Cross Submit check failed for %s in %s", ol.getTargetURL(), url);
                     LOG.error(errorMessage);
                     ol.getMetadata().setValue(Constants.STATUS_ERROR_SOURCE,
@@ -320,33 +332,51 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
      * If the sitemap and target URLs are on the same host, submission is allowed.
      * For cross-host submissions, checks robots.txt rules of the target host.
      *
-     * @param ol The outlink containing the target URL to check
-     * @param sitemap The URL of the sitemap
+     * @param ol       The outlink containing the target URL to check
+     * @param sitemap  The URL of the sitemap
+     * @param metadata
      * @return true if submission is allowed, false otherwise
      * @throws MalformedURLException if URLs are malformed
      */
-    public boolean crossSubmitCheck(Outlink ol, String sitemap ) throws MalformedURLException{
+    public boolean crossSubmitCheck(Outlink ol, String sitemap, Metadata metadata) throws MalformedURLException {
+        URL targetURL = new URL(ol.getTargetURL());
+        URL sitemapURL = new URL(sitemap);
 
-        URL targetURL;
-        URL sitemapURL;
-        sitemapURL = new URL(sitemap);
-
-        targetURL = new URL(ol.getTargetURL());
+        // Same host - allow
         if (targetURL.getHost().equals(sitemapURL.getHost())) {
-            // same host, no need to check robots.txt
             return true;
         }
-        else {
-            Protocol protocol = protocolFactory.getProtocol(targetURL);
-            BaseRobotRules rules = protocol.getRobotRules(ol.getTargetURL());
-            if (rules != null) {
-                return rules.getSitemaps().contains(sitemapURL.toString()) && rules.isAllowed(targetURL.toString());
-            }
-            else {
-                // no robots.txt and a cross submit host, so disallow
-                return false;
+
+        // Cross-host checks
+        Metadata targetMetadata = metadataTransfer.getMetaForOutlink(ol.getTargetURL(), sitemapURL.toString(), metadata);
+        String[] urlPaths = targetMetadata.getValues("url.path");
+
+        // Check url.path metadata first
+        if (urlPaths != null) {
+            for (String path : urlPaths) {
+                if (new URL(path).getHost().equals(targetURL.getHost())) {
+                    return true;
+                }
             }
         }
+
+        // Check robots.txt rules
+        Protocol protocol = protocolFactory.getProtocol(targetURL);
+        BaseRobotRules rules = protocol.getRobotRules(ol.getTargetURL());
+        if (rules != null) {
+            if (rules.getSitemaps().contains(sitemapURL.toString())) {
+                return true;
+            }
+            if (urlPaths != null) {
+                for (String path : urlPaths) {
+                    if (rules.getSitemaps().contains(path)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     public SitemapType detectContent(String url, byte[] content) {
@@ -555,6 +585,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         super.prepare(stormConf, context, collector);
         Config conf = new Config();
         conf.putAll(stormConf);
+        metadataTransfer = MetadataTransfer.getInstance(stormConf);
         sniffContent = ConfUtils.getBoolean(stormConf,
                 "sitemap.sniffContent", false);
         filterHoursSinceModified = ConfUtils.getInt(stormConf,
