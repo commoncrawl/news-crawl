@@ -18,6 +18,7 @@ import static org.mockito.Mockito.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -99,7 +100,7 @@ public class NewsSiteMapParserTest extends ParsingTester {
                  SitemapType.SITEMAP, type);
      }
 	@Test
-	public void testCrossHostSitemapVerification() throws IOException, UnknownFormatException {
+	public void testCrossHostSitemapVerification() throws IOException, UnknownFormatException, URISyntaxException {
 		String sitemapURL = "https://www.example.org/sitemap-news.xml";
 		String articleURL = "http://www.example.org/business/article55.html";
 		String adSitemapURL = "https://www.example.net/sitemap-ads.xml";
@@ -163,7 +164,7 @@ public class NewsSiteMapParserTest extends ParsingTester {
 	 * URLs from example.net fail since their robots reference a different sitemap index.
 	 */
 	@Test
-    public void test_cross_host_submission_sitemaps() throws IOException, UnknownFormatException {
+    public void test_cross_host_submission_sitemaps() throws IOException, UnknownFormatException, URISyntaxException {
 		String sitemapURL = "https://www.example.org/sitemap-news.xml";
 		String sitemapIndexURL = "https://www.example.org/sitemap-index.xml";
 		String adSitemapURL = "https://www.example.net/sitemap-ads.xml";

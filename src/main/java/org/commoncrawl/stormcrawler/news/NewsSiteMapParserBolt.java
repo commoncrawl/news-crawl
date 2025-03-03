@@ -17,6 +17,8 @@ import static com.digitalpebble.stormcrawler.Constants.StatusStreamName;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -295,7 +297,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                     collector.emit(StatusStreamName, tuple, v);
                     continue;
                 }
-            } catch (MalformedURLException e) {
+            } catch (MalformedURLException | URISyntaxException e) {
                 String errorMessage = String.format("Malformed URL in outlink %s: %s", url, e);
                 LOG.error(errorMessage);
                 ol.getMetadata().setValue(Constants.STATUS_ERROR_SOURCE,
@@ -338,9 +340,9 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
      * @return true if submission is allowed, false otherwise
      * @throws MalformedURLException if URLs are malformed
      */
-    public boolean crossSubmitCheck(Outlink ol, String sitemap, Metadata metadata) throws MalformedURLException {
-        URL targetURL = new URL(ol.getTargetURL());
-        URL sitemapURL = new URL(sitemap);
+    public boolean crossSubmitCheck(Outlink ol, String sitemap, Metadata metadata) throws URISyntaxException, MalformedURLException {
+        URI targetURL = new URI(ol.getTargetURL());
+        URI sitemapURL = new URI(sitemap);
 
         // Same host - allow
         if (targetURL.getHost().equals(sitemapURL.getHost())) {
@@ -348,7 +350,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         }
 
         // Cross-host checks
-        Metadata targetMetadata = metadataTransfer.getMetaForOutlink(ol.getTargetURL(), sitemapURL.toString(), metadata);
+        Metadata targetMetadata = metadataTransfer.getMetaForOutlink(targetURL.toString(), sitemapURL.toString(), metadata);
         String[] urlPaths = targetMetadata.getValues("url.path");
 
         // Check url.path metadata first
@@ -361,8 +363,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         }
 
         // Check robots.txt rules
-        Protocol protocol = protocolFactory.getProtocol(targetURL);
-        BaseRobotRules rules = protocol.getRobotRules(ol.getTargetURL());
+        Protocol protocol = protocolFactory.getProtocol(targetURL.toURL());
+        BaseRobotRules rules = protocol.getRobotRules(targetURL.toString());
         if (rules != null) {
             if (rules.getSitemaps().contains(sitemapURL.toString())) {
                 return true;
