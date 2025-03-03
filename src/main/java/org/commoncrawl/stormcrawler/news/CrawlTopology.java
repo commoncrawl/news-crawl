@@ -21,11 +21,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.digitalpebble.stormcrawler.Metadata;
-import com.digitalpebble.stormcrawler.persistence.Status;
-import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.StormSubmitter;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
@@ -161,20 +156,4 @@ public class CrawlTopology extends ConfigurableTopology {
 	return warcbolt;
     }
 
-	@Override
-	protected int submit(String name, Config conf, TopologyBuilder builder) {
-        // register for serialization with Kryo
-        Config.registerSerialization(conf, Metadata.class);
-        Config.registerSerialization(conf, Status.class);
-
-        try {
-			LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology(name, conf, builder.createTopology());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return -1;
-        }
-        return 0;
-
-	}
 }
