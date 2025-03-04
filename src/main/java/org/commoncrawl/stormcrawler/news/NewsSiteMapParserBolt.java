@@ -40,6 +40,7 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.commoncrawl.stormcrawler.utils.DomainChecker;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.stormcrawler.Constants;
@@ -159,6 +160,9 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
     /** Delay in minutes used for scheduling sub-sitemaps **/
     private int scheduleSitemapsWithDelay = -1;
+
+    private boolean crossSubmitAllowed;
+    private boolean crossSubmitLenient;
 
     @Override
     public void execute(Tuple tuple) {
@@ -285,7 +289,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         // send outlinks to status stream
         for (Outlink ol : outlinks) {
             try {
-                if (!crossSubmitCheck(ol, url, metadata)) {
+                if (!this.crossSubmitAllowed && !crossSubmitCheck(ol, url, metadata)) {
 
                     String errorMessage = String.format("Cross Submit check failed for %s in %s", ol.getTargetURL(), url);
                     LOG.error(errorMessage);
@@ -329,6 +333,13 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         collector.ack(tuple);
     }
 
+    public String getHost(URI url) {
+        if (this.crossSubmitLenient) {
+            return DomainChecker.getPayLevelDomain(url.getHost());
+        }
+        return url.getHost();
+    }
+
     /**
      * Checks whether a sitemap URL is allowed to submit URLs for another host.
      * If the sitemap and target URLs are on the same host, submission is allowed.
@@ -344,8 +355,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         URI targetURL = new URI(ol.getTargetURL());
         URI sitemapURL = new URI(sitemap);
 
+        String targetHost = this.getHost(targetURL);
+        String sitemapHost = this.getHost(sitemapURL);
         // Same host - allow
-        if (targetURL.getHost().equals(sitemapURL.getHost())) {
+        if (targetHost.equals(sitemapHost)) {
             return true;
         }
 
@@ -356,7 +369,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         // Check url.path metadata first
         if (urlPaths != null) {
             for (String path : urlPaths) {
-                if (new URL(path).getHost().equals(targetURL.getHost())) {
+                if (this.getHost(new URI(path)).equals(targetHost)) {
                     return true;
                 }
             }
@@ -605,6 +618,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 new ReducedMetric(new MeanReducer()), 30);
         scheduleSitemapsWithDelay = ConfUtils.getInt(stormConf,
                 "sitemap.schedule.delay", scheduleSitemapsWithDelay);
+        crossSubmitAllowed = ConfUtils.getBoolean(stormConf,
+                "crossSubmit.allowed", crossSubmitAllowed);
+        crossSubmitLenient = ConfUtils.getBoolean(stormConf,
+                "crossSubmit.lenient", crossSubmitLenient);;
     }
 
 }
