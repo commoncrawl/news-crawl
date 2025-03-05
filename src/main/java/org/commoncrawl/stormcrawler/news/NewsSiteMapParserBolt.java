@@ -31,6 +31,7 @@ import java.util.Map;
 import com.digitalpebble.stormcrawler.protocol.Protocol;
 import com.digitalpebble.stormcrawler.protocol.ProtocolFactory;
 import com.digitalpebble.stormcrawler.util.MetadataTransfer;
+import crawlercommons.domains.EffectiveTldFinder;
 import crawlercommons.robots.BaseRobotRules;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
@@ -40,7 +41,6 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.commoncrawl.stormcrawler.utils.DomainChecker;
 import org.slf4j.LoggerFactory;
 
 import com.digitalpebble.stormcrawler.Constants;
@@ -161,8 +161,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     /** Delay in minutes used for scheduling sub-sitemaps **/
     private int scheduleSitemapsWithDelay = -1;
 
-    private boolean crossSubmitAllowed;
-    private boolean crossSubmitLenient;
+    private boolean crossSubmitAllowed = false;
+    private boolean crossSubmitLenient = true;
 
     @Override
     public void execute(Tuple tuple) {
@@ -335,7 +335,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
     public String getHost(URI url) {
         if (this.crossSubmitLenient) {
-            return DomainChecker.getPayLevelDomain(url.getHost());
+            /// www.example.com-> "example.com"
+            /// blog.subdomain.example.co.uk -> "example.co.uk"
+            /// www.myapp.github.io -> "myapp.github.io" (excludePrivate is false)
+            return EffectiveTldFinder.getAssignedDomain(url.getHost(), true,false);
         }
         return url.getHost();
     }
