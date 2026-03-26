@@ -19,8 +19,8 @@ config:
 
   # mandatory when using Flux
   topology.kryo.register:
-    - com.digitalpebble.stormcrawler.Metadata
-    - com.digitalpebble.stormcrawler.persistence.Status
+    - org.apache.stormcrawler.Metadata
+    - org.apache.stormcrawler.persistence.Status
 
   topology.backpressure.enable: false
 
@@ -31,7 +31,7 @@ config:
   topology.metrics.consumer.register:
      - class: "org.apache.storm.metric.LoggingMetricsConsumer"
        parallelism.hint: 1
-     - class: "com.digitalpebble.stormcrawler.elasticsearch.metrics.MetricsConsumer"
+     - class: "org.apache.stormcrawler.elasticsearch.metrics.MetricsConsumer"
        parallelism.hint: 1
 
   # status index and fetcher queues are partitioned by domain
@@ -71,8 +71,8 @@ config:
   http.timeout: 30000
 
   # use okhttp
-  http.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
-  https.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
+  http.protocol.implementation: org.apache.stormcrawler.protocol.okhttp.HttpProtocol
+  https.protocol.implementation: org.apache.stormcrawler.protocol.okhttp.HttpProtocol
 
   # do not fail on unknown SSL certificates
   http.trust.everything: true
@@ -103,7 +103,7 @@ config:
   fetcher.max.urls.in.queues: 6000
 
   # fetch Scheduler implementation
-  scheduler.class: "com.digitalpebble.stormcrawler.persistence.AdaptiveScheduler"
+  scheduler.class: "org.apache.stormcrawler.persistence.AdaptiveScheduler"
   # AdaptiveScheduler properties
   scheduler.adaptive.setLastModified: true
   # frequently changing feeds or news sitemaps are refetched after 90 min.

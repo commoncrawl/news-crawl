@@ -24,25 +24,24 @@ import java.util.Map;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
+import org.apache.stormcrawler.ConfigurableTopology;
+import org.apache.stormcrawler.Constants;
+import org.apache.stormcrawler.bolt.FeedParserBolt;
+import org.apache.stormcrawler.bolt.FetcherBolt;
+import org.apache.stormcrawler.bolt.URLFilterBolt;
+import org.apache.stormcrawler.bolt.URLPartitionerBolt;
+import org.apache.stormcrawler.indexing.DummyIndexer;
+import org.apache.stormcrawler.opensearch.persistence.AggregationSpout;
+import org.apache.stormcrawler.opensearch.persistence.StatusUpdaterBolt;
+import org.apache.stormcrawler.protocol.AbstractHttpProtocol;
+import org.apache.stormcrawler.spout.FileSpout;
+import org.apache.stormcrawler.util.ConfUtils;
+import org.apache.stormcrawler.util.URLStreamGrouping;
+import org.apache.stormcrawler.warc.FileTimeSizeRotationPolicy;
+import org.apache.stormcrawler.warc.FileTimeSizeRotationPolicy.Units;
+import org.apache.stormcrawler.warc.WARCFileNameFormat;
+import org.apache.stormcrawler.warc.WARCHdfsBolt;
 import org.slf4j.LoggerFactory;
-
-import com.digitalpebble.stormcrawler.ConfigurableTopology;
-import com.digitalpebble.stormcrawler.Constants;
-import com.digitalpebble.stormcrawler.bolt.FeedParserBolt;
-import com.digitalpebble.stormcrawler.bolt.FetcherBolt;
-import com.digitalpebble.stormcrawler.bolt.URLFilterBolt;
-import com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt;
-import com.digitalpebble.stormcrawler.elasticsearch.persistence.AggregationSpout;
-import com.digitalpebble.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt;
-import com.digitalpebble.stormcrawler.indexing.DummyIndexer;
-import com.digitalpebble.stormcrawler.protocol.AbstractHttpProtocol;
-import com.digitalpebble.stormcrawler.spout.FileSpout;
-import com.digitalpebble.stormcrawler.util.ConfUtils;
-import com.digitalpebble.stormcrawler.util.URLStreamGrouping;
-import com.digitalpebble.stormcrawler.warc.FileTimeSizeRotationPolicy;
-import com.digitalpebble.stormcrawler.warc.FileTimeSizeRotationPolicy.Units;
-import com.digitalpebble.stormcrawler.warc.WARCFileNameFormat;
-import com.digitalpebble.stormcrawler.warc.WARCHdfsBolt;
 
 /**
  * Dummy topology to play with the spouts and bolts on ElasticSearch

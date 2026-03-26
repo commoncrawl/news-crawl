@@ -13,7 +13,7 @@
  */
 package org.commoncrawl.stormcrawler.news;
 
-import static com.digitalpebble.stormcrawler.Constants.StatusStreamName;
+import static org.apache.stormcrawler.Constants.StatusStreamName;
 
 import java.io.IOException;
 import java.net.URL;
@@ -25,27 +25,26 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpHeaders;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.apache.stormcrawler.Constants;
+import org.apache.stormcrawler.Metadata;
+import org.apache.stormcrawler.bolt.SiteMapParserBolt;
+import org.apache.stormcrawler.parse.Outlink;
+import org.apache.stormcrawler.parse.ParseData;
+import org.apache.stormcrawler.parse.ParseFilter;
+import org.apache.stormcrawler.parse.ParseFilters;
+import org.apache.stormcrawler.parse.ParseResult;
+import org.apache.stormcrawler.persistence.DefaultScheduler;
+import org.apache.stormcrawler.persistence.Status;
+import org.apache.stormcrawler.util.ConfUtils;
 import org.slf4j.LoggerFactory;
-
-import com.digitalpebble.stormcrawler.Constants;
-import com.digitalpebble.stormcrawler.Metadata;
-import com.digitalpebble.stormcrawler.bolt.SiteMapParserBolt;
-import com.digitalpebble.stormcrawler.parse.Outlink;
-import com.digitalpebble.stormcrawler.parse.ParseData;
-import com.digitalpebble.stormcrawler.parse.ParseFilter;
-import com.digitalpebble.stormcrawler.parse.ParseFilters;
-import com.digitalpebble.stormcrawler.parse.ParseResult;
-import com.digitalpebble.stormcrawler.persistence.DefaultScheduler;
-import com.digitalpebble.stormcrawler.persistence.Status;
-import com.digitalpebble.stormcrawler.protocol.HttpHeaders;
-import com.digitalpebble.stormcrawler.util.ConfUtils;
 
 import crawlercommons.sitemaps.AbstractSiteMap;
 import crawlercommons.sitemaps.Namespace;

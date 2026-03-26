@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -12,12 +12,11 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.apache.stormcrawler.Metadata;
+import org.apache.stormcrawler.filtering.URLFilters;
+import org.apache.stormcrawler.persistence.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.digitalpebble.stormcrawler.Metadata;
-import com.digitalpebble.stormcrawler.filtering.URLFilters;
-import com.digitalpebble.stormcrawler.persistence.Status;
 
 /**
  * Variant of the URLFilterBolt to go upstream of the fetching to catch anything
@@ -34,7 +33,7 @@ public class PreFilterBolt extends BaseRichBolt {
 
 	private final String filterConfigFile;
 
-	private static final String _s = com.digitalpebble.stormcrawler.Constants.StatusStreamName;
+	private static final String _s = org.apache.stormcrawler.Constants.StatusStreamName;
 
 	public PreFilterBolt(String filterConfigFile) {
 		this.filterConfigFile = filterConfigFile;

@@ -1,5 +1,5 @@
 {
-  "com.digitalpebble.stormcrawler.filtering.URLFilters": [
+  "org.apache.stormcrawler.filtering.URLFilters": [
     {
       "class": "org.commoncrawl.stormcrawler.filter.FastURLFilter",
       "params": {

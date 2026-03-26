@@ -21,7 +21,7 @@ config:
 
 components:
   - id: "WARCFileNameFormat"
-    className: "com.digitalpebble.stormcrawler.warc.WARCFileNameFormat"
+    className: "org.apache.stormcrawler.warc.WARCFileNameFormat"
     configMethods:
       - name: "withPath"
         args:
@@ -30,7 +30,7 @@ components:
         args:
           - "CC-NEWS"
   - id: "WARCFileRotationPolicy"
-    className: "com.digitalpebble.stormcrawler.warc.FileTimeSizeRotationPolicy"
+    className: "org.apache.stormcrawler.warc.FileTimeSizeRotationPolicy"
     constructorArgs:
       - 1024
       - MB
@@ -77,10 +77,10 @@ components:
 
 spouts:
   - id: "spout"
-    className: "com.digitalpebble.stormcrawler.elasticsearch.persistence.AggregationSpout"
+    className: "org.apache.stormcrawler.elasticsearch.persistence.AggregationSpout"
     parallelism: 16
   - id: "filespout"
-    className: "com.digitalpebble.stormcrawler.spout.FileSpout"
+    className: "org.apache.stormcrawler.spout.FileSpout"
     parallelism: 1
     constructorArgs:
       - "/path/to/seeds/"
@@ -89,7 +89,7 @@ spouts:
 
 bolts:
   - id: "filter"
-    className: "com.digitalpebble.stormcrawler.bolt.URLFilterBolt"
+    className: "org.apache.stormcrawler.bolt.URLFilterBolt"
     parallelism: 1
   - id: "prefilter"
     className: "org.commoncrawl.stormcrawler.news.PreFilterBolt"
@@ -97,22 +97,22 @@ bolts:
     constructorArgs:
       - "pre-urlfilters.json"
   - id: "partitioner"
-    className: "com.digitalpebble.stormcrawler.bolt.URLPartitionerBolt"
+    className: "org.apache.stormcrawler.bolt.URLPartitionerBolt"
     parallelism: 1
   - id: "fetcher"
-    className: "com.digitalpebble.stormcrawler.bolt.FetcherBolt"
+    className: "org.apache.stormcrawler.bolt.FetcherBolt"
     parallelism: 1
   - id: "sitemap"
     className: "org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt"
     parallelism: 1
   - id: "feed"
-    className: "com.digitalpebble.stormcrawler.bolt.FeedParserBolt"
+    className: "org.apache.stormcrawler.bolt.FeedParserBolt"
     parallelism: 1
   - id: "ssbolt"
-    className: "com.digitalpebble.stormcrawler.indexing.DummyIndexer"
+    className: "org.apache.stormcrawler.indexing.DummyIndexer"
     parallelism: 1
   - id: "warc"
-    className: "com.digitalpebble.stormcrawler.warc.WARCHdfsBolt"
+    className: "org.apache.stormcrawler.warc.WARCHdfsBolt"
     parallelism: 1
     configMethods:
       - name: "withFileNameFormat"
@@ -129,7 +129,7 @@ bolts:
         args:
           - "warc"
   - id: "status"
-    className: "com.digitalpebble.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt"
+    className: "org.apache.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt"
     parallelism: 1
 
 streams:
@@ -219,7 +219,7 @@ streams:
       streamId: "status"
       type: CUSTOM
       customClass:
-        className: "com.digitalpebble.stormcrawler.util.URLStreamGrouping"
+        className: "org.apache.stormcrawler.util.URLStreamGrouping"
         constructorArgs:
           - "byDomain"
 

@@ -18,8 +18,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
 
-import com.digitalpebble.stormcrawler.Metadata;
-import com.digitalpebble.stormcrawler.filtering.URLFilter;
+import org.apache.stormcrawler.Metadata;
+import org.apache.stormcrawler.filtering.URLFilter;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class PunycodeURLNormalizer extends URLFilter {

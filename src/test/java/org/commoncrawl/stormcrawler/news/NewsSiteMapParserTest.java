@@ -31,9 +31,9 @@ import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.digitalpebble.stormcrawler.Metadata;
-import com.digitalpebble.stormcrawler.parse.Outlink;
-import com.digitalpebble.stormcrawler.parse.ParsingTester;
+import org.apache.stormcrawler.Metadata;
+import org.apache.stormcrawler.parse.Outlink;
+import org.apache.stormcrawler.parse.ParsingTester;
 
 import crawlercommons.sitemaps.UnknownFormatException;
 

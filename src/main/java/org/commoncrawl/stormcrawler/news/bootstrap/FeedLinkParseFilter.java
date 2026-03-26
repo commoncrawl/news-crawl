@@ -18,10 +18,10 @@ import java.util.ArrayList;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DocumentFragment;
 
-import com.digitalpebble.stormcrawler.bolt.FeedParserBolt;
-import com.digitalpebble.stormcrawler.parse.Outlink;
-import com.digitalpebble.stormcrawler.parse.ParseResult;
-import com.digitalpebble.stormcrawler.parse.filter.LinkParseFilter;
+import org.apache.stormcrawler.bolt.FeedParserBolt;
+import org.apache.stormcrawler.parse.Outlink;
+import org.apache.stormcrawler.parse.ParseResult;
+import org.apache.stormcrawler.parse.filter.LinkParseFilter;
 
 /**
  * ParseFilter which extracts exclusively RSS links via Xpath, all other links

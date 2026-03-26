@@ -23,14 +23,14 @@ import org.commoncrawl.stormcrawler.news.ContentDetector;
 import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt;
 import org.slf4j.LoggerFactory;
 
-import com.digitalpebble.stormcrawler.Constants;
-import com.digitalpebble.stormcrawler.Metadata;
-import com.digitalpebble.stormcrawler.bolt.SiteMapParserBolt;
-import com.digitalpebble.stormcrawler.parse.ParseData;
-import com.digitalpebble.stormcrawler.parse.ParseFilter;
-import com.digitalpebble.stormcrawler.parse.ParseFilters;
-import com.digitalpebble.stormcrawler.parse.ParseResult;
-import com.digitalpebble.stormcrawler.persistence.Status;
+import org.apache.stormcrawler.Constants;
+import org.apache.stormcrawler.Metadata;
+import org.apache.stormcrawler.bolt.SiteMapParserBolt;
+import org.apache.stormcrawler.parse.ParseData;
+import org.apache.stormcrawler.parse.ParseFilter;
+import org.apache.stormcrawler.parse.ParseFilters;
+import org.apache.stormcrawler.parse.ParseResult;
+import org.apache.stormcrawler.persistence.Status;
 
 /**
  * Detector for <link href=
