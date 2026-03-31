@@ -42,7 +42,7 @@ under the License.
 		<stormcrawler.version>3.5.1</stormcrawler.version>
 		<storm.version>2.8.4</storm.version>
 		<aws.version>1.12.797</aws.version>
-		<jackson.version>2.18.1</jackson.version>
+		<jackson.version>2.18.6</jackson.version>
 		<crawler-commons.version>1.6</crawler-commons.version>
 		<mockito.version>5.23.0</mockito.version>
 		<wiremock.version>3.0.1</wiremock.version>
