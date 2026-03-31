@@ -42,7 +42,7 @@ under the License.
 		<stormcrawler.version>3.5.1</stormcrawler.version>
 		<storm.version>2.8.4</storm.version>
 		<aws.version>1.12.797</aws.version>
-		<jackson-databind.version>2.11.1</jackson-databind.version>
+		<jackson.version>2.18.1</jackson.version>
 		<crawler-commons.version>1.6</crawler-commons.version>
 		<mockito.version>5.23.0</mockito.version>
 		<wiremock.version>3.0.1</wiremock.version>
@@ -169,6 +169,23 @@ under the License.
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-s3</artifactId>
 			<version>${aws.version}</version>
+		</dependency>
+
+		<!-- set version explicitly -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
 		</dependency>
 
 		<!-- test dependencies -->
