@@ -6,11 +6,11 @@ includes:
       override: false
 
     - resource: false
-      file: "crawler-conf.yaml"
+      file: "conf/crawler-conf.yaml"
       override: true
 
     - resource: false
-      file: "es-conf.yaml"
+      file: "conf/opensearch-conf.yaml"
       override: true
 
 config:
@@ -77,13 +77,13 @@ components:
 
 spouts:
   - id: "spout"
-    className: "org.apache.stormcrawler.elasticsearch.persistence.AggregationSpout"
+    className: "org.apache.stormcrawler.opensearch.persistence.AggregationSpout"
     parallelism: 16
   - id: "filespout"
     className: "org.apache.stormcrawler.spout.FileSpout"
     parallelism: 1
     constructorArgs:
-      - "/path/to/seeds/"
+      - "/data/seeds/"
       - "feeds.txt"
       - true
 
@@ -129,7 +129,7 @@ bolts:
         args:
           - "warc"
   - id: "status"
-    className: "org.apache.stormcrawler.elasticsearch.persistence.StatusUpdaterBolt"
+    className: "org.apache.stormcrawler.opensearch.persistence.StatusUpdaterBolt"
     parallelism: 1
 
 streams:

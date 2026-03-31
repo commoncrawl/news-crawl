@@ -1,0 +1,126 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements. See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# configuration for OpenSearch resources
+
+config:
+
+  # address to use unless a more specific one has been 
+  # defined for a component
+  # also accepts a list or multiple values in a single line
+  # separated by a semi-colon e.g. "opensearch1:9200; opensearch2:9200"
+  # Note: here the address from inside the docker-compose cluster is required
+  opensearch.addresses: "http://opensearch-news-crawl:9200"
+  #opensearch.user: "USERNAME"
+  #opensearch.password: "PASSWORD"
+  opensearch.concurrentRequests: 2
+
+  # Disable TLS validation for connection to OpenSearch
+  # opensearch.disable.tls.validation: false
+
+  # Indexer bolt
+  # addresses can be specified as a full URL
+  # if not we assume that the protocol is http and the port 9200
+  opensearch.indexer.addresses: "http://opensearch-news-crawl:9200"
+  opensearch.indexer.index.name: "content"
+  # opensearch.indexer.pipeline: "_PIPELINE_"
+  opensearch.indexer.create: false
+  opensearch.indexer.bulkActions: 100
+  opensearch.indexer.flushInterval: "2s"
+  opensearch.indexer.concurrentRequests: 1
+  opensearch.indexer.sniff: true
+  
+  # MetricsConsumer
+  opensearch.metrics.addresses: "http://opensearch-news-crawl:9200"
+  opensearch.metrics.index.name: "metrics"
+  opensearch.metrics.sniff: true
+  
+  # Spout and persistence bolt
+  opensearch.status.addresses: "http://opensearch-news-crawl:9200"
+  opensearch.status.index.name: "status"
+  #opensearch.status.user: "USERNAME"
+  #opensearch.status.password: "PASSWORD"
+  # the routing is done on the value of 'partition.url.mode'
+  opensearch.status.routing: true
+  # stores the value used for grouping the URLs as a separate field
+  # needed by the spout implementations
+  # also used for routing if the value above is set to true
+  opensearch.status.routing.fieldname: "key"
+  opensearch.status.bulkActions: 500
+  opensearch.status.flushInterval: "5s"
+  opensearch.status.concurrentRequests: 1
+  opensearch.status.sniff: true
+
+  ################
+  # spout config #
+  ################
+
+  # positive or negative filters parsable by the Lucene Query Parser
+  # opensearch.status.filterQuery: 
+  #  - "-(key:stormcrawler.net)"
+  #  - "-(key:stormcrawler.apache.org)"
+
+  # time in secs for which the URLs will be considered for fetching after a ack or fail
+  # need a high value to avoid duplicates by URLs added multiple times to the fetcher
+  # queues, should be close to
+  #    fetcher.max.crawl.delay * fetcher.max.queue.size
+  spout.ttl.purgatory: 1200
+
+  # Min time (in msecs) to allow between 2 successive queries to OpenSearch
+  spout.min.delay.queries: 30000
+  
+  # Max time (in msecs) to allow between 2 successive queries to OpenSearch
+  spout.max.delay.queries: 60000
+
+  # Delay since previous query date (in secs) after which the nextFetchDate value will be reset to the current time
+  # Setting this to -1 or a large value means that OpenSearch will cache the results but also that fewer and fewer results
+  # might be returned.
+  # - should reset to avoid that a bucket with many URLs blocks incrementing the date to look
+  #   for next fetches for a specific bucket. May happen if a news sitemap adds 1000s of URLs.
+  spout.reset.fetchdate.after: 240
+
+  opensearch.status.max.buckets: 200
+  # max. URLs per bucket (= domain name): 30 sec. / 5 sec. fetch delay = 6
+  # but set to a lower number for domains with longer crawl-delay
+  # cf. also fetcher.max.queue.size and fetcher.max.urls.in.queues
+  opensearch.status.max.urls.per.bucket: 5
+  # field to group the URLs into buckets
+  opensearch.status.bucket.field: "key"
+  # fields to sort the URLs within a bucket
+  opensearch.status.bucket.sort.field: 
+   - "nextFetchDate"
+   - "url"
+  # field to sort the buckets
+  opensearch.status.global.sort.field: "nextFetchDate"
+
+  # AggregationSpout : sampling improves the performance on large crawls
+  opensearch.status.sample: false
+
+  # max allowed duration of a query in sec 
+  opensearch.status.query.timeout: -1
+
+  # AggregationSpout (expert): adds this value in mins to the latest date returned in the results and
+  # use it as nextFetchDate
+  opensearch.status.recentDate.increase: -1
+  opensearch.status.recentDate.min.gap: -1
+
+  topology.metrics.consumer.register:
+       - class: "org.apache.stormcrawler.opensearch.metrics.MetricsConsumer"
+         parallelism.hint: 1
+         #whitelist:
+         #  - "fetcher_counter"
+         #  - "fetcher_average.bytes_fetched"
+         #blacklist:
+         #  - "__receive.*"
