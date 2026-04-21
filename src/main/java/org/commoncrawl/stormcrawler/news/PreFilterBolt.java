@@ -25,62 +25,62 @@ import org.slf4j.LoggerFactory;
  */
 public class PreFilterBolt extends BaseRichBolt {
 
-	protected static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    protected static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-	private URLFilters urlFilters;
+    private URLFilters urlFilters;
 
-	protected OutputCollector collector;
+    protected OutputCollector collector;
 
-	private final String filterConfigFile;
+    private final String filterConfigFile;
 
-	private static final String _s = org.apache.stormcrawler.Constants.StatusStreamName;
+    private static final String _s = org.apache.stormcrawler.Constants.StatusStreamName;
 
-	public PreFilterBolt(String filterConfigFile) {
-		this.filterConfigFile = filterConfigFile;
-	}
+    public PreFilterBolt(String filterConfigFile) {
+        this.filterConfigFile = filterConfigFile;
+    }
 
-	@Override
-	public void execute(Tuple input) {
+    @Override
+    public void execute(Tuple input) {
 
-		// must have at least a URL and metadata
-		String urlString = input.getStringByField("url");
-		Metadata metadata = (Metadata) input.getValueByField("metadata");
+        // must have at least a URL and metadata
+        String urlString = input.getStringByField("url");
+        Metadata metadata = (Metadata) input.getValueByField("metadata");
 
-		String filtered = urlFilters.filter(null, null, urlString);
-		if (StringUtils.isBlank(filtered)) {
-			LOG.debug("URL rejected: {}", urlString);
-			// emit with an error to the status stream
-			metadata.addValue("error.cause", "Filtered");
-			Values v = new Values(urlString, metadata, Status.ERROR);
-			collector.emit(_s, input, v);
-			collector.ack(input);
-			return;
-		}
+        String filtered = urlFilters.filter(null, null, urlString);
+        if (StringUtils.isBlank(filtered)) {
+            LOG.debug("URL rejected: {}", urlString);
+            // emit with an error to the status stream
+            metadata.addValue("error.cause", "Filtered");
+            Values v = new Values(urlString, metadata, Status.ERROR);
+            collector.emit(_s, input, v);
+            collector.ack(input);
+            return;
+        }
 
-		// pass to std out
-		Values v = new Values(urlString, metadata);
-		collector.emit(input, v);
-		collector.ack(input);
-	}
+        // pass to std out
+        Values v = new Values(urlString, metadata);
+        collector.emit(input, v);
+        collector.ack(input);
+    }
 
-	@Override
-	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declareStream(_s, new Fields("url", "metadata", "status"));
-		declarer.declare(new Fields("url", "metadata"));
-	}
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declareStream(_s, new Fields("url", "metadata", "status"));
+        declarer.declare(new Fields("url", "metadata"));
+    }
 
-	@Override
-	public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-		this.collector = collector;
-		if (filterConfigFile != null) {
-			try {
-				urlFilters = new URLFilters(stormConf, filterConfigFile);
-			} catch (IOException e) {
-				throw new RuntimeException("Can't load filters from " + filterConfigFile);
-			}
-		} else {
-			urlFilters = URLFilters.fromConf(stormConf);
-		}
-	}
+    @Override
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+        this.collector = collector;
+        if (filterConfigFile != null) {
+            try {
+                urlFilters = new URLFilters(stormConf, filterConfigFile);
+            } catch (IOException e) {
+                throw new RuntimeException("Can't load filters from " + filterConfigFile);
+            }
+        } else {
+            urlFilters = URLFilters.fromConf(stormConf);
+        }
+    }
 
 }

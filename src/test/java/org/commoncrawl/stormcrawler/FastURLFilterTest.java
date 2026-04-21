@@ -35,53 +35,53 @@ public class FastURLFilterTest {
 
     @BeforeClass
     public static void init() {
-	filter = createFilter("fast-urlfilter.txt");
+        filter = createFilter("fast-urlfilter.txt");
     }
 
     public static FastURLFilter createFilter(String fileName) {
-	ObjectNode filterParams = new ObjectNode(JsonNodeFactory.instance);
-	filterParams.put("file", fileName);
-	FastURLFilter filter = new FastURLFilter();
-	Map<String, Object> conf = new HashMap<>();
-	conf.put("fast.urlfilter.refresh", 10);
-	filter.configure(conf, filterParams);
-	return filter;
+        ObjectNode filterParams = new ObjectNode(JsonNodeFactory.instance);
+        filterParams.put("file", fileName);
+        FastURLFilter filter = new FastURLFilter();
+        Map<String, Object> conf = new HashMap<>();
+        conf.put("fast.urlfilter.refresh", 10);
+        filter.configure(conf, filterParams);
+        return filter;
     }
 
     @Test
     public void testHostFilter() throws MalformedURLException {
-	URL url = new URL("http://may.go.com/image.jpg");
-	Metadata metadata = new Metadata();
-	String filterResult = filter.filter(url, metadata, url.toExternalForm());
-	Assert.assertEquals(url.toString(), filterResult);
-	
-	url = new URL("http://no.go.com/");
-	filterResult = filter.filter(url, metadata, url.toExternalForm());
-	Assert.assertEquals(null, filterResult);
+        URL url = new URL("http://may.go.com/image.jpg");
+        Metadata metadata = new Metadata();
+        String filterResult = filter.filter(url, metadata, url.toExternalForm());
+        Assert.assertEquals(url.toString(), filterResult);
+
+        url = new URL("http://no.go.com/");
+        filterResult = filter.filter(url, metadata, url.toExternalForm());
+        Assert.assertEquals(null, filterResult);
     }
 
     @Test
     public void testDomainNotAllowed() throws MalformedURLException {
-	URL url = new URL("http://domainnotallowed.com/forum/search.php");
-	Metadata metadata = new Metadata();
-	String filterResult = filter.filter(url, metadata, url.toExternalForm());
-	Assert.assertEquals(null, filterResult);
-	
-	url = new URL("http://domainnotallowed.com/");
-	filterResult = filter.filter(url, metadata, url.toExternalForm());
-	Assert.assertEquals(null, filterResult);
-	
-	url = new URL("http://partiallyallowed.com/");
-	filterResult = filter.filter(url, metadata, url.toExternalForm());
-	Assert.assertEquals(url.toString(), filterResult);
-	
-	url = new URL("http://partiallyallowed.com/verbotten");
-	filterResult = filter.filter(url, metadata, url.toExternalForm());
-	Assert.assertEquals(null, filterResult);
+        URL url = new URL("http://domainnotallowed.com/forum/search.php");
+        Metadata metadata = new Metadata();
+        String filterResult = filter.filter(url, metadata, url.toExternalForm());
+        Assert.assertEquals(null, filterResult);
 
-	// allowed
-	url = new URL("http://digitalpebble.com/");
-	filterResult = filter.filter(url, metadata, url.toExternalForm());
-	Assert.assertEquals(url.toString(), filterResult);
+        url = new URL("http://domainnotallowed.com/");
+        filterResult = filter.filter(url, metadata, url.toExternalForm());
+        Assert.assertEquals(null, filterResult);
+
+        url = new URL("http://partiallyallowed.com/");
+        filterResult = filter.filter(url, metadata, url.toExternalForm());
+        Assert.assertEquals(url.toString(), filterResult);
+
+        url = new URL("http://partiallyallowed.com/verbotten");
+        filterResult = filter.filter(url, metadata, url.toExternalForm());
+        Assert.assertEquals(null, filterResult);
+
+        // allowed
+        url = new URL("http://digitalpebble.com/");
+        filterResult = filter.filter(url, metadata, url.toExternalForm());
+        Assert.assertEquals(url.toString(), filterResult);
     }
 }

@@ -39,8 +39,7 @@ public class PunycodeURLNormalizer extends URLFilter {
     }
 
     @Override
-    public String filter(URL sourceUrl, Metadata sourceMetadata,
-            String urlToFilter) {
+    public String filter(URL sourceUrl, Metadata sourceMetadata, String urlToFilter) {
         try {
             URL url = new URL(urlToFilter);
             String hostName = url.getHost();
@@ -51,8 +50,7 @@ public class PunycodeURLNormalizer extends URLFilter {
             if (hostName.equals(url.getHost())) {
                 return urlToFilter;
             }
-            urlToFilter = new URL(url.getProtocol(), hostName, url.getPort(),
-                    url.getFile()).toString();
+            urlToFilter = new URL(url.getProtocol(), hostName, url.getPort(), url.getFile()).toString();
         } catch (MalformedURLException e) {
             return null;
         }

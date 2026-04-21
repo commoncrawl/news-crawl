@@ -27,6 +27,7 @@ import org.apache.stormcrawler.parse.filter.LinkParseFilter;
  * ParseFilter which extracts exclusively RSS links via Xpath, all other links
  * are skipped. See {@link LinkParseFilter} how to register and configure in
  * parsefilters.json. A configuration snippet:
+ * 
  * <pre>
  *     {
  *      "class": "org.commoncrawl.stormcrawler.news.bootstrap.FeedLinkParseFilter",
@@ -41,12 +42,10 @@ import org.apache.stormcrawler.parse.filter.LinkParseFilter;
  */
 public class FeedLinkParseFilter extends LinkParseFilter {
 
-    private static final org.slf4j.Logger LOG = LoggerFactory
-            .getLogger(FeedLinkParseFilter.class);
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(FeedLinkParseFilter.class);
 
     @Override
-    public void filter(String URL, byte[] content, DocumentFragment doc,
-            ParseResult parse) {
+    public void filter(String URL, byte[] content, DocumentFragment doc, ParseResult parse) {
 
         // skip existing links
         logLinks(parse, URL, "Skipped links");

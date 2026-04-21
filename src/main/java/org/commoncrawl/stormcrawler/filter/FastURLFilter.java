@@ -111,7 +111,7 @@ import com.google.common.collect.Multimap;
  * The rules file is defined via the property <code>urlfilter.fast.file</code>,
  * the default name is <code>fast-urlfilter.txt</code>.
  */
-public class FastURLFilter  extends URLFilter implements JSONResource {
+public class FastURLFilter extends URLFilter implements JSONResource {
 
     protected static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -127,41 +127,41 @@ public class FastURLFilter  extends URLFilter implements JSONResource {
 
     public void configure(@SuppressWarnings("rawtypes") Map stormConf, JsonNode filterParams) {
 
-	// read from conf first
-	int refreshRate = ConfUtils.getInt(stormConf, "fast.urlfilter.refresh", -1);
-	this.resourceFile = ConfUtils.getString(stormConf, "fast.urlfilter.file", null);
+        // read from conf first
+        int refreshRate = ConfUtils.getInt(stormConf, "fast.urlfilter.refresh", -1);
+        this.resourceFile = ConfUtils.getString(stormConf, "fast.urlfilter.file", null);
 
-	// then from the param file (which needs recompiling in case of change)
-	if (filterParams != null) {
-	    JsonNode node = filterParams.get("file");
-	    if (node != null && node.isTextual() && this.resourceFile == null) {
-		this.resourceFile = node.asText();
-	    }
-	    node = filterParams.get("refresh");
-	    if (node != null && node.isInt() && refreshRate == -1) {
-		refreshRate = node.asInt();
-	    }
-	}
+        // then from the param file (which needs recompiling in case of change)
+        if (filterParams != null) {
+            JsonNode node = filterParams.get("file");
+            if (node != null && node.isTextual() && this.resourceFile == null) {
+                this.resourceFile = node.asText();
+            }
+            node = filterParams.get("refresh");
+            if (node != null && node.isInt() && refreshRate == -1) {
+                refreshRate = node.asInt();
+            }
+        }
 
-	try {
-	    loadJSONResources();
-	} catch (Exception e) {
-	    LOG.error("Exception while loading resources", e);
-	}
+        try {
+            loadJSONResources();
+        } catch (Exception e) {
+            LOG.error("Exception while loading resources", e);
+        }
 
-	if (refreshRate != -1) {
-	    LOG.info("Filter set to reload from {} every {} sec", getResourceFile(), refreshRate);
-	    new Timer().schedule(new TimerTask() {
-		public void run() {
-		    LOG.info("Reloading resources");
-		    try {
-			loadJSONResources();
-		    } catch (Exception e) {
-			LOG.error("Can't load resources", e);
-		    }
-		}
-	    }, refreshRate * 1000, refreshRate * 1000);
-	}
+        if (refreshRate != -1) {
+            LOG.info("Filter set to reload from {} every {} sec", getResourceFile(), refreshRate);
+            new Timer().schedule(new TimerTask() {
+                public void run() {
+                    LOG.info("Reloading resources");
+                    try {
+                        loadJSONResources();
+                    } catch (Exception e) {
+                        LOG.error("Can't load resources", e);
+                    }
+                }
+            }, refreshRate * 1000, refreshRate * 1000);
+        }
     }
 
     /**
@@ -171,252 +171,256 @@ public class FastURLFilter  extends URLFilter implements JSONResource {
      **/
     @Override
     public void loadJSONResources() throws Exception {
-	InputStream inputStream = null;
-	AmazonS3 s3client = null;
-	try {
-	    if (getResourceFile().startsWith("s3://")) {
-		// try loading from S3
-		s3client = AmazonS3ClientBuilder.standard().build();
-		java.net.URI uri = new java.net.URI(getResourceFile());
+        InputStream inputStream = null;
+        AmazonS3 s3client = null;
+        try {
+            if (getResourceFile().startsWith("s3://")) {
+                // try loading from S3
+                s3client = AmazonS3ClientBuilder.standard().build();
+                java.net.URI uri = new java.net.URI(getResourceFile());
 
-		String bucketName = uri.getHost();
-		// remove the first "/"
-		String path = uri.getPath().substring(1);
+                String bucketName = uri.getHost();
+                // remove the first "/"
+                String path = uri.getPath().substring(1);
 
-		// optimisation - avoid a full reload if the resource has not changed
-		ObjectMetadata metadata = s3client.getObjectMetadata(bucketName, path);
-		final String ETAG = metadata.getETag();
-		if (ETAG != null && ETAG.equals(resourceETAG)) {
-		    LOG.info("Unchanged ETAG for {} - skipping reload", getResourceFile());
-		    return;
-		} else {
-		    resourceETAG = ETAG;
-		}
+                // optimisation - avoid a full reload if the resource has not changed
+                ObjectMetadata metadata = s3client.getObjectMetadata(bucketName, path);
+                final String ETAG = metadata.getETag();
+                if (ETAG != null && ETAG.equals(resourceETAG)) {
+                    LOG.info("Unchanged ETAG for {} - skipping reload", getResourceFile());
+                    return;
+                } else {
+                    resourceETAG = ETAG;
+                }
 
-		final S3Object object = s3client.getObject(new GetObjectRequest(bucketName, path));
-		inputStream = object.getObjectContent();
-	    } else {
-		inputStream = getClass().getClassLoader().getResourceAsStream(getResourceFile());
-		if (inputStream == null) {
-		    LOG.error("Can't load conf from {}", getResourceFile());
-		    return;
-		}
-	    }
-	    if (getResourceFile().endsWith(".gz")) {
-		inputStream = new GZIPInputStream(inputStream);
-	    }
+                final S3Object object = s3client.getObject(new GetObjectRequest(bucketName, path));
+                inputStream = object.getObjectContent();
+            } else {
+                inputStream = getClass().getClassLoader().getResourceAsStream(getResourceFile());
+                if (inputStream == null) {
+                    LOG.error("Can't load conf from {}", getResourceFile());
+                    return;
+                }
+            }
+            if (getResourceFile().endsWith(".gz")) {
+                inputStream = new GZIPInputStream(inputStream);
+            }
 
-	    loadJSONResources(new BufferedInputStream(inputStream));
-	} finally {
-	    if (inputStream != null) {
-		inputStream.close();
-	    }
-	    if (s3client != null) {
-		s3client.shutdown();
-	    }
-	}
+            loadJSONResources(new BufferedInputStream(inputStream));
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+            if (s3client != null) {
+                s3client.shutdown();
+            }
+        }
     }
 
     @Override
     public void loadJSONResources(InputStream inputStream)
-	    throws JsonParseException, JsonMappingException, IOException {
-	long start = System.currentTimeMillis();
+            throws JsonParseException, JsonMappingException, IOException {
+        long start = System.currentTimeMillis();
 
-	try (Reader r = new InputStreamReader(inputStream)) {
-	    reloadRules(r);
-	}
+        try (Reader r = new InputStreamReader(inputStream)) {
+            reloadRules(r);
+        }
 
-	long end = System.currentTimeMillis();
-	LOG.info("Loaded {} hostrules and {} domain rules in {} msec from {}", hostRules.size(), domainRules.size(),
-		(end - start), resourceFile);
+        long end = System.currentTimeMillis();
+        LOG.info(
+                "Loaded {} hostrules and {} domain rules in {} msec from {}",
+                hostRules.size(),
+                domainRules.size(),
+                (end - start),
+                resourceFile);
     }
 
     @Override
     public String getResourceFile() {
-	return resourceFile;
+        return resourceFile;
     }
 
     @Override
     public String filter(URL sourceUrl, Metadata sourceMetadata, String urlToFilter) {
-	synchronized (this) {
-	    URL u;
+        synchronized (this) {
+            URL u;
 
-	    try {
-		u = new URL(urlToFilter);
-	    } catch (Exception e) {
-		LOG.debug("Rejected {} because failed to parse as URL: {}", urlToFilter, e.getMessage());
-		return null;
-	    }
+            try {
+                u = new URL(urlToFilter);
+            } catch (Exception e) {
+                LOG.debug("Rejected {} because failed to parse as URL: {}", urlToFilter, e.getMessage());
+                return null;
+            }
 
-	    String hostname = u.getHost();
+            String hostname = u.getHost();
 
-	    // first check for host-specific rules
-	    for (Rule rule : hostRules.get(hostname)) {
-		if (rule.match(u)) {
-		    return null;
-		}
-	    }
+            // first check for host-specific rules
+            for (Rule rule : hostRules.get(hostname)) {
+                if (rule.match(u)) {
+                    return null;
+                }
+            }
 
-	    // also look up domain rules for host name
-	    for (Rule rule : domainRules.get(hostname)) {
-		if (rule.match(u)) {
-		    return null;
-		}
-	    }
+            // also look up domain rules for host name
+            for (Rule rule : domainRules.get(hostname)) {
+                if (rule.match(u)) {
+                    return null;
+                }
+            }
 
-	    // check suffixes of host name from longer to shorter:
-	    // subdomains, domain, top-level domain
-	    int start = 0;
-	    int pos;
-	    while ((pos = hostname.indexOf('.', start)) != -1) {
-		start = pos + 1;
-		String domain = hostname.substring(start);
-		for (Rule rule : domainRules.get(domain)) {
-		    if (rule.match(u)) {
-			return null;
-		    }
-		}
-	    }
+            // check suffixes of host name from longer to shorter:
+            // subdomains, domain, top-level domain
+            int start = 0;
+            int pos;
+            while ((pos = hostname.indexOf('.', start)) != -1) {
+                start = pos + 1;
+                String domain = hostname.substring(start);
+                for (Rule rule : domainRules.get(domain)) {
+                    if (rule.match(u)) {
+                        return null;
+                    }
+                }
+            }
 
-	    // finally check "global" rules defined for `Domain .`
-	    for (Rule rule : domainRules.get(".")) {
-		if (rule.match(u)) {
-		    return null;
-		}
-	    }
+            // finally check "global" rules defined for `Domain .`
+            for (Rule rule : domainRules.get(".")) {
+                if (rule.match(u)) {
+                    return null;
+                }
+            }
 
-	    // no reject rules found
-	    return urlToFilter;
-	}
+            // no reject rules found
+            return urlToFilter;
+        }
     }
 
     private void reloadRules(Reader rules) throws IOException {
-	synchronized (this) {
-	    domainRules.clear();
-	    hostRules.clear();
+        synchronized (this) {
+            domainRules.clear();
+            hostRules.clear();
 
-	    BufferedReader reader = new BufferedReader(rules);
+            BufferedReader reader = new BufferedReader(rules);
 
-	    String current = null;
-	    boolean host = false;
-	    int lineno = 0;
+            String current = null;
+            boolean host = false;
+            int lineno = 0;
 
-	    String line;
-	    try {
-		while ((line = reader.readLine()) != null) {
-		    lineno++;
-		    line = line.trim();
+            String line;
+            try {
+                while ((line = reader.readLine()) != null) {
+                    lineno++;
+                    line = line.trim();
 
-		    if (line.indexOf("#") != -1) {
-			// strip comments
-			line = line.substring(0, line.indexOf("#")).trim();
-		    }
+                    if (line.indexOf("#") != -1) {
+                        // strip comments
+                        line = line.substring(0, line.indexOf("#")).trim();
+                    }
 
-		    if (StringUtils.isBlank(line)) {
-			continue;
-		    }
+                    if (StringUtils.isBlank(line)) {
+                        continue;
+                    }
 
-		    if (line.startsWith("Host")) {
-			host = true;
-			current = line.split("\\s+")[1];
-		    } else if (line.startsWith("Domain")) {
-			host = false;
-			current = line.split("\\s+")[1];
-		    } else {
-			if (current == null) {
-			    continue;
-			}
+                    if (line.startsWith("Host")) {
+                        host = true;
+                        current = line.split("\\s+")[1];
+                    } else if (line.startsWith("Domain")) {
+                        host = false;
+                        current = line.split("\\s+")[1];
+                    } else {
+                        if (current == null) {
+                            continue;
+                        }
 
-			Rule rule = null;
-			try {
-			    if (CATCH_ALL_RULE.matcher(line).matches()) {
-				rule = DenyAllRule.getInstance();
-			    } else if (line.startsWith("DenyPathQuery")) {
-				rule = new DenyPathQueryRule(line.split("\\s+")[1]);
-			    } else if (line.startsWith("DenyPath")) {
-				rule = new DenyPathRule(line.split("\\s+")[1]);
-			    } else {
-				LOG.warn("Problem reading rule on line {}: {}", lineno, line);
-				continue;
-			    }
-			} catch (Exception e) {
-			    LOG.warn("Problem reading rule on line {}: {} - {}", lineno, line, e.getMessage());
-			    continue;
-			}
+                        Rule rule = null;
+                        try {
+                            if (CATCH_ALL_RULE.matcher(line).matches()) {
+                                rule = DenyAllRule.getInstance();
+                            } else if (line.startsWith("DenyPathQuery")) {
+                                rule = new DenyPathQueryRule(line.split("\\s+")[1]);
+                            } else if (line.startsWith("DenyPath")) {
+                                rule = new DenyPathRule(line.split("\\s+")[1]);
+                            } else {
+                                LOG.warn("Problem reading rule on line {}: {}", lineno, line);
+                                continue;
+                            }
+                        } catch (Exception e) {
+                            LOG.warn("Problem reading rule on line {}: {} - {}", lineno, line, e.getMessage());
+                            continue;
+                        }
 
-			if (host) {
-			    LOG.trace("Adding host rule [{}] [{}]", current, rule);
-			    hostRules.put(current, rule);
-			} else {
-			    LOG.trace("Adding domain rule [{}] [{}]", current, rule);
-			    domainRules.put(current, rule);
-			}
-		    }
-		}
+                        if (host) {
+                            LOG.trace("Adding host rule [{}] [{}]", current, rule);
+                            hostRules.put(current, rule);
+                        } else {
+                            LOG.trace("Adding domain rule [{}] [{}]", current, rule);
+                            domainRules.put(current, rule);
+                        }
+                    }
+                }
 
-	    } catch (IOException e) {
-		LOG.warn("Caught exception while reading rules file at line {}: {}", lineno, e.getMessage());
-		throw e;
-	    }
-	}
+            } catch (IOException e) {
+                LOG.warn("Caught exception while reading rules file at line {}: {}", lineno, e.getMessage());
+                throw e;
+            }
+        }
     }
 
     public static class Rule {
-	protected Pattern pattern;
+        protected Pattern pattern;
 
-	Rule() {
-	}
+        Rule() {
+        }
 
-	public Rule(String regex) {
-	    pattern = Pattern.compile(regex);
-	}
+        public Rule(String regex) {
+            pattern = Pattern.compile(regex);
+        }
 
-	public boolean match(URL url) {
-	    return pattern.matcher(url.toString()).find();
-	}
+        public boolean match(URL url) {
+            return pattern.matcher(url.toString()).find();
+        }
 
-	public String toString() {
-	    return pattern.toString();
-	}
+        public String toString() {
+            return pattern.toString();
+        }
     }
 
     public static class DenyPathRule extends Rule {
-	public DenyPathRule(String regex) {
-	    super(regex);
-	}
+        public DenyPathRule(String regex) {
+            super(regex);
+        }
 
-	public boolean match(URL url) {
-	    String haystack = url.getPath();
-	    return pattern.matcher(haystack).find();
-	}
+        public boolean match(URL url) {
+            String haystack = url.getPath();
+            return pattern.matcher(haystack).find();
+        }
     }
 
     /** Rule for <code>DenyPath .*</code> or <code>DenyPath .?</code> */
     public static class DenyAllRule extends Rule {
 
-	private static Rule instance = new DenyAllRule(".");
+        private static Rule instance = new DenyAllRule(".");
 
-	private DenyAllRule(String regex) {
-	    super(regex);
-	}
+        private DenyAllRule(String regex) {
+            super(regex);
+        }
 
-	public static Rule getInstance() {
-	    return instance;
-	}
+        public static Rule getInstance() {
+            return instance;
+        }
 
-	public boolean match(URL url) {
-	    return true;
-	}
+        public boolean match(URL url) {
+            return true;
+        }
     }
 
     public static class DenyPathQueryRule extends Rule {
-	public DenyPathQueryRule(String regex) {
-	    super(regex);
-	}
+        public DenyPathQueryRule(String regex) {
+            super(regex);
+        }
 
-	public boolean match(URL url) {
-	    String haystack = url.getFile();
-	    return pattern.matcher(haystack).find();
-	}
+        public boolean match(URL url) {
+            String haystack = url.getFile();
+            return pattern.matcher(haystack).find();
+        }
     }
 }

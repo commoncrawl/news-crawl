@@ -35,21 +35,15 @@ import org.apache.http.HttpHeaders;
 @SuppressWarnings("serial")
 public class FeedDetectorBolt extends FeedParserBolt {
 
-    private static final org.slf4j.Logger LOG = LoggerFactory
-            .getLogger(FeedDetectorBolt.class);
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(FeedDetectorBolt.class);
 
-    public static final String[] mimeTypeClues = {
-            "rss+xml", "atom+xml", "text/rss"
-    };
+    public static final String[] mimeTypeClues = {"rss+xml", "atom+xml", "text/rss"};
 
-    public static String[][] contentClues = { { "<rss" }, { "<feed" },
-            { "http://www.w3.org/2005/Atom" } };
+    public static String[][] contentClues = {{"<rss"}, {"<feed"}, {"http://www.w3.org/2005/Atom"}};
     protected static final int maxOffsetContentGuess = 512;
-    private static ContentDetector contentDetector = new ContentDetector(
-            contentClues, maxOffsetContentGuess);
+    private static ContentDetector contentDetector = new ContentDetector(contentClues, maxOffsetContentGuess);
 
     private ParseFilter parseFilters;
-
 
     @Override
     public void execute(Tuple tuple) {
@@ -67,8 +61,7 @@ public class FeedDetectorBolt extends FeedParserBolt {
                     if (ct.contains(clue)) {
                         isFeed = true;
                         metadata.setValue(isFeedKey, "true");
-                        LOG.info("Feed detected from content type <{}> for {}",
-                                ct, url);
+                        LOG.info("Feed detected from content type <{}> for {}", ct, url);
                         break;
                     }
                 }
@@ -90,8 +83,7 @@ public class FeedDetectorBolt extends FeedParserBolt {
             parseData.setMetadata(metadata);
             parseFilters.filter(url, content, null, parse);
             // emit status
-            collector.emit(Constants.StatusStreamName, tuple,
-                    new Values(url, metadata, Status.FETCHED));
+            collector.emit(Constants.StatusStreamName, tuple, new Values(url, metadata, Status.FETCHED));
         } else {
             // pass on
             collector.emit(tuple, tuple.getValues());
@@ -100,9 +92,8 @@ public class FeedDetectorBolt extends FeedParserBolt {
     }
 
     @Override
-    @SuppressWarnings({ "rawtypes" })
-    public void prepare(Map stormConf, TopologyContext context,
-            OutputCollector collect) {
+    @SuppressWarnings({"rawtypes"})
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collect) {
         super.prepare(stormConf, context, collect);
         parseFilters = ParseFilters.fromConf(stormConf);
     }

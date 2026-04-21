@@ -40,15 +40,13 @@ import org.apache.stormcrawler.persistence.Status;
 @SuppressWarnings("serial")
 public class NewsSiteMapDetectorBolt extends SiteMapParserBolt {
 
-    private static final org.slf4j.Logger LOG = LoggerFactory
-            .getLogger(NewsSiteMapDetectorBolt.class);
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(NewsSiteMapDetectorBolt.class);
 
     protected static final int maxOffsetContentGuess = 1024;
-    private static ContentDetector contentDetector = new ContentDetector(
-            NewsSiteMapParserBolt.contentClues, maxOffsetContentGuess);
+    private static ContentDetector contentDetector = new ContentDetector(NewsSiteMapParserBolt.contentClues,
+            maxOffsetContentGuess);
 
     private ParseFilter parseFilters;
-
 
     @Override
     public void execute(Tuple tuple) {
@@ -57,10 +55,8 @@ public class NewsSiteMapDetectorBolt extends SiteMapParserBolt {
         byte[] content = tuple.getBinaryByField("content");
         String url = tuple.getStringByField("url");
 
-        boolean isSitemap = Boolean.valueOf(
-                metadata.getFirstValue(SiteMapParserBolt.isSitemapKey));
-        boolean isNewsSitemap = Boolean.valueOf(
-                metadata.getFirstValue(NewsSiteMapParserBolt.isSitemapNewsKey));
+        boolean isSitemap = Boolean.valueOf(metadata.getFirstValue(SiteMapParserBolt.isSitemapKey));
+        boolean isNewsSitemap = Boolean.valueOf(metadata.getFirstValue(NewsSiteMapParserBolt.isSitemapNewsKey));
 
         if (!isNewsSitemap || !isSitemap) {
             int match = contentDetector.getFirstMatch(content);
@@ -70,10 +66,8 @@ public class NewsSiteMapDetectorBolt extends SiteMapParserBolt {
                 metadata.setValue(SiteMapParserBolt.isSitemapKey, "true");
                 if (match <= NewsSiteMapParserBolt.contentCluesSitemapNewsMatchUpTo) {
                     isNewsSitemap = true;
-                    LOG.info("{} detected as news sitemap based on content",
-                            url);
-                    metadata.setValue(NewsSiteMapParserBolt.isSitemapNewsKey,
-                            "true");
+                    LOG.info("{} detected as news sitemap based on content", url);
+                    metadata.setValue(NewsSiteMapParserBolt.isSitemapNewsKey, "true");
                 }
             }
         }
@@ -85,8 +79,7 @@ public class NewsSiteMapDetectorBolt extends SiteMapParserBolt {
             parseData.setMetadata(metadata);
             parseFilters.filter(url, content, null, parse);
             // emit status
-            collector.emit(Constants.StatusStreamName, tuple,
-                    new Values(url, metadata, Status.FETCHED));
+            collector.emit(Constants.StatusStreamName, tuple, new Values(url, metadata, Status.FETCHED));
         } else {
             // pass on
             collector.emit(tuple, tuple.getValues());
@@ -95,9 +88,8 @@ public class NewsSiteMapDetectorBolt extends SiteMapParserBolt {
     }
 
     @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public void prepare(Map stormConf, TopologyContext context,
-            OutputCollector collect) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collect) {
         super.prepare(stormConf, context, collect);
         parseFilters = ParseFilters.fromConf(stormConf);
     }
