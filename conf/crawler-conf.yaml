@@ -19,8 +19,8 @@ config:
 
   # mandatory when using Flux
   topology.kryo.register:
-    - com.digitalpebble.stormcrawler.Metadata
-    - com.digitalpebble.stormcrawler.persistence.Status
+    - org.apache.stormcrawler.Metadata
+    - org.apache.stormcrawler.persistence.Status
 
   topology.backpressure.enable: false
 
@@ -31,7 +31,7 @@ config:
   topology.metrics.consumer.register:
      - class: "org.apache.storm.metric.LoggingMetricsConsumer"
        parallelism.hint: 1
-     - class: "com.digitalpebble.stormcrawler.elasticsearch.metrics.MetricsConsumer"
+     - class: "org.apache.stormcrawler.opensearch.metrics.MetricsConsumer"
        parallelism.hint: 1
 
   # status index and fetcher queues are partitioned by domain
@@ -70,9 +70,12 @@ config:
   # increased network timeout (ms) for news sites from Asia and eastern Europe
   http.timeout: 30000
 
+  # allowed URL protocols
+  protocols: "http,https"
+
   # use okhttp
-  http.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
-  https.protocol.implementation: com.digitalpebble.stormcrawler.protocol.okhttp.HttpProtocol
+  http.protocol.implementation: org.apache.stormcrawler.protocol.okhttp.HttpProtocol
+  https.protocol.implementation: org.apache.stormcrawler.protocol.okhttp.HttpProtocol
 
   # do not fail on unknown SSL certificates
   http.trust.everything: true
@@ -82,10 +85,26 @@ config:
   # or transferred protocol metadata must also be prefixed.
   protocol.md.prefix: "protocol."
 
+  # number of instances for each protocol implementation
+  protocol.instances.num: 8
+  # connection pool configuration of OkHttp protocol
+  okhttp.protocol.connection.pool:
+    # maximum number of idle connections (in addition to active connections)
+    max.idle.connections: 256
+    # maximum keep-alive time of the connections in seconds
+    connection.keep.alive: 300
+  # See also
+  #   https://square.github.io/okhttp/3.x/okhttp/okhttp3/ConnectionPool.html
+  # Note that OkHttp's connection pool (v4.9.1) is not optimized for fast
+  # look-up of connections, the pool size (idle and active connections)
+  # should not exceed 1000. To allow for efficient pooling in large and
+  # diverse crawls, it's recommended to increase also the number of protocol
+  # instances, see `protocol.instance.num`.
+
   # delay between successive requests to the same host/domain
   # (be defensive, a delay of 5 sec. means about 1000 fetches per hour
   #  which should be enough even for large news sites)
-  fetcher.server.delay: 6.0
+  fetcher.server.delay: 9.0
 
   # generous max. crawl delay
   # (fetch content even if the robots.txt specifies a large host-specific crawl delay:
@@ -103,7 +122,7 @@ config:
   fetcher.max.urls.in.queues: 6000
 
   # fetch Scheduler implementation
-  scheduler.class: "com.digitalpebble.stormcrawler.persistence.AdaptiveScheduler"
+  scheduler.class: "org.apache.stormcrawler.persistence.AdaptiveScheduler"
   # AdaptiveScheduler properties
   scheduler.adaptive.setLastModified: true
   # frequently changing feeds or news sitemaps are refetched after 90 min.

@@ -1,0 +1,122 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements. See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+services:
+
+  # Apache Storm components
+  # - Zookeeper coordinates the communication between Nimbus and the Supervisors
+  zookeeper:
+    image: zookeeper:${ZOOKEEPER_VERSION:-3.9.3}
+    container_name: zookeeper
+    restart: always
+
+  # - the daemon Nimbus runs on the master node
+  storm-nimbus:
+    image: storm:${STORM_VERSION:-2.8.4}
+    container_name: storm-nimbus
+    hostname: nimbus
+    command: storm nimbus
+    depends_on:
+      - zookeeper
+    links:
+      - zookeeper
+    ports:
+      - 6627:6627
+    restart: always
+
+  # - the Supervisors run on the worker nodes
+  storm-supervisor:
+    image: storm:${STORM_VERSION:-2.8.4}
+    container_name: storm-supervisor
+    command: storm supervisor -c worker.childopts=-Xmx%HEAP-MEM%m
+    depends_on:
+      - zookeeper
+      - storm-nimbus
+    links:
+      - zookeeper
+      - storm-nimbus:nimbus
+    # supervisor launches the worker processes
+    # which need to be able to access
+    # - (in case a indexing topology is run) the
+    #   OpenSearch (http://opensearch:9200/) and
+      - opensearch-news-crawl
+    # - the WARC output folder
+    # - and the seed folder
+    volumes:
+      - ${WARCOUTPUT:-./warcdata}:/data/warc
+      - ${SEEDDIR:-./seeds}:/data/seeds
+    restart: always
+
+  # - the Storm UI provides diagnostics about the Storm cluster
+  storm-ui:
+    image: storm:${STORM_VERSION:-2.8.4}
+    container_name: storm-ui
+    command: storm ui
+    depends_on:
+      - storm-nimbus
+    links:
+      - storm-nimbus:nimbus
+    ports:
+      - "127.0.0.1:8080:8080"
+    restart: always
+
+  opensearch-news-crawl:
+    image: opensearchproject/opensearch:${OPENSEARCH_VERSION:-2.19.4}
+    container_name: opensearch-news-crawl
+    environment:
+      - cluster.name=opensearch-news-crawl-cluster
+      - node.name=opensearch-news-crawl
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms4G -Xmx4G"
+      - plugins.security.disabled=true
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+    volumes:
+      - ${OPENSEARCHDATA:-./opensearchdata}:/usr/share/opensearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 65536
+    ports:
+      - "127.0.0.1:9200:9200" # REST API
+
+  opensearch-dashboard-news-crawl:
+    image: opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION:-2.19.4}
+    container_name: opensearch-dashboard-news-crawl
+    ports:
+      - "127.0.0.1:5601:5601"
+    expose:
+      - "5601"
+    environment:
+      - 'OPENSEARCH_HOSTS=["http://opensearch-news-crawl:9200"]'
+      - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true" # disables security dashboards plugin in OpenSearch Dashboards
+
+  # - to launch a topology
+  # - will exit on startup
+  news-crawler:
+    build: .
+    container_name: news-crawler
+    command: /bin/bash
+    depends_on:
+      - storm-nimbus
+    links:
+      - storm-nimbus:nimbus
+    volumes:
+      - ${WARCOUTPUT:-./warcdata}:/data/warc
+      - ${SEEDDIR:-./seeds}:/data/seeds
+    restart: "no"
+

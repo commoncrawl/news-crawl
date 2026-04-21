@@ -21,15 +21,15 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.slf4j.LoggerFactory;
 
-import com.digitalpebble.stormcrawler.Constants;
-import com.digitalpebble.stormcrawler.Metadata;
-import com.digitalpebble.stormcrawler.bolt.FeedParserBolt;
-import com.digitalpebble.stormcrawler.parse.ParseData;
-import com.digitalpebble.stormcrawler.parse.ParseFilter;
-import com.digitalpebble.stormcrawler.parse.ParseFilters;
-import com.digitalpebble.stormcrawler.parse.ParseResult;
-import com.digitalpebble.stormcrawler.persistence.Status;
-import com.digitalpebble.stormcrawler.protocol.HttpHeaders;
+import org.apache.stormcrawler.Constants;
+import org.apache.stormcrawler.Metadata;
+import org.apache.stormcrawler.bolt.FeedParserBolt;
+import org.apache.stormcrawler.parse.ParseData;
+import org.apache.stormcrawler.parse.ParseFilter;
+import org.apache.stormcrawler.parse.ParseFilters;
+import org.apache.stormcrawler.parse.ParseResult;
+import org.apache.stormcrawler.persistence.Status;
+import org.apache.http.HttpHeaders;
 
 /** Detect RSS and Atom feeds, but do not parse and extract links */
 @SuppressWarnings("serial")
