@@ -28,8 +28,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import crawlercommons.domains.EffectiveTldFinder;
+import crawlercommons.robots.BaseRobotRules;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHeaders;
+import org.apache.storm.Config;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.task.OutputCollector;
@@ -46,7 +49,10 @@ import org.apache.stormcrawler.parse.ParseFilters;
 import org.apache.stormcrawler.parse.ParseResult;
 import org.apache.stormcrawler.persistence.DefaultScheduler;
 import org.apache.stormcrawler.persistence.Status;
+import org.apache.stormcrawler.protocol.Protocol;
+import org.apache.stormcrawler.protocol.ProtocolFactory;
 import org.apache.stormcrawler.util.ConfUtils;
+import org.apache.stormcrawler.util.MetadataTransfer;
 import org.slf4j.LoggerFactory;
 
 import crawlercommons.sitemaps.AbstractSiteMap;

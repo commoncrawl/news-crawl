@@ -25,11 +25,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import com.digitalpebble.stormcrawler.protocol.Protocol;
-import com.digitalpebble.stormcrawler.protocol.ProtocolFactory;
-import com.digitalpebble.stormcrawler.util.MetadataTransfer;
 import crawlercommons.robots.BaseRobotRules;
 import org.apache.commons.io.IOUtils;
+import org.apache.stormcrawler.protocol.Protocol;
+import org.apache.stormcrawler.protocol.ProtocolFactory;
+import org.apache.stormcrawler.util.MetadataTransfer;
 import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
 import org.junit.Before;
 import org.junit.Test;
@@ -164,7 +164,7 @@ public class NewsSiteMapParserTest extends ParsingTester {
 	 * URLs from example.net fail since their robots reference a different sitemap index.
 	 */
 	@Test
-    public void test_cross_host_submission_sitemaps() throws IOException, UnknownFormatException, URISyntaxException {
+    public void testCrossHostSubmissionSitemaps() throws IOException, UnknownFormatException, URISyntaxException {
 		String sitemapURL = "https://www.example.org/sitemap-news.xml";
 		String sitemapIndexURL = "https://www.example.org/sitemap-index.xml";
 		String adSitemapURL = "https://www.example.net/sitemap-ads.xml";
