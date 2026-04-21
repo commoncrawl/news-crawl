@@ -4,7 +4,7 @@ Crawler for news based on [StormCrawler](https://stormcrawler.apache.org/). Prod
 
 
 ## Prerequisites
-
+* JVM 17 or higher
 * Install OpenSearch 2.19.5
 * Install Apache Storm 2.8.8
 * Start OpenSearch and Storm
