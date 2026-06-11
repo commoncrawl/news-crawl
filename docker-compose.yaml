@@ -17,13 +17,13 @@ services:
   # Apache Storm components
   # - Zookeeper coordinates the communication between Nimbus and the Supervisors
   zookeeper:
-    image: zookeeper:${ZOOKEEPER_VERSION:-3.9.3}
+    image: zookeeper:${ZOOKEEPER_VERSION:-3.9.4}
     container_name: zookeeper
     restart: always
 
   # - the daemon Nimbus runs on the master node
   storm-nimbus:
-    image: storm:${STORM_VERSION:-2.8.4}
+    image: storm:${STORM_VERSION:-2.8.8}
     container_name: storm-nimbus
     hostname: nimbus
     command: storm nimbus
@@ -37,7 +37,7 @@ services:
 
   # - the Supervisors run on the worker nodes
   storm-supervisor:
-    image: storm:${STORM_VERSION:-2.8.4}
+    image: storm:${STORM_VERSION:-2.8.8}
     container_name: storm-supervisor
     command: storm supervisor -c worker.childopts=-Xmx%HEAP-MEM%m
     depends_on:
@@ -60,7 +60,7 @@ services:
 
   # - the Storm UI provides diagnostics about the Storm cluster
   storm-ui:
-    image: storm:${STORM_VERSION:-2.8.4}
+    image: storm:${STORM_VERSION:-2.8.8}
     container_name: storm-ui
     command: storm ui
     depends_on:
@@ -72,7 +72,7 @@ services:
     restart: always
 
   opensearch-news-crawl:
-    image: opensearchproject/opensearch:${OPENSEARCH_VERSION:-2.19.4}
+    image: opensearchproject/opensearch:${OPENSEARCH_VERSION:-2.19.5}
     container_name: opensearch-news-crawl
     environment:
       - cluster.name=opensearch-news-crawl-cluster
@@ -95,7 +95,7 @@ services:
       - "127.0.0.1:9200:9200" # REST API
 
   opensearch-dashboard-news-crawl:
-    image: opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION:-2.19.4}
+    image: opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION:-2.19.5}
     container_name: opensearch-dashboard-news-crawl
     ports:
       - "127.0.0.1:5601:5601"

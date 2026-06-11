@@ -77,6 +77,13 @@ config:
   http.protocol.implementation: org.apache.stormcrawler.protocol.okhttp.HttpProtocol
   https.protocol.implementation: org.apache.stormcrawler.protocol.okhttp.HttpProtocol
 
+  # the http/https protocol versions to use, in order of preference
+  # - the WARC writer handles HTTP/1.1 and HTTP/2 (cf. storm-crawler#1010)
+  # - okhttp does not support HTTP/1.0 requests (it supports responses however)
+  # http.protocol.versions:
+  # - "h2"
+  # - "http/1.1"
+
   # do not fail on unknown SSL certificates
   http.trust.everything: true
 

@@ -5,14 +5,14 @@ __ES_STATUS_URL_DEFAULT='http://localhost:9200/status'
 function ____show_help() {
     echo "$0  [-v|-V] [-C] <command>  [<args>]"
     echo
-    echo "Query StormCrawler's Elasticsearch status index"
+    echo "Query StormCrawler's Elasticsearch or OpenSearch status index"
     echo "  with help of curl, jq and bash"
     echo
     echo "Global options"
     echo " -h   show detailed help"
     echo " -v   verbose, print commands before execution"
     echo " -V   very verbose"
-    echo " -D   dry run, do not execute request to ES (use in combination with -v)"
+    echo " -D   dry run, do not execute request (use in combination with -v)"
     echo " -C   colorize JSON output"
     echo
     echo "Commands"
@@ -134,12 +134,12 @@ ES_STATUS_URL=${ES_STATUS_URL:-$__ES_STATUS_URL_DEFAULT}
 set -e
 
 
-# current time in Elasticsearch date format
+# current time in Elasticsearch/OpenSearch date format
 function ____now () {
     date -u '+%Y-%m-%dT%H:%M:%S.000Z'
 }
 
-# given date in Elasticsearch date format
+# given date in Elasticsearch/OpenSearch date format
 function ____date () {
     date -d"$1" -u '+%Y-%m-%dT%H:%M:%S.000Z'
 }
