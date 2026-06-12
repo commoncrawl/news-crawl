@@ -104,7 +104,7 @@ After 1-2 minutes if everything is up, connect to OpenSearch on port [9200](http
 
 For inspecting the worker log files:
 ```
-docker exec storm-supervisor /bin/bash -c 'cat /logs/workers-artifacts/*/*/worker.log'
+docker exec storm-supervisor-news-crawl /bin/bash -c 'cat /logs/workers-artifacts/*/*/worker.log'
 ```
 
 To stop the topology:

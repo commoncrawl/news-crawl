@@ -18,13 +18,13 @@ services:
   # - Zookeeper coordinates the communication between Nimbus and the Supervisors
   zookeeper:
     image: zookeeper:${ZOOKEEPER_VERSION:-3.9.4}
-    container_name: zookeeper
+    container_name: zookeeper-news-crawl
     restart: always
 
   # - the daemon Nimbus runs on the master node
   storm-nimbus:
     image: storm:${STORM_VERSION:-2.8.8}
-    container_name: storm-nimbus
+    container_name: storm-nimbus-news-crawl
     hostname: nimbus
     command: storm nimbus
     depends_on:
@@ -38,7 +38,7 @@ services:
   # - the Supervisors run on the worker nodes
   storm-supervisor:
     image: storm:${STORM_VERSION:-2.8.8}
-    container_name: storm-supervisor
+    container_name: storm-supervisor-news-crawl
     command: storm supervisor -c worker.childopts=-Xmx%HEAP-MEM%m
     depends_on:
       - zookeeper
@@ -50,7 +50,7 @@ services:
     # which need to be able to access
     # - (in case a indexing topology is run) the
     #   OpenSearch (http://opensearch:9200/) and
-      - opensearch-news-crawl
+      - opensearch
     # - the WARC output folder
     # - and the seed folder
     volumes:
@@ -61,7 +61,7 @@ services:
   # - the Storm UI provides diagnostics about the Storm cluster
   storm-ui:
     image: storm:${STORM_VERSION:-2.8.8}
-    container_name: storm-ui
+    container_name: storm-ui-news-crawl
     command: storm ui
     depends_on:
       - storm-nimbus
@@ -71,7 +71,7 @@ services:
       - "127.0.0.1:8080:8080"
     restart: always
 
-  opensearch-news-crawl:
+  opensearch:
     image: opensearchproject/opensearch:${OPENSEARCH_VERSION:-2.19.5}
     container_name: opensearch-news-crawl
     environment:
@@ -94,7 +94,7 @@ services:
     ports:
       - "127.0.0.1:9200:9200" # REST API
 
-  opensearch-dashboard-news-crawl:
+  opensearch-dashboard:
     image: opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION:-2.19.5}
     container_name: opensearch-dashboard-news-crawl
     ports:
