@@ -46,6 +46,8 @@ under the License.
 		<mockito.version>5.23.0</mockito.version>
 		<wiremock.version>3.0.1</wiremock.version>
 		<junit.version>4.13.2</junit.version>
+		<git-code-format-maven-plugin.version>5.4</git-code-format-maven-plugin.version>
+		<skip.format.code>true</skip.format.code>
 	</properties>
 
 	<dependencies>
@@ -205,37 +207,45 @@ under the License.
 				</executions>
 			</plugin>
 			<plugin>
-				<groupId>com.diffplug.spotless</groupId>
-				<artifactId>spotless-maven-plugin</artifactId>
-				<version>2.46.1</version>
-				<configuration>
-					<pom>
-						<!-- These are the defaults, you can override if you want -->
-						<includes>
-							<include>pom.xml</include>
-						</includes>
-						<sortPom>
-							<indentAttribute>all</indentAttribute>
-							<keepBlankLines>true</keepBlankLines>
-							<expandEmptyElements>false</expandEmptyElements>
-							<nrOfIndentSpace>-1</nrOfIndentSpace>
-							<predefinedSortOrder>recommended_2008_06</predefinedSortOrder>
-						</sortPom>
-					</pom>
-					<java>
-						<eclipse>
-							<file>${project.basedir}/eclipse-formatter.xml</file>
-						</eclipse>
-					</java>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>check</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
+                <groupId>com.cosium.code</groupId>
+                <artifactId>git-code-format-maven-plugin</artifactId>
+                <version>${git-code-format-maven-plugin.version}</version>
+                <executions>
+                    <!-- On commit, format the modified java files -->
+                    <execution>
+                        <id>install-formatter-hook</id>
+                        <goals>
+                            <goal>install-hooks</goal>
+                        </goals>
+                    </execution>
+                    <!-- On Maven verify phase, fail if any file (including
+                    unmodified)
+                        is badly formatted -->
+                    <execution>
+                        <id>validate-code-format</id>
+                        <goals>
+                            <goal>validate-code-format</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <!-- Enable https://github.com/google/google-java-format -->
+                    <dependency>
+                        <groupId>com.cosium.code</groupId>
+                        <artifactId>google-java-format</artifactId>
+                        <version>${git-code-format-maven-plugin.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <skip>${skip.format.code}</skip>
+                    <formatterOptions>
+                        <googleJavaFormat.aosp>true</googleJavaFormat.aosp>
+                        <googleJavaFormat.fixImportsOnly>false</googleJavaFormat.fixImportsOnly>
+                        <googleJavaFormat.skipSortingImports>false</googleJavaFormat.skipSortingImports>
+                        <googleJavaFormat.skipRemovingUnusedImports>false</googleJavaFormat.skipRemovingUnusedImports>
+                    </formatterOptions>
+                </configuration>
+            </plugin>
 		</plugins>
 	</build>
 </project>
