@@ -14,13 +14,11 @@
 package org.commoncrawl.stormcrawler.news;
 
 import java.util.Map;
-
+import org.apache.http.HttpHeaders;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.slf4j.LoggerFactory;
-
 import org.apache.stormcrawler.Constants;
 import org.apache.stormcrawler.Metadata;
 import org.apache.stormcrawler.bolt.FeedParserBolt;
@@ -29,7 +27,7 @@ import org.apache.stormcrawler.parse.ParseFilter;
 import org.apache.stormcrawler.parse.ParseFilters;
 import org.apache.stormcrawler.parse.ParseResult;
 import org.apache.stormcrawler.persistence.Status;
-import org.apache.http.HttpHeaders;
+import org.slf4j.LoggerFactory;
 
 /** Detect RSS and Atom feeds, but do not parse and extract links */
 @SuppressWarnings("serial")
@@ -41,7 +39,8 @@ public class FeedDetectorBolt extends FeedParserBolt {
 
     public static String[][] contentClues = {{"<rss"}, {"<feed"}, {"http://www.w3.org/2005/Atom"}};
     protected static final int maxOffsetContentGuess = 512;
-    private static ContentDetector contentDetector = new ContentDetector(contentClues, maxOffsetContentGuess);
+    private static ContentDetector contentDetector =
+            new ContentDetector(contentClues, maxOffsetContentGuess);
 
     private ParseFilter parseFilters;
 
@@ -83,7 +82,8 @@ public class FeedDetectorBolt extends FeedParserBolt {
             parseData.setMetadata(metadata);
             parseFilters.filter(url, content, null, parse);
             // emit status
-            collector.emit(Constants.StatusStreamName, tuple, new Values(url, metadata, Status.FETCHED));
+            collector.emit(
+                    Constants.StatusStreamName, tuple, new Values(url, metadata, Status.FETCHED));
         } else {
             // pass on
             collector.emit(tuple, tuple.getValues());
@@ -97,5 +97,4 @@ public class FeedDetectorBolt extends FeedParserBolt {
         super.prepare(stormConf, context, collect);
         parseFilters = ParseFilters.fromConf(stormConf);
     }
-
 }

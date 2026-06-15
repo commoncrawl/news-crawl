@@ -14,20 +14,18 @@
  */
 package org.commoncrawl.stormcrawler;
 
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-
+import org.apache.stormcrawler.Metadata;
+import org.apache.stormcrawler.filtering.URLFilter;
 import org.commoncrawl.stormcrawler.filter.FastURLFilter;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import org.apache.stormcrawler.Metadata;
-import org.apache.stormcrawler.filtering.URLFilter;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class FastURLFilterTest {
 

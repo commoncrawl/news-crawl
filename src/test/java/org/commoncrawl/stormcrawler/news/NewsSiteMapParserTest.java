@@ -16,6 +16,7 @@ package org.commoncrawl.stormcrawler.news;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
+import crawlercommons.sitemaps.UnknownFormatException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -25,17 +26,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.io.IOUtils;
-import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
-import org.junit.Before;
-import org.junit.Test;
-
 import org.apache.stormcrawler.Metadata;
 import org.apache.stormcrawler.parse.Outlink;
 import org.apache.stormcrawler.parse.ParsingTester;
-
-import crawlercommons.sitemaps.UnknownFormatException;
+import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
+import org.junit.Before;
+import org.junit.Test;
 
 public class NewsSiteMapParserTest extends ParsingTester {
 
@@ -60,7 +57,8 @@ public class NewsSiteMapParserTest extends ParsingTester {
         SitemapType type = ((NewsSiteMapParserBolt) bolt).detectContent(url, content);
         assertEquals(SitemapType.NEWS, type);
 
-        ((NewsSiteMapParserBolt) bolt).parseSiteMap(url, content, contentType, parentMetadata, links);
+        ((NewsSiteMapParserBolt) bolt)
+                .parseSiteMap(url, content, contentType, parentMetadata, links);
 
         // unmodified sitemap:
         // - publication date is far in the past, link should be skipped
@@ -69,14 +67,17 @@ public class NewsSiteMapParserTest extends ParsingTester {
 
         // now set the publication date to yesterday
         LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
-        content = (new String(content, StandardCharsets.UTF_8))
-                .replace(
-                        "<news:publication_date>2008-12-23</news:publication_date>",
-                        "<news:publication_date>"
-                                + yesterday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                                + "</news:publication_date>")
-                .getBytes(StandardCharsets.UTF_8);
-        ((NewsSiteMapParserBolt) bolt).parseSiteMap(url, content, contentType, parentMetadata, links);
+        content =
+                (new String(content, StandardCharsets.UTF_8))
+                        .replace(
+                                "<news:publication_date>2008-12-23</news:publication_date>",
+                                "<news:publication_date>"
+                                        + yesterday.format(
+                                                DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                                        + "</news:publication_date>")
+                        .getBytes(StandardCharsets.UTF_8);
+        ((NewsSiteMapParserBolt) bolt)
+                .parseSiteMap(url, content, contentType, parentMetadata, links);
 
         assertEquals(
                 "Expected one <loc> and one additional <xhtml:link> link - image links are ignored",
@@ -95,8 +96,13 @@ public class NewsSiteMapParserTest extends ParsingTester {
         String url = "https://example.org/feed.xml";
         byte[] content = readContent("feed-with-sitemap-namespace.xml");
         SitemapType type = ((NewsSiteMapParserBolt) bolt).detectContent(url, content);
-        assertNotEquals("RSS feed with sitemap namespace should not be detected as sitemap", SitemapType.NEWS, type);
-        assertNotEquals("RSS feed with sitemap namespace should not be detected as sitemap", SitemapType.SITEMAP, type);
+        assertNotEquals(
+                "RSS feed with sitemap namespace should not be detected as sitemap",
+                SitemapType.NEWS,
+                type);
+        assertNotEquals(
+                "RSS feed with sitemap namespace should not be detected as sitemap",
+                SitemapType.SITEMAP,
+                type);
     }
-
 }

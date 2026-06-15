@@ -1,26 +1,22 @@
 /**
- * Licensed to DigitalPebble Ltd under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * DigitalPebble licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to DigitalPebble Ltd under one or more contributor license agreements. See the NOTICE
+ * file distributed with this work for additional information regarding copyright ownership.
+ * DigitalPebble licenses this file to You under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy of the
+ * License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.commoncrawl.stormcrawler.news;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
@@ -43,9 +39,7 @@ import org.apache.stormcrawler.warc.WARCFileNameFormat;
 import org.apache.stormcrawler.warc.WARCHdfsBolt;
 import org.slf4j.LoggerFactory;
 
-/**
- * Dummy topology to play with the spouts and bolts on OpenSearch
- */
+/** Dummy topology to play with the spouts and bolts on OpenSearch */
 public class CrawlTopology extends ConfigurableTopology {
 
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(CrawlTopology.class);
@@ -70,22 +64,28 @@ public class CrawlTopology extends ConfigurableTopology {
             builder.setSpout("filespout", new FileSpout(args[0], args[1], true));
             Fields key = new Fields("url");
 
-            builder.setBolt("filter", new URLFilterBolt()).fieldsGrouping("filespout", Constants.StatusStreamName, key);
+            builder.setBolt("filter", new URLFilterBolt())
+                    .fieldsGrouping("filespout", Constants.StatusStreamName, key);
         }
 
         builder.setSpout("spout", new AggregationSpout(), numShards);
 
-        builder.setBolt("prefilter", new PreFilterBolt("pre-urlfilters.json"), numWorkers).shuffleGrouping("spout");
+        builder.setBolt("prefilter", new PreFilterBolt("pre-urlfilters.json"), numWorkers)
+                .shuffleGrouping("spout");
 
-        builder.setBolt("partitioner", new URLPartitionerBolt(), numWorkers).shuffleGrouping("prefilter");
+        builder.setBolt("partitioner", new URLPartitionerBolt(), numWorkers)
+                .shuffleGrouping("prefilter");
 
-        builder.setBolt("fetch", new FetcherBolt(), numWorkers).fieldsGrouping("partitioner", new Fields("key"));
+        builder.setBolt("fetch", new FetcherBolt(), numWorkers)
+                .fieldsGrouping("partitioner", new Fields("key"));
 
         builder.setBolt("sitemap", new NewsSiteMapParserBolt(), numWorkers)
                 .setNumTasks(2)
                 .localOrShuffleGrouping("fetch");
 
-        builder.setBolt("feed", new FeedParserBolt(), numWorkers).setNumTasks(4).localOrShuffleGrouping("sitemap");
+        builder.setBolt("feed", new FeedParserBolt(), numWorkers)
+                .setNumTasks(4)
+                .localOrShuffleGrouping("sitemap");
 
         // don't need to parse the pages but need to update their status
         builder.setBolt("ssb", new DummyIndexer(), numWorkers).localOrShuffleGrouping("feed");
@@ -98,15 +98,17 @@ public class CrawlTopology extends ConfigurableTopology {
 
         final Fields furl = new Fields("url");
 
-        BoltDeclarer statusBolt = builder.setBolt("status", new StatusUpdaterBolt(), numWorkers)
-                .fieldsGrouping("fetch", Constants.StatusStreamName, furl)
-                .fieldsGrouping("sitemap", Constants.StatusStreamName, furl)
-                .fieldsGrouping("feed", Constants.StatusStreamName, furl)
-                .fieldsGrouping("ssb", Constants.StatusStreamName, furl)
-                .fieldsGrouping("prefilter", Constants.StatusStreamName, furl);
+        BoltDeclarer statusBolt =
+                builder.setBolt("status", new StatusUpdaterBolt(), numWorkers)
+                        .fieldsGrouping("fetch", Constants.StatusStreamName, furl)
+                        .fieldsGrouping("sitemap", Constants.StatusStreamName, furl)
+                        .fieldsGrouping("feed", Constants.StatusStreamName, furl)
+                        .fieldsGrouping("ssb", Constants.StatusStreamName, furl)
+                        .fieldsGrouping("prefilter", Constants.StatusStreamName, furl);
 
         if (args.length >= 2) {
-            statusBolt.customGrouping("filter", Constants.StatusStreamName, new URLStreamGrouping());
+            statusBolt.customGrouping(
+                    "filter", Constants.StatusStreamName, new URLStreamGrouping());
         }
         statusBolt.setNumTasks(numShards);
 
@@ -127,12 +129,15 @@ public class CrawlTopology extends ConfigurableTopology {
         String userAgent = AbstractHttpProtocol.getAgentString(getConf());
         fields.put("http-header-user-agent", userAgent);
         fields.put("http-header-from", ConfUtils.getString(getConf(), "http.agent.email"));
-        String robotsTxtParser = "checked by crawler-commons "
-                + crawlercommons.CrawlerCommons.getVersion()
-                + " (https://github.com/crawler-commons/crawler-commons)";
+        String robotsTxtParser =
+                "checked by crawler-commons "
+                        + crawlercommons.CrawlerCommons.getVersion()
+                        + " (https://github.com/crawler-commons/crawler-commons)";
         fields.put("robots", robotsTxtParser);
         fields.put("format", "WARC File Format 1.1");
-        fields.put("conformsTo", "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/");
+        fields.put(
+                "conformsTo",
+                "https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/");
 
         WARCHdfsBolt warcbolt = (WARCHdfsBolt) new WARCHdfsBolt();
         warcbolt.withConfigKey("warc");
@@ -156,5 +161,4 @@ public class CrawlTopology extends ConfigurableTopology {
 
         return warcbolt;
     }
-
 }

@@ -13,20 +13,18 @@
  */
 package org.commoncrawl.stormcrawler.news;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.net.IDN;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Map;
-
 import org.apache.stormcrawler.Metadata;
 import org.apache.stormcrawler.filtering.URLFilter;
-import com.fasterxml.jackson.databind.JsonNode;
 
 public class PunycodeURLNormalizer extends URLFilter {
 
     @Override
-    public void configure(Map stormConf, JsonNode filterParams) {
-    }
+    public void configure(Map stormConf, JsonNode filterParams) {}
 
     private boolean isAscii(String str) {
         char[] chars = str.toCharArray();
@@ -50,11 +48,11 @@ public class PunycodeURLNormalizer extends URLFilter {
             if (hostName.equals(url.getHost())) {
                 return urlToFilter;
             }
-            urlToFilter = new URL(url.getProtocol(), hostName, url.getPort(), url.getFile()).toString();
+            urlToFilter =
+                    new URL(url.getProtocol(), hostName, url.getPort(), url.getFile()).toString();
         } catch (MalformedURLException e) {
             return null;
         }
         return urlToFilter;
     }
-
 }

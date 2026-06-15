@@ -1,21 +1,29 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work for additional information regarding
+ * copyright ownership. The ASF licenses this file to You under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the License. You may obtain a
+ * copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 package org.commoncrawl.stormcrawler.filter;
 
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.S3Object;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -29,7 +37,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.stormcrawler.JSONResource;
 import org.apache.stormcrawler.Metadata;
@@ -38,28 +45,15 @@ import org.apache.stormcrawler.util.ConfUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Multimap;
-
 /**
- * Version of the FastURLFilter that can load from a text representation instead
- * of the JSON that the SC version handles. Can also reload periodically and get
- * its content from S3.
- * 
- * Filters URLs based on a file of regular expressions using host/domains
- * matching first. The default policy is to accept a URL if no matches are
- * found.
+ * Version of the FastURLFilter that can load from a text representation instead of the JSON that
+ * the SC version handles. Can also reload periodically and get its content from S3.
  *
- * Rule Format:
- * 
+ * <p>Filters URLs based on a file of regular expressions using host/domains matching first. The
+ * default policy is to accept a URL if no matches are found.
+ *
+ * <p>Rule Format:
+ *
  * <pre>
  * Host www.example.org
  *   DenyPath /path/to/be/excluded
@@ -72,48 +66,45 @@ import com.google.common.collect.Multimap;
  * Domain example.org
  *   DenyPathQuery /resource/.*?action=exclude
  * </pre>
- * 
- * <code>Host</code> rules are evaluated before <code>Domain</code> rules. For
- * <code>Host</code> rules the entire host name of a URL must match while the
- * domain names in <code>Domain</code> rules are considered as matches if the
- * domain is a suffix of the host name (consisting of complete host name parts).
- * Shorter domain suffixes are checked first, a single dot
- * &quot;<code>.</code>&quot; as &quot;domain name&quot; can be used to specify
- * global rules applied to every URL.
- * 
- * E.g., for "www.example.com" the rules given above are looked up in the
- * following order:
+ *
+ * <code>Host</code> rules are evaluated before <code>Domain</code> rules. For <code>Host</code>
+ * rules the entire host name of a URL must match while the domain names in <code>Domain</code>
+ * rules are considered as matches if the domain is a suffix of the host name (consisting of
+ * complete host name parts). Shorter domain suffixes are checked first, a single dot &quot;<code>.
+ * </code>&quot; as &quot;domain name&quot; can be used to specify global rules applied to every
+ * URL.
+ *
+ * <p>E.g., for "www.example.com" the rules given above are looked up in the following order:
+ *
  * <ol>
- * <li>check "www.example.com" whether host-based rules exist and whether one of
- * them matches</li>
- * <li>check "www.example.com" for domain-based rules</li>
- * <li>check "example.com" for domain-based rules</li>
- * <li>check "com" for domain-based rules</li>
- * <li>check for global rules (&quot;<code>Domain .</code>&quot;)</li>
+ *   <li>check "www.example.com" whether host-based rules exist and whether one of them matches
+ *   <li>check "www.example.com" for domain-based rules
+ *   <li>check "example.com" for domain-based rules
+ *   <li>check "com" for domain-based rules
+ *   <li>check for global rules (&quot;<code>Domain .</code>&quot;)
  * </ol>
- * The first matching rule will reject the URL and no further rules are checked.
- * If no rule matches the URL is accepted. URLs without a host name (e.g.,
- * <code>file:/path/file.txt</code> are checked for global rules only. URLs
- * which fail to be parsed as {@link java.net.URL} are always rejected.
- * 
- * For rules either the URL path (<code>DenyPath</code>) or path and query
- * (<code>DenyPathQuery</code>) are checked whether the given
- * {@link java.util.regex Java Regular expression} is found (see
- * {@link java.util.regex.Matcher#find()}) in the URL path (and query).
- * 
- * Rules are applied in the order of their definition. For better performance,
- * regular expressions which are simpler/faster or match more URLs should be
- * defined earlier.
- * 
- * Comments in the rule file start with the <code>#</code> character and reach
- * until the end of the line.
- * 
- * The rules file is defined via the property <code>urlfilter.fast.file</code>,
- * the default name is <code>fast-urlfilter.txt</code>.
+ *
+ * The first matching rule will reject the URL and no further rules are checked. If no rule matches
+ * the URL is accepted. URLs without a host name (e.g., <code>file:/path/file.txt</code> are checked
+ * for global rules only. URLs which fail to be parsed as {@link java.net.URL} are always rejected.
+ *
+ * <p>For rules either the URL path (<code>DenyPath</code>) or path and query (<code>DenyPathQuery
+ * </code>) are checked whether the given {@link java.util.regex Java Regular expression} is found
+ * (see {@link java.util.regex.Matcher#find()}) in the URL path (and query).
+ *
+ * <p>Rules are applied in the order of their definition. For better performance, regular
+ * expressions which are simpler/faster or match more URLs should be defined earlier.
+ *
+ * <p>Comments in the rule file start with the <code>#</code> character and reach until the end of
+ * the line.
+ *
+ * <p>The rules file is defined via the property <code>urlfilter.fast.file</code>, the default name
+ * is <code>fast-urlfilter.txt</code>.
  */
 public class FastURLFilter extends URLFilter implements JSONResource {
 
-    protected static final Logger LOG = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    protected static final Logger LOG =
+            LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     public static final String URLFILTER_FAST_FILE = "urlfilter.fast.file";
     private Multimap<String, Rule> hostRules = LinkedHashMultimap.create();
@@ -121,7 +112,8 @@ public class FastURLFilter extends URLFilter implements JSONResource {
 
     private String resourceFile;
 
-    private static final Pattern CATCH_ALL_RULE = Pattern.compile("^\\s*DenyPath(?:Query)?\\s+\\.[*?]\\s*$");
+    private static final Pattern CATCH_ALL_RULE =
+            Pattern.compile("^\\s*DenyPath(?:Query)?\\s+\\.[*?]\\s*$");
 
     private String resourceETAG;
 
@@ -151,24 +143,28 @@ public class FastURLFilter extends URLFilter implements JSONResource {
 
         if (refreshRate != -1) {
             LOG.info("Filter set to reload from {} every {} sec", getResourceFile(), refreshRate);
-            new Timer().schedule(new TimerTask() {
-                public void run() {
-                    LOG.info("Reloading resources");
-                    try {
-                        loadJSONResources();
-                    } catch (Exception e) {
-                        LOG.error("Can't load resources", e);
-                    }
-                }
-            }, refreshRate * 1000, refreshRate * 1000);
+            new Timer()
+                    .schedule(
+                            new TimerTask() {
+                                public void run() {
+                                    LOG.info("Reloading resources");
+                                    try {
+                                        loadJSONResources();
+                                    } catch (Exception e) {
+                                        LOG.error("Can't load resources", e);
+                                    }
+                                }
+                            },
+                            refreshRate * 1000,
+                            refreshRate * 1000);
         }
     }
 
     /**
      * Load the resources from the JSON file in the uber jar or from S3
-     * 
+     *
      * @throws Exception
-     **/
+     */
     @Override
     public void loadJSONResources() throws Exception {
         InputStream inputStream = null;
@@ -248,7 +244,10 @@ public class FastURLFilter extends URLFilter implements JSONResource {
             try {
                 u = new URL(urlToFilter);
             } catch (Exception e) {
-                LOG.debug("Rejected {} because failed to parse as URL: {}", urlToFilter, e.getMessage());
+                LOG.debug(
+                        "Rejected {} because failed to parse as URL: {}",
+                        urlToFilter,
+                        e.getMessage());
                 return null;
             }
 
@@ -344,7 +343,11 @@ public class FastURLFilter extends URLFilter implements JSONResource {
                                 continue;
                             }
                         } catch (Exception e) {
-                            LOG.warn("Problem reading rule on line {}: {} - {}", lineno, line, e.getMessage());
+                            LOG.warn(
+                                    "Problem reading rule on line {}: {} - {}",
+                                    lineno,
+                                    line,
+                                    e.getMessage());
                             continue;
                         }
 
@@ -359,7 +362,10 @@ public class FastURLFilter extends URLFilter implements JSONResource {
                 }
 
             } catch (IOException e) {
-                LOG.warn("Caught exception while reading rules file at line {}: {}", lineno, e.getMessage());
+                LOG.warn(
+                        "Caught exception while reading rules file at line {}: {}",
+                        lineno,
+                        e.getMessage());
                 throw e;
             }
         }
@@ -368,8 +374,7 @@ public class FastURLFilter extends URLFilter implements JSONResource {
     public static class Rule {
         protected Pattern pattern;
 
-        Rule() {
-        }
+        Rule() {}
 
         public Rule(String regex) {
             pattern = Pattern.compile(regex);

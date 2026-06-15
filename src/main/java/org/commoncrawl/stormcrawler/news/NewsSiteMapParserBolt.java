@@ -15,6 +15,18 @@ package org.commoncrawl.stormcrawler.news;
 
 import static org.apache.stormcrawler.Constants.StatusStreamName;
 
+import crawlercommons.sitemaps.AbstractSiteMap;
+import crawlercommons.sitemaps.Namespace;
+import crawlercommons.sitemaps.SiteMap;
+import crawlercommons.sitemaps.SiteMapIndex;
+import crawlercommons.sitemaps.SiteMapParser;
+import crawlercommons.sitemaps.SiteMapURL;
+import crawlercommons.sitemaps.SiteMapURL.ChangeFrequency;
+import crawlercommons.sitemaps.UnknownFormatException;
+import crawlercommons.sitemaps.extension.Extension;
+import crawlercommons.sitemaps.extension.ExtensionMetadata;
+import crawlercommons.sitemaps.extension.LinkAttributes;
+import crawlercommons.sitemaps.extension.NewsAttributes;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -24,7 +36,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.storm.metric.api.MeanReducer;
@@ -46,22 +57,8 @@ import org.apache.stormcrawler.persistence.Status;
 import org.apache.stormcrawler.util.ConfUtils;
 import org.slf4j.LoggerFactory;
 
-import crawlercommons.sitemaps.AbstractSiteMap;
-import crawlercommons.sitemaps.Namespace;
-import crawlercommons.sitemaps.SiteMap;
-import crawlercommons.sitemaps.SiteMapIndex;
-import crawlercommons.sitemaps.SiteMapParser;
-import crawlercommons.sitemaps.SiteMapURL;
-import crawlercommons.sitemaps.SiteMapURL.ChangeFrequency;
-import crawlercommons.sitemaps.UnknownFormatException;
-import crawlercommons.sitemaps.extension.Extension;
-import crawlercommons.sitemaps.extension.ExtensionMetadata;
-import crawlercommons.sitemaps.extension.LinkAttributes;
-import crawlercommons.sitemaps.extension.NewsAttributes;
-
 /**
- * ParserBolt for <link href=
- * "https://support.google.com/news/publisher/answer/74288?hl=en">news
+ * ParserBolt for <link href= "https://support.google.com/news/publisher/answer/74288?hl=en">news
  * sitemaps</a>.
  */
 @SuppressWarnings("serial")
@@ -76,24 +73,29 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     // - pass "isSitemapNews" to status metadata
 
     public static enum SitemapType {
-        NEWS, INDEX, SITEMAP
+        NEWS,
+        INDEX,
+        SITEMAP
     }
 
     public static final String isSitemapNewsKey = "isSitemapNews";
     public static final String isSitemapIndexKey = "isSitemapIndex";
+
     /**
-     * A sitemap (not necessarily a news sitemap) which is verified to contain links
-     * to news articles. Necessary to crawl news sites which provide a sitemap but
-     * neither a news feed or sitemap.
+     * A sitemap (not necessarily a news sitemap) which is verified to contain links to news
+     * articles. Necessary to crawl news sites which provide a sitemap but neither a news feed or
+     * sitemap.
      */
     public static final String isSitemapVerifiedKey = "isSitemapVerified";
 
-    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(NewsSiteMapParserBolt.class);
+    private static final org.slf4j.Logger LOG =
+            LoggerFactory.getLogger(NewsSiteMapParserBolt.class);
 
     /* content clues for news sitemaps, sitemap indexes or any sitemaps */
     public static String[][] contentClues;
     public static int contentCluesSitemapNewsMatchUpTo = -1;
     public static int contentCluesSitemapIndexMatchUpTo = -1;
+
     static {
         int cluesSize = Namespace.NEWS.length + 1 + 1 + Namespace.SITEMAP_LEGACY.length;
         contentClues = new String[cluesSize][1];
@@ -127,7 +129,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
     private ReducedMetric averagedMetrics;
 
-    /** Delay in minutes used for scheduling sub-sitemaps **/
+    /** Delay in minutes used for scheduling sub-sitemaps * */
     private int scheduleSitemapsWithDelay = -1;
 
     @Override
@@ -184,7 +186,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             metadata.remove(isSitemapKey);
         } else {
             if (isSitemap) {
-                collector.emit(Constants.StatusStreamName, tuple, new Values(url, metadata, Status.FETCHED));
+                collector.emit(
+                        Constants.StatusStreamName,
+                        tuple,
+                        new Values(url, metadata, Status.FETCHED));
             } else {
                 // not a sitemap, just pass it on
                 collector.emit(tuple, tuple.getValues());
@@ -210,7 +215,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             metadata.setValue(Constants.STATUS_ERROR_SOURCE, "sitemap parsing");
             metadata.setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
             metadata.remove("numLinks");
-            collector.emit(Constants.StatusStreamName, tuple, new Values(url, metadata, Status.ERROR));
+            collector.emit(
+                    Constants.StatusStreamName, tuple, new Values(url, metadata, Status.ERROR));
             collector.ack(tuple);
             return;
         }
@@ -260,7 +266,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         metadata.setValue("numLinks", String.valueOf(outlinks.size()));
 
         // marking the main URL as successfully fetched
-        collector.emit(Constants.StatusStreamName, tuple, new Values(url, metadata, Status.FETCHED));
+        collector.emit(
+                Constants.StatusStreamName, tuple, new Values(url, metadata, Status.FETCHED));
         collector.ack(tuple);
     }
 
@@ -307,7 +314,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             byte[] content,
             String contentType,
             Metadata parentMetadata,
-            List<Outlink> links) throws UnknownFormatException, IOException {
+            List<Outlink> links)
+            throws UnknownFormatException, IOException {
 
         SiteMapParser parser = new SiteMapParser(strictModeSitemaps, allowPartialSitemaps);
         parser.setStrictNamespace(true);
@@ -357,14 +365,15 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                     continue;
                 }
 
-                Outlink ol = filterOutlink(
-                        sURL,
-                        target,
-                        parentMetadata,
-                        isSitemapKey,
-                        "true",
-                        isSitemapNewsKey,
-                        "false");
+                Outlink ol =
+                        filterOutlink(
+                                sURL,
+                                target,
+                                parentMetadata,
+                                isSitemapKey,
+                                "true",
+                                isSitemapNewsKey,
+                                "false");
                 if (ol == null) {
                     continue;
                 }
@@ -372,7 +381,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 // add a delay
                 if (this.scheduleSitemapsWithDelay > 0) {
                     if (delay > 0) {
-                        ol.getMetadata().setValue(DefaultScheduler.DELAY_METADATA, Integer.toString(delay));
+                        ol.getMetadata()
+                                .setValue(DefaultScheduler.DELAY_METADATA, Integer.toString(delay));
                     }
                     delay += this.scheduleSitemapsWithDelay;
                 }
@@ -391,7 +401,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             SiteMap sm = (SiteMap) siteMap;
             Collection<SiteMapURL> sitemapURLs = sm.getSiteMapUrls();
             Iterator<SiteMapURL> iter = sitemapURLs.iterator();
-            sitemap_urls : while (iter.hasNext()) {
+            sitemap_urls:
+            while (iter.hasNext()) {
                 linksFound++;
                 SiteMapURL smurl = iter.next();
                 // TODO handle priority in metadata
@@ -447,28 +458,30 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                             // skip href links duplicating sitemap URL
                             continue;
                         }
-                        Outlink ol = filterOutlink(
-                                sURL,
-                                hrefStr,
-                                parentMetadata,
-                                isSitemapKey,
-                                "false",
-                                isSitemapNewsKey,
-                                "false");
+                        Outlink ol =
+                                filterOutlink(
+                                        sURL,
+                                        hrefStr,
+                                        parentMetadata,
+                                        isSitemapKey,
+                                        "false",
+                                        isSitemapNewsKey,
+                                        "false");
                         if (ol != null) {
                             links.add(ol);
                         }
                     }
                 }
 
-                Outlink ol = filterOutlink(
-                        sURL,
-                        target,
-                        parentMetadata,
-                        isSitemapKey,
-                        "false",
-                        isSitemapNewsKey,
-                        "false");
+                Outlink ol =
+                        filterOutlink(
+                                sURL,
+                                target,
+                                parentMetadata,
+                                isSitemapKey,
+                                "false",
+                                isSitemapNewsKey,
+                                "false");
                 if (ol == null) {
                     continue;
                 }
@@ -476,7 +489,11 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 links.add(ol);
                 LOG.debug("{} : [sitemap] {}", url, target);
             }
-            LOG.info("Sitemap (found {} links, {} skipped): {}", linksFound, linksSkippedNotRecentlyModified, url);
+            LOG.info(
+                    "Sitemap (found {} links, {} skipped): {}",
+                    linksFound,
+                    linksSkippedNotRecentlyModified,
+                    url);
         }
 
         return siteMap;
@@ -487,16 +504,18 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         super.prepare(stormConf, context, collector);
         sniffContent = ConfUtils.getBoolean(stormConf, "sitemap.sniffContent", false);
-        filterHoursSinceModified = ConfUtils.getInt(stormConf, "sitemap.filter.hours.since.modified", -1);
+        filterHoursSinceModified =
+                ConfUtils.getInt(stormConf, "sitemap.filter.hours.since.modified", -1);
         parseFilters = ParseFilters.fromConf(stormConf);
         int maxOffsetGuess = ConfUtils.getInt(stormConf, "sitemap.offset.guess", 1024);
         contentDetector = new ContentDetector(NewsSiteMapParserBolt.contentClues, maxOffsetGuess);
         rssContentDetector = new ContentDetector(FeedDetectorBolt.contentClues, maxOffsetGuess);
-        averagedMetrics = context.registerMetric(
-                "news_sitemap_average_processing_time",
-                new ReducedMetric(new MeanReducer()),
-                30);
-        scheduleSitemapsWithDelay = ConfUtils.getInt(stormConf, "sitemap.schedule.delay", scheduleSitemapsWithDelay);
+        averagedMetrics =
+                context.registerMetric(
+                        "news_sitemap_average_processing_time",
+                        new ReducedMetric(new MeanReducer()),
+                        30);
+        scheduleSitemapsWithDelay =
+                ConfUtils.getInt(stormConf, "sitemap.schedule.delay", scheduleSitemapsWithDelay);
     }
-
 }
