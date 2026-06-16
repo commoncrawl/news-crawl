@@ -16,6 +16,7 @@ package org.commoncrawl.stormcrawler.news;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
+import crawlercommons.sitemaps.UnknownFormatException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -25,75 +26,83 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.io.IOUtils;
-import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
-import org.junit.Before;
-import org.junit.Test;
-
 import org.apache.stormcrawler.Metadata;
 import org.apache.stormcrawler.parse.Outlink;
 import org.apache.stormcrawler.parse.ParsingTester;
-
-import crawlercommons.sitemaps.UnknownFormatException;
+import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
+import org.junit.Before;
+import org.junit.Test;
 
 public class NewsSiteMapParserTest extends ParsingTester {
 
     @Before
     public void setupParserBolt() {
-	setupParserBolt(new NewsSiteMapParserBolt());
-	Map<String, Object> config = new HashMap<>();
-	config.put("sitemap.sniffContent", true);
-	// allow items published during the last week
-	config.put("sitemap.filter.hours.since.modified", 168);
-	prepareParserBolt("test.parsefilters.json", config);
+        setupParserBolt(new NewsSiteMapParserBolt());
+        Map<String, Object> config = new HashMap<>();
+        config.put("sitemap.sniffContent", true);
+        // allow items published during the last week
+        config.put("sitemap.filter.hours.since.modified", 168);
+        prepareParserBolt("test.parsefilters.json", config);
     }
 
     @Test
     public void testSiteMapParser() throws IOException, UnknownFormatException {
-	String url = "https://example.org/sitemap-news.xml";
-	byte[] content = readContent("sitemap-news.xml");
-	String contentType = "";
-	Metadata parentMetadata = new Metadata();
-	List<Outlink> links = new ArrayList<>();
+        String url = "https://example.org/sitemap-news.xml";
+        byte[] content = readContent("sitemap-news.xml");
+        String contentType = "";
+        Metadata parentMetadata = new Metadata();
+        List<Outlink> links = new ArrayList<>();
 
-	SitemapType type = ((NewsSiteMapParserBolt) bolt).detectContent(url, content);
-	assertEquals(SitemapType.NEWS, type);
+        SitemapType type = ((NewsSiteMapParserBolt) bolt).detectContent(url, content);
+        assertEquals(SitemapType.NEWS, type);
 
-	((NewsSiteMapParserBolt) bolt).parseSiteMap(url, content, contentType, parentMetadata, links);
+        ((NewsSiteMapParserBolt) bolt)
+                .parseSiteMap(url, content, contentType, parentMetadata, links);
 
-	// unmodified sitemap:
-	// - publication date is far in the past, link should be skipped
-	// <news:publication_date>2008-12-23</news:publication_date>
-	assertEquals("Outdated link not skipped", 0, links.size());
+        // unmodified sitemap:
+        // - publication date is far in the past, link should be skipped
+        // <news:publication_date>2008-12-23</news:publication_date>
+        assertEquals("Outdated link not skipped", 0, links.size());
 
-	// now set the publication date to yesterday
-	LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
-	content = (new String(content, StandardCharsets.UTF_8))
-		.replace("<news:publication_date>2008-12-23</news:publication_date>", "<news:publication_date>"
-			+ yesterday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "</news:publication_date>")
-		.getBytes(StandardCharsets.UTF_8);
-	((NewsSiteMapParserBolt) bolt).parseSiteMap(url, content, contentType, parentMetadata, links);
+        // now set the publication date to yesterday
+        LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+        content =
+                (new String(content, StandardCharsets.UTF_8))
+                        .replace(
+                                "<news:publication_date>2008-12-23</news:publication_date>",
+                                "<news:publication_date>"
+                                        + yesterday.format(
+                                                DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                                        + "</news:publication_date>")
+                        .getBytes(StandardCharsets.UTF_8);
+        ((NewsSiteMapParserBolt) bolt)
+                .parseSiteMap(url, content, contentType, parentMetadata, links);
 
-	assertEquals("Expected one <loc> and one additional <xhtml:link> link - image links are ignored", 2,
-		links.size());
+        assertEquals(
+                "Expected one <loc> and one additional <xhtml:link> link - image links are ignored",
+                2,
+                links.size());
     }
 
     protected byte[] readContent(String filename) throws IOException {
-	ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	IOUtils.copy(getClass().getClassLoader().getResourceAsStream(filename), baos);
-	return baos.toByteArray();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        IOUtils.copy(getClass().getClassLoader().getResourceAsStream(filename), baos);
+        return baos.toByteArray();
     }
 
-	@Test
-     public void testFeedWithSitemapNamespace() throws IOException, UnknownFormatException {
-         String url = "https://example.org/feed.xml";
-		byte[] content = readContent("feed-with-sitemap-namespace.xml");
-         SitemapType type = ((NewsSiteMapParserBolt) bolt).detectContent(url, content);
-         assertNotEquals("RSS feed with sitemap namespace should not be detected as sitemap",
-                 SitemapType.NEWS, type);
-         assertNotEquals("RSS feed with sitemap namespace should not be detected as sitemap",
-                 SitemapType.SITEMAP, type);
-     }
-
+    @Test
+    public void testFeedWithSitemapNamespace() throws IOException, UnknownFormatException {
+        String url = "https://example.org/feed.xml";
+        byte[] content = readContent("feed-with-sitemap-namespace.xml");
+        SitemapType type = ((NewsSiteMapParserBolt) bolt).detectContent(url, content);
+        assertNotEquals(
+                "RSS feed with sitemap namespace should not be detected as sitemap",
+                SitemapType.NEWS,
+                type);
+        assertNotEquals(
+                "RSS feed with sitemap namespace should not be detected as sitemap",
+                SitemapType.SITEMAP,
+                type);
+    }
 }

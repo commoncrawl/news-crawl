@@ -4,7 +4,7 @@ Crawler for news based on [StormCrawler](https://stormcrawler.apache.org/). Prod
 
 
 ## Prerequisites
-
+* JVM 17 or higher
 * Install OpenSearch 2.19.5
 * Install Apache Storm 2.8.8
 * Start OpenSearch and Storm
@@ -118,4 +118,19 @@ NewsCrawl            ACTIVE     48         1            146          NewsCrawl-1
 
 $> storm kill NewsCrawl
 ```
+
+## Note for developers
+
+Please format your code before submitting a PR with
+
+```
+mvn git-code-format:format-code -Dgcf.globPattern="**/*" -Dskip.format.code=false
+```
+
+You can enable pre-commit format hooks by running:
+
+```
+mvn clean install -Dskip.format.code=false
+```
+
 
