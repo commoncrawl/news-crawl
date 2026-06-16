@@ -44,7 +44,7 @@ import org.apache.stormcrawler.warc.WARCHdfsBolt;
 import org.slf4j.LoggerFactory;
 
 /**
- * Dummy topology to play with the spouts and bolts on ElasticSearch
+ * Dummy topology to play with the spouts and bolts on OpenSearch
  */
 public class CrawlTopology extends ConfigurableTopology {
 

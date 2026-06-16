@@ -5,8 +5,8 @@ Crawler for news based on [StormCrawler](https://stormcrawler.apache.org/). Prod
 
 ## Prerequisites
 
-* Install OpenSearch 2.19.4
-* Install Apache Storm 2.8.4
+* Install OpenSearch 2.19.5
+* Install Apache Storm 2.8.8
 * Start OpenSearch and Storm
 * Create the OpenSearch indices by running [bin/OS_IndexInit.sh](bin/OS_IndexInit.sh) and the dashboards by [OS_ImportDashboards.sh](bin/OS_ImportDashboards.sh)
 
@@ -32,14 +32,14 @@ mvn clean package
 
 And run ...
 ``` sh
-storm local target/crawler-3.5.1.jar --local-ttl 60 -- org.commoncrawl.stormcrawler.news.CrawlTopology -conf $PWD/conf/opensearch-conf.yaml -conf $PWD/conf/crawler-conf.yaml $PWD/seeds/ feeds.txt
+storm local target/crawler-3.6.0.jar --local-ttl 60 -- org.commoncrawl.stormcrawler.news.CrawlTopology -conf $PWD/conf/opensearch-conf.yaml -conf $PWD/conf/crawler-conf.yaml $PWD/seeds/ feeds.txt
 ```
 
 This will launch the crawl topology in local mode for 60 seconds. It will also "inject" all URLs found in the file `./seeds/feeds.txt` in the status index. The URLs point to news feeds and sitemaps from which links to news articles are extracted and fetched. The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
 
-Of course, it's also possible to add (or remove) the seeds (feeds and sitemaps) using the Elasticsearch API. In this case, the can topology can be run without the last two arguments.
+Of course, it's also possible to add (or remove) the seeds (feeds and sitemaps) using the OpenSearch API. In this case, the can topology can be run without the last two arguments.
 
-Alternatively, the topology can be run from the [crawler.flux](./conf/crawler.flux), please see the [Storm Flux documentation](https://storm.apache.org/releases/2.8.4/flux.html). Make sure to adapt the Flux definition to your needs!
+Alternatively, the topology can be run from the [crawler.flux](./conf/crawler.flux), please see the [Storm Flux documentation](https://storm.apache.org/releases/2.8.8/flux.html). Make sure to adapt the Flux definition to your needs!
 
 In production, you should use `storm jar ...` to run the topology in distributed mode and continuously (no time limit) including the Storm UI and logging.
 
@@ -88,7 +88,7 @@ NOTE:
 - Make sure that the OpenSearch port 9200 is not already in use or mapped by a running OpenSearch instance. Otherwise OpenSearch commands may affect the running instance!
 
 
-To launch the topology using [Storm Flux](https://storm.apache.org/releases/2.8.4/flux.html):
+To launch the topology using [Storm Flux](https://storm.apache.org/releases/2.8.8/flux.html):
 ```
 docker compose run --rm news-crawler \
     storm jar lib/crawler.jar org.apache.storm.flux.Flux --remote /news-crawler/conf/crawler.flux
@@ -104,7 +104,7 @@ After 1-2 minutes if everything is up, connect to OpenSearch on port [9200](http
 
 For inspecting the worker log files:
 ```
-docker exec storm-supervisor /bin/bash -c 'cat /logs/workers-artifacts/*/*/worker.log'
+docker exec storm-supervisor-news-crawl /bin/bash -c 'cat /logs/workers-artifacts/*/*/worker.log'
 ```
 
 To stop the topology:
