@@ -16,11 +16,6 @@
  */
 package org.commoncrawl.stormcrawler.filter;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -46,6 +41,10 @@ import org.apache.stormcrawler.filtering.URLFilter;
 import org.apache.stormcrawler.util.ConfUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 
 /**
  * Version of the FastURLFilter that can load from a text representation instead of the JSON that
@@ -170,11 +169,11 @@ public class FastURLFilter extends URLFilter implements JSONResource {
     @Override
     public void loadJSONResources() throws Exception {
         InputStream inputStream = null;
-        AmazonS3 s3client = null;
+        S3Client s3client = null;
         try {
             if (getResourceFile().startsWith("s3://")) {
                 // try loading from S3
-                s3client = AmazonS3ClientBuilder.standard().build();
+                s3client = S3Client.builder().build();
                 java.net.URI uri = new java.net.URI(getResourceFile());
 
                 String bucketName = uri.getHost();
@@ -182,8 +181,14 @@ public class FastURLFilter extends URLFilter implements JSONResource {
                 String path = uri.getPath().substring(1);
 
                 // optimisation - avoid a full reload if the resource has not changed
-                ObjectMetadata metadata = s3client.getObjectMetadata(bucketName, path);
-                final String ETAG = metadata.getETag();
+                HeadObjectResponse headResponse =
+                        s3client.headObject(
+                                HeadObjectRequest.builder()
+                                                 .bucket(bucketName)
+                                                 .key(path)
+                                                 .build()
+                        );
+                final String ETAG = headResponse.eTag();
                 if (ETAG != null && ETAG.equals(resourceETAG)) {
                     LOG.info("Unchanged ETAG for {} - skipping reload", getResourceFile());
                     return;
@@ -191,8 +196,13 @@ public class FastURLFilter extends URLFilter implements JSONResource {
                     resourceETAG = ETAG;
                 }
 
-                final S3Object object = s3client.getObject(new GetObjectRequest(bucketName, path));
-                inputStream = object.getObjectContent();
+                inputStream =
+                        s3client.getObject(
+                                GetObjectRequest.builder()
+                                                .bucket(bucketName)
+                                                .key(path)
+                                                .build()
+                        );
             } else {
                 inputStream = getClass().getClassLoader().getResourceAsStream(getResourceFile());
                 if (inputStream == null) {
@@ -210,7 +220,7 @@ public class FastURLFilter extends URLFilter implements JSONResource {
                 inputStream.close();
             }
             if (s3client != null) {
-                s3client.shutdown();
+                s3client.close();
             }
         }
     }
