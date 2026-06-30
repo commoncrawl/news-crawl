@@ -41,6 +41,7 @@ import org.apache.stormcrawler.filtering.URLFilter;
 import org.apache.stormcrawler.util.ConfUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -173,7 +174,7 @@ public class FastURLFilter extends URLFilter implements JSONResource {
         try {
             if (getResourceFile().startsWith("s3://")) {
                 // try loading from S3
-                s3client = S3Client.builder().build();
+                s3client = S3Client.builder().httpClient(UrlConnectionHttpClient.create()).build();
                 java.net.URI uri = new java.net.URI(getResourceFile());
 
                 String bucketName = uri.getHost();
