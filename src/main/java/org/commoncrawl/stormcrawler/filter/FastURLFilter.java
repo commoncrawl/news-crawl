@@ -184,11 +184,7 @@ public class FastURLFilter extends URLFilter implements JSONResource {
                 // optimisation - avoid a full reload if the resource has not changed
                 HeadObjectResponse headResponse =
                         s3client.headObject(
-                                HeadObjectRequest.builder()
-                                                 .bucket(bucketName)
-                                                 .key(path)
-                                                 .build()
-                        );
+                                HeadObjectRequest.builder().bucket(bucketName).key(path).build());
                 final String ETAG = headResponse.eTag();
                 if (ETAG != null && ETAG.equals(resourceETAG)) {
                     LOG.info("Unchanged ETAG for {} - skipping reload", getResourceFile());
@@ -199,11 +195,7 @@ public class FastURLFilter extends URLFilter implements JSONResource {
 
                 inputStream =
                         s3client.getObject(
-                                GetObjectRequest.builder()
-                                                .bucket(bucketName)
-                                                .key(path)
-                                                .build()
-                        );
+                                GetObjectRequest.builder().bucket(bucketName).key(path).build());
             } else {
                 inputStream = getClass().getClassLoader().getResourceAsStream(getResourceFile());
                 if (inputStream == null) {
