@@ -53,9 +53,15 @@ services:
       - opensearch
     # - the WARC output folder
     # - and the seed folder
+    environment:
+      - AWS_PROFILE=${AWS_PROFILE:-cc}
+      - AWS_REGION=${AWS_REGION:-us-east-1}   # or rely on region= in the profile
     volumes:
       - ${WARCOUTPUT:-./warcdata}:/data/warc
       - ${SEEDDIR:-./seeds}:/data/seeds
+      # Worker JVMs run as the "storm" user (home /home/storm), so mount the host's ~/.aws
+      # at the storm user's home for the AWS SDK's default ~/.aws lookup to find it.
+      - ${HOME}/.aws:/home/storm/.aws:ro
     restart: always
 
   # - the Storm UI provides diagnostics about the Storm cluster
@@ -82,6 +88,12 @@ services:
       - "OPENSEARCH_JAVA_OPTS=-Xms4G -Xmx4G"
       - plugins.security.disabled=true
       - "DISABLE_INSTALL_DEMO_CONFIG=true"
+    networks:
+      # conf/opensearch-conf.yaml addresses the cluster as "opensearch-news-crawl" (the
+      # production DNS name); expose that as an alias so those addresses resolve in Compose too.
+      default:
+        aliases:
+          - opensearch-news-crawl
     volumes:
       - ${OPENSEARCHDATA:-./opensearchdata}:/usr/share/opensearch/data
     ulimits:
@@ -102,7 +114,7 @@ services:
     expose:
       - "5601"
     environment:
-      - 'OPENSEARCH_HOSTS=["http://opensearch-news-crawl:9200"]'
+      - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
       - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true" # disables security dashboards plugin in OpenSearch Dashboards
 
   # - to launch a topology
