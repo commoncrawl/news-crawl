@@ -13,7 +13,7 @@ config:
   topology.debug: false
 
   # override the JVM parameters for the workers
-  topology.worker.childopts: "-Xmx4g -Djava.net.preferIPv4Stack=true"
+  topology.worker.childopts: "-Xmx4g -Djava.net.preferIPv4Stack=false"
 
   topology.name: "NewsCrawl"
 
