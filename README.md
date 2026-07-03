@@ -12,7 +12,7 @@ Two indexes / stores are involved:
 - **OpenSearch** holds the *URL status index*: every known URL and its state (`DISCOVERED`, `FETCHED`, `REDIRECTION`, `ERROR`). This is the crawler's memory of what to fetch next.
 - **WARC files** on local disk (`warc.dir`) hold the actual fetched content — this is the output shipped to Common Crawl.
 
-The production crawl ([`CrawlTopology`](src/main/java/org/commoncrawl/stormcrawler/news/CrawlTopology.java)) is a Storm pipeline:
+The production crawl is a Storm pipeline defined primarily in [`conf/crawler.flux`](conf/crawler.flux) (the main topology, launched via [Storm Flux](https://storm.apache.org/releases/2.8.8/flux.html)). A functionally-equivalent Java implementation of the same pipeline is provided in [`CrawlTopology`](src/main/java/org/commoncrawl/stormcrawler/news/CrawlTopology.java). Either way the DAG is the same:
 
 ```
 seeds/feeds.txt
@@ -42,33 +42,51 @@ The crawler relies on [RSS](https://en.wikipedia.org/wiki/RSS)/[Atom](https://en
 
 ## Configuration
 
-The default configuration should work out-of-the-box. The only thing to do is to configure the user agent properties send in the HTTP request header. Open the file `conf/crawler-conf.yaml` in an editor and fill in the values for `http.agent.name` and all further properties starting with the `http.agent.` prefix.
+The default configuration works out-of-the-box for a local test crawl. The **only mandatory change** is the HTTP user agent — news sites reject requests without a real `User-Agent`. Open `conf/crawler-conf.yaml` and fill in `http.agent.name` and the other `http.agent.*` properties (`version`, `url`, `email`).
+
+The crawl is configured through a handful of files under [`conf/`](./conf/), layered on top of StormCrawler's built-in `crawler-default.yaml` (later files override earlier ones):
+
+| File | What it configures |
+| --- | --- |
+| [`crawler-conf.yaml`](conf/crawler-conf.yaml) | Main crawler config: HTTP agent (`http.agent.*`), fetch parallelism, timeouts, content-size limits, and the `warc.*` keys (`warc.dir`, `warc.rotation.policy.max-mb` / `max-minutes`). |
+| [`opensearch-conf.yaml`](conf/opensearch-conf.yaml) | OpenSearch cluster addresses and the status-index / indexer settings. |
+| [`crawler.flux`](conf/crawler.flux) | The main topology definition itself (spouts, bolts, streams) **and** the WARC output settings — see below. Includes the two files above. |
+| [`bootstrap-conf.yaml`](conf/bootstrap-conf.yaml) | Config for the [bootstrap topology](#bootstrap-discovering-feeds-and-sitemaps); sets a distinct WARC directory (`/data/warc/bootstrap`) and a more conservative `fetcher.server.delay`. |
+
+### WARC output settings
+
+Where WARC files are written and how they rotate is configured **differently** depending on which topology you launch:
+
+- **Flux (`crawler.flux`) — hardcoded in the component definitions.** The output path is `WARCFileNameFormat.withPath("/data/warc")` and rotation is `1024 MB` / `1440 minutes` in `WARCFileRotationPolicy`. These **ignore** the `warc.*` config keys, so to change them you must edit `crawler.flux` directly. Also fill in the placeholder `WARCInfo` header values (`http-header-user-agent`, `http-header-from`, `operator`, `robots`), which ship as `"..."`.
+- **Java (`CrawlTopology`) — read from config.** The output path comes from `warc.dir` (default `/data/warc`) and rotation from `warc.rotation.policy.max-mb` / `warc.rotation.policy.max-minutes` in `crawler-conf.yaml`; the WARC header fields are derived from the `http.agent.*` values at runtime.
+
+In both cases the WARC output directory must exist before you start the crawl.
 
 
 ## Run the crawl
 
-Generate an uberjar:
+Once the configuration is in place, generate the uberjar:
 ``` sh
 mvn clean package
 ```
 
-And run ...
+The main news crawler topology is defined in [`conf/crawler.flux`](./conf/crawler.flux) and launched via [Storm Flux](https://storm.apache.org/releases/2.8.8/flux.html) — this is also the default entry point of the shaded jar (its manifest `mainClass` is `org.apache.storm.flux.Flux`).
+
+For a quick local smoke test you can instead run the equivalent Java topology [`CrawlTopology`](src/main/java/org/commoncrawl/stormcrawler/news/CrawlTopology.java) in local mode. Note the `--` separator: it overrides the manifest's default Flux main class so the named class runs instead.
 ``` sh
 storm local target/crawler-3.6.0.jar --local-ttl 60 -- org.commoncrawl.stormcrawler.news.CrawlTopology -conf $PWD/conf/opensearch-conf.yaml -conf $PWD/conf/crawler-conf.yaml $PWD/seeds/ feeds.txt
 ```
 
 This will launch the crawl topology in local mode for 60 seconds. It will also "inject" all URLs found in the file `./seeds/feeds.txt` in the status index. The URLs point to news feeds and sitemaps from which links to news articles are extracted and fetched. The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
 
-Of course, it's also possible to add (or remove) the seeds (feeds and sitemaps) using the OpenSearch API. In this case, the can topology can be run without the last two arguments.
+Of course, it's also possible to add (or remove) the seeds (feeds and sitemaps) using the OpenSearch API. In this case, the topology can be run without the last two arguments.
 
-Alternatively, the topology can be run from the [crawler.flux](./conf/crawler.flux), please see the [Storm Flux documentation](https://storm.apache.org/releases/2.8.8/flux.html). Make sure to adapt the Flux definition to your needs!
-
-In production, you should use `storm jar ...` to run the topology in distributed mode and continuously (no time limit) including the Storm UI and logging.
+In production, you should use `storm jar ...` to run the topology in distributed mode and continuously (no time limit) including the Storm UI and logging (see the Docker Compose section below for the exact Flux and Java commands).
 
 
 ## Bootstrap: discovering feeds and sitemaps
 
-The production crawl assumes its seeds are *already known* to be feeds or news sitemaps. When you only have a list of candidate URLs (e.g. news site home pages) and don't yet know which of them expose a feed or a Google News sitemap, run the **bootstrap topology** first.
+The news crawl assumes its seeds are *already known* to be feeds or news sitemaps. When you only have a list of candidate URLs (e.g. news site home pages) and don't yet know which of them expose a feed or a Google News sitemap, run the **bootstrap topology** first.
 
 [`BootstrapTopology`](src/main/java/org/commoncrawl/stormcrawler/news/bootstrap/BootstrapTopology.java) reuses the same fetch skeleton but replaces the *parser* bolts with *detector* bolts — [`NewsSiteMapDetectorBolt`](src/main/java/org/commoncrawl/stormcrawler/news/bootstrap/NewsSiteMapDetectorBolt.java) and [`FeedDetectorBolt`](src/main/java/org/commoncrawl/stormcrawler/news/FeedDetectorBolt.java) — which classify a fetched URL by its content/`Content-Type` instead of extracting article links from it. The detected feeds and sitemaps can then be used as seeds for the production crawl above.
 
@@ -123,15 +141,15 @@ Wait until the containers are running, then initialize the OpenSearch index and 
 
 NOTE:
 - This will delete existing indexes!
-- Make sure that the OpenSearch port 9200 is not already in use or mapped by a running OpenSearch instance. Otherwise OpenSearch commands may affect the running instance!
+- Make sure that the OpenSearch port 9200 is not already in use or mapped by a running OpenSearch instance. Otherwise, OpenSearch commands may affect the running instance!
 
 
-To launch the topology using [Storm Flux](https://storm.apache.org/releases/2.8.8/flux.html):
+Submit the topology from the `news-crawler` service. The main path uses [Storm Flux](https://storm.apache.org/releases/2.8.8/flux.html) with `conf/crawler.flux`:
 ```
 docker compose run --rm news-crawler \
     storm jar lib/crawler.jar org.apache.storm.flux.Flux --remote /news-crawler/conf/crawler.flux
 ```
-Or using the Java topology:
+Or run the equivalent Java topology (the `--` separator overrides the manifest's default Flux main class):
 ```
 docker compose run --rm news-crawler \
     storm jar lib/crawler.jar -- org.commoncrawl.stormcrawler.news.CrawlTopology \
@@ -142,7 +160,7 @@ After 1-2 minutes if everything is up, connect to OpenSearch on port [9200](http
 
 For inspecting the worker log files (the container name matches `container_name:` for the `storm-supervisor` service in [docker-compose.yaml](docker-compose.yaml)):
 ```
-docker exec storm-supervisor-news-crawl-production /bin/bash -c 'cat /logs/workers-artifacts/*/*/worker.log'
+docker exec storm-supervisor-news-crawl /bin/bash -c 'cat /logs/workers-artifacts/*/*/worker.log'
 ```
 
 To stop the topology:
