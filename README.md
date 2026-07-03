@@ -3,6 +3,28 @@
 Crawler for news based on [StormCrawler](https://stormcrawler.apache.org/). Produces WARC files to be stored as part of the [Common Crawl](https://commoncrawl.org/). The data is hosted as [AWS Open Data Set](https://registry.opendata.aws/) – if you want to use the data and not the crawler software please read [the announcement of the news dataset](https://commoncrawl.org/2016/10/news-dataset-available/).
 
 
+## How it works
+
+The project is a custom [Apache StormCrawler](https://stormcrawler.apache.org/) topology. Stock StormCrawler provides the heavy machinery — the HTTP fetcher, robots.txt handling, URL partitioner, WARC writer and OpenSearch status index. This repository adds ~10 **news-specific** bolts and filters on top (parsing Google News sitemaps, detecting RSS/Atom feeds, news-aware URL filtering).
+
+Two indexes / stores are involved:
+
+- **OpenSearch** holds the *URL status index*: every known URL and its state (`DISCOVERED`, `FETCHED`, `REDIRECTION`, `ERROR`). This is the crawler's memory of what to fetch next.
+- **WARC files** on local disk (`warc.dir`) hold the actual fetched content — this is the output shipped to Common Crawl.
+
+The production crawl ([`CrawlTopology`](src/main/java/org/commoncrawl/stormcrawler/news/CrawlTopology.java)) is a Storm pipeline:
+
+```
+seeds/feeds.txt
+  → FileSpout → PreFilterBolt → URLPartitionerBolt → FetcherBolt
+  → {NewsSiteMapParserBolt, FeedParserBolt}          (extract article links)
+  → WARCHdfsBolt (write content to WARC on disk)
+  + StatusUpdaterBolt (write URL states to OpenSearch)
+```
+
+Feeds and sitemaps are re-fetched on a schedule to discover new articles; the article URLs they yield are queued in the status index and fetched in turn.
+
+
 ## Prerequisites
 * JVM 17 or higher
 * Install OpenSearch 2.19.5
@@ -44,18 +66,33 @@ Alternatively, the topology can be run from the [crawler.flux](./conf/crawler.fl
 In production, you should use `storm jar ...` to run the topology in distributed mode and continuously (no time limit) including the Storm UI and logging.
 
 
+## Bootstrap: discovering feeds and sitemaps
+
+The production crawl assumes its seeds are *already known* to be feeds or news sitemaps. When you only have a list of candidate URLs (e.g. news site home pages) and don't yet know which of them expose a feed or a Google News sitemap, run the **bootstrap topology** first.
+
+[`BootstrapTopology`](src/main/java/org/commoncrawl/stormcrawler/news/bootstrap/BootstrapTopology.java) reuses the same fetch skeleton but replaces the *parser* bolts with *detector* bolts — [`NewsSiteMapDetectorBolt`](src/main/java/org/commoncrawl/stormcrawler/news/bootstrap/NewsSiteMapDetectorBolt.java) and [`FeedDetectorBolt`](src/main/java/org/commoncrawl/stormcrawler/news/FeedDetectorBolt.java) — which classify a fetched URL by its content/`Content-Type` instead of extracting article links from it. The detected feeds and sitemaps can then be used as seeds for the production crawl above.
+
+It uses its own configuration ([conf/bootstrap-conf.yaml](conf/bootstrap-conf.yaml)), which sets a distinct WARC output directory and a more conservative `fetcher.server.delay`. Run it like the production topology, but with the bootstrap main class and config:
+
+``` sh
+storm local target/crawler-3.6.0.jar --local-ttl 60 -- org.commoncrawl.stormcrawler.news.bootstrap.BootstrapTopology -conf $PWD/conf/opensearch-conf.yaml -conf $PWD/conf/bootstrap-conf.yaml $PWD/seeds/ feeds.txt
+```
+
+
 ## Monitor the crawl
 
 When the topology is running you can check that URLs have been injected and news are getting fetched on <http://localhost:9200/status/_search?pretty>. Or use StormCrawler's OpenSearch dashboards to monitor the crawling process on <http://localhost:5601/>.
 
-There is also a shell script [bin/status](./bin/status) to get aggregated counts from the status index, and to add, delete or force a re-fetch of URLs. E.g., 
+There is also a shell script [bin/status](./bin/status) to get aggregated counts from the status index, and to add, delete or force a re-fetch of URLs. E.g.,
 
 ```
-$> bin/es_status aggregate_status
+$> bin/status aggregate_status
 3824    DISCOVERED
 34      FETCHED
 5       REDIRECTION
 ```
+
+Run `bin/status` without arguments to see the full list of sub-commands (each sub-command is a function inside the script). Pass `-C` to colorize the JSON output.
 
 
 ## Run Crawl with Docker Compose
@@ -69,6 +106,7 @@ mvn clean package
 Verify the configuration in the file [docker-compose.yaml](docker-compose.yaml) and [conf/](conf/) is correct:
 - Don't forget to adapt the paths to mounted volumes used to persist data (OpenSearch indexes and WARC files).
 - Make sure to add the user agent configuration in conf/crawler-conf.yaml.
+- If the FastURLFilter rules file is loaded from S3 (`fast.urlfilter.file: "s3://..."` in `conf/`), the worker needs AWS credentials and a region. The `storm-supervisor` service selects a named profile via `AWS_PROFILE`/`AWS_REGION` (defaults in [docker-compose.yaml](docker-compose.yaml), overridable through a `.env` file) and mounts the host's `~/.aws` read-only at `/home/storm/.aws`. It is mounted there — the `storm` user's home — rather than `/root`, because the worker JVM runs as the `storm` user, so that is where the AWS SDK's default `~/.aws` lookup resolves. Make sure the profile exists in your `~/.aws/credentials` (and `~/.aws/config` for region / SSO / role).
 
 Then download and build the Docker images:
 
@@ -102,9 +140,9 @@ docker compose run --rm news-crawler \
 
 After 1-2 minutes if everything is up, connect to OpenSearch on port [9200](http://localhost:9200/) or the OpenSearch dashboards on port [5601](http://localhost:5601/).
 
-For inspecting the worker log files:
+For inspecting the worker log files (the container name matches `container_name:` for the `storm-supervisor` service in [docker-compose.yaml](docker-compose.yaml)):
 ```
-docker exec storm-supervisor-news-crawl /bin/bash -c 'cat /logs/workers-artifacts/*/*/worker.log'
+docker exec storm-supervisor-news-crawl-production /bin/bash -c 'cat /logs/workers-artifacts/*/*/worker.log'
 ```
 
 To stop the topology:
@@ -121,10 +159,26 @@ $> storm kill NewsCrawl
 
 ## Note for developers
 
+Requires **JDK 17+** (see [.java-version](.java-version)). Common commands:
+
+```
+mvn clean package                         # build the shaded uberjar → target/crawler-3.6.0.jar
+mvn test                                  # run all JUnit tests
+mvn test -Dtest=NewsSiteMapParserTest     # run a single test class
+```
+
+Code style is [google-java-format](https://github.com/google/google-java-format) (AOSP profile), enforced in CI by the Cosium `git-code-format-maven-plugin`. The plugin is gated behind the `skip.format.code` property (default `true`), so you must pass `-Dskip.format.code=false` to run it locally.
+
 Please format your code before submitting a PR with
 
 ```
 mvn git-code-format:format-code -Dgcf.globPattern="**/*" -Dskip.format.code=false
+```
+
+To only check formatting (as CI does), without modifying files:
+
+```
+mvn git-code-format:validate-code-format -Dgcf.globPattern="**/*" -Dskip.format.code=false
 ```
 
 You can enable pre-commit format hooks by running:
