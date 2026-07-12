@@ -129,7 +129,10 @@ config:
   fetcher.max.urls.in.queues: 6000
 
   # fetch Scheduler implementation
-  scheduler.class: "org.apache.stormcrawler.persistence.AdaptiveScheduler"
+  # NewsSitemapScheduler extends AdaptiveScheduler and additionally retires dead ephemeral
+  # sitemaps (issue commoncrawl/news-crawl#40). Revert to the plain AdaptiveScheduler to disable.
+  scheduler.class: "org.commoncrawl.stormcrawler.news.NewsSitemapScheduler"
+  # scheduler.class: "org.apache.stormcrawler.persistence.AdaptiveScheduler"
   # AdaptiveScheduler properties
   scheduler.adaptive.setLastModified: true
   # frequently changing feeds or news sitemaps are refetched after 90 min.
@@ -138,6 +141,9 @@ config:
   scheduler.adaptive.fetchInterval.max: 129600
   scheduler.adaptive.fetchInterval.rate.incr: .5
   scheduler.adaptive.fetchInterval.rate.decr: .2
+  # NewsSitemapScheduler: tombstone a sitemap not modified for at least this many minutes
+  # that also yields no recent news (numLinks == 0). 259200 min = 180 days.
+  scheduler.sitemap.ephemeral.staleInterval: 259200
 
   # AdaptiveScheduler only handles successful re-fetches (HTTP 200 or 304 not modified),
   # all others are delegated to DefaultScheduler
