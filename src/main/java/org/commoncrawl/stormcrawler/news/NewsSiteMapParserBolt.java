@@ -15,6 +15,8 @@ package org.commoncrawl.stormcrawler.news;
 
 import static org.apache.stormcrawler.Constants.StatusStreamName;
 
+import crawlercommons.domains.EffectiveTldFinder;
+import crawlercommons.robots.BaseRobotRules;
 import crawlercommons.sitemaps.AbstractSiteMap;
 import crawlercommons.sitemaps.Namespace;
 import crawlercommons.sitemaps.SiteMap;
@@ -39,9 +41,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import crawlercommons.domains.EffectiveTldFinder;
-import crawlercommons.robots.BaseRobotRules;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.storm.Config;
@@ -103,11 +102,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
     private static final org.slf4j.Logger LOG =
             LoggerFactory.getLogger(NewsSiteMapParserBolt.class);
-  
-    
+
     private MetadataTransfer metadataTransfer;
     private ProtocolFactory protocolFactory;
- 
+
     /* content clues for news sitemaps, sitemap indexes or any sitemaps */
     public static String[][] contentClues;
     public static int contentCluesSitemapNewsMatchUpTo = -1;
@@ -273,25 +271,23 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         for (Outlink ol : outlinks) {
             try {
                 if (!this.crossSubmitAllowed && !crossSubmitCheck(ol, url, metadata)) {
-
-                    String errorMessage = String.format("Cross Submit check failed for %s in %s", ol.getTargetURL(), url);
+                    String errorMessage =
+                            String.format(
+                                    "Cross Submit check failed for %s in %s",
+                                    ol.getTargetURL(), url);
                     LOG.error(errorMessage);
-                    ol.getMetadata().setValue(Constants.STATUS_ERROR_SOURCE,
-                            "cross submit check");
+                    ol.getMetadata().setValue(Constants.STATUS_ERROR_SOURCE, "cross submit check");
                     ol.getMetadata().setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
-                    Values v = new Values(ol.getTargetURL(), ol.getMetadata(),
-                        Status.ERROR);
+                    Values v = new Values(ol.getTargetURL(), ol.getMetadata(), Status.ERROR);
                     collector.emit(StatusStreamName, tuple, v);
                     continue;
                 }
             } catch (MalformedURLException | URISyntaxException e) {
                 String errorMessage = String.format("Malformed URL in outlink %s: %s", url, e);
                 LOG.error(errorMessage);
-                ol.getMetadata().setValue(Constants.STATUS_ERROR_SOURCE,
-                        "cross submit check");
+                ol.getMetadata().setValue(Constants.STATUS_ERROR_SOURCE, "cross submit check");
                 ol.getMetadata().setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
-                Values v = new Values(ol.getTargetURL(), ol.getMetadata(),
-                    Status.ERROR);
+                Values v = new Values(ol.getTargetURL(), ol.getMetadata(), Status.ERROR);
                 collector.emit(StatusStreamName, tuple, v);
             }
 
@@ -320,23 +316,24 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             /// www.example.com-> "example.com"
             /// blog.subdomain.example.co.uk -> "example.co.uk"
             /// www.myapp.github.io -> "myapp.github.io" (excludePrivate is false)
-            return EffectiveTldFinder.getAssignedDomain(url.getHost(), true,false);
+            return EffectiveTldFinder.getAssignedDomain(url.getHost(), true, false);
         }
         return url.getHost();
     }
 
     /**
-     * Checks whether a sitemap URL is allowed to submit URLs for another host.
-     * If the sitemap and target URLs are on the same host, submission is allowed.
-     * For cross-host submissions, checks robots.txt rules of the target host.
+     * Checks whether a sitemap URL is allowed to submit URLs for another host. If the sitemap and
+     * target URLs are on the same host, submission is allowed. For cross-host submissions, checks
+     * robots.txt rules of the target host.
      *
-     * @param ol       The outlink containing the target URL to check
-     * @param sitemap  The URL of the sitemap
+     * @param ol The outlink containing the target URL to check
+     * @param sitemap The URL of the sitemap
      * @param metadata
      * @return true if submission is allowed, false otherwise
      * @throws MalformedURLException if URLs are malformed
      */
-    public boolean crossSubmitCheck(Outlink ol, String sitemap, Metadata metadata) throws URISyntaxException, MalformedURLException {
+    public boolean crossSubmitCheck(Outlink ol, String sitemap, Metadata metadata)
+            throws URISyntaxException, MalformedURLException {
         URI targetURL = new URI(ol.getTargetURL());
         URI sitemapURL = new URI(sitemap);
 
@@ -348,7 +345,9 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         }
 
         // Cross-host checks
-        Metadata targetMetadata = metadataTransfer.getMetaForOutlink(targetURL.toString(), sitemapURL.toString(), metadata);
+        Metadata targetMetadata =
+                metadataTransfer.getMetaForOutlink(
+                        targetURL.toString(), sitemapURL.toString(), metadata);
         String[] urlPaths = targetMetadata.getValues("url.path");
 
         // Check url.path metadata first
@@ -629,10 +628,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                         30);
         scheduleSitemapsWithDelay =
                 ConfUtils.getInt(stormConf, "sitemap.schedule.delay", scheduleSitemapsWithDelay);
-        crossSubmitAllowed = ConfUtils.getBoolean(stormConf,
-                "crossSubmit.allowed", crossSubmitAllowed);
-        crossSubmitLenient = ConfUtils.getBoolean(stormConf,
-                "crossSubmit.lenient", crossSubmitLenient);
+        crossSubmitAllowed =
+                ConfUtils.getBoolean(stormConf, "crossSubmit.allowed", crossSubmitAllowed);
+        crossSubmitLenient =
+                ConfUtils.getBoolean(stormConf, "crossSubmit.lenient", crossSubmitLenient);
     }
 
     public ProtocolFactory getProtocolFactory() {

@@ -16,6 +16,7 @@ package org.commoncrawl.stormcrawler.news;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import crawlercommons.robots.BaseRobotRules;
 import crawlercommons.sitemaps.UnknownFormatException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -25,19 +26,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
-import crawlercommons.robots.BaseRobotRules;
 import org.apache.commons.io.IOUtils;
-import org.apache.stormcrawler.protocol.Protocol;
-import org.apache.stormcrawler.protocol.ProtocolFactory;
-import org.apache.stormcrawler.util.MetadataTransfer;
-import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
-import org.junit.Before;
-import org.junit.Test;
-
 import org.apache.stormcrawler.Metadata;
 import org.apache.stormcrawler.parse.Outlink;
 import org.apache.stormcrawler.parse.ParsingTester;
+import org.apache.stormcrawler.protocol.Protocol;
+import org.apache.stormcrawler.protocol.ProtocolFactory;
+import org.apache.stormcrawler.util.MetadataTransfer;
 import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapType;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +46,7 @@ public class NewsSiteMapParserTest extends ParsingTester {
         config.put("sitemap.sniffContent", true);
         // allow items published during the last week
         config.put("sitemap.filter.hours.since.modified", 168);
-	config.put("http.agent.name", " Mozilla/5.0 (compatible; NewsBot/1.0; +http://example.com/bot)");
+        config.put("http.agent.name", "UnitTestBot");
         prepareParserBolt("test.parsefilters.json", config);
     }
 
@@ -114,125 +109,154 @@ public class NewsSiteMapParserTest extends ParsingTester {
                 SitemapType.SITEMAP,
                 type);
     }
-	@Test
-	public void testCrossHostSitemapVerification() throws IOException, UnknownFormatException, URISyntaxException {
-		String sitemapURL = "https://www.example.org/sitemap-news.xml";
-		String articleURL = "http://www.example.org/business/article55.html";
-		String adSitemapURL = "https://www.example.net/sitemap-ads.xml";
 
-		// Mock RobotRules and its dependencies
-		ProtocolFactory mockProtocolFactory = mock(ProtocolFactory.class);
-		Protocol mockProtocol = mock(Protocol.class);
-		when(mockProtocolFactory.getProtocol(any(URL.class))).thenReturn(mockProtocol);
+    @Test
+    public void testCrossHostSitemapVerification()
+            throws IOException, UnknownFormatException, URISyntaxException {
+        String sitemapURL = "https://www.example.org/sitemap-news.xml";
+        String articleURL = "http://www.example.org/business/article55.html";
+        String adSitemapURL = "https://www.example.net/sitemap-ads.xml";
 
-		BaseRobotRules mockRules = mock(BaseRobotRules.class);
-		when(mockProtocol.getRobotRules(articleURL)).thenReturn(mockRules);
-		when(mockRules.getSitemaps()).thenReturn(Collections.singletonList(sitemapURL));
+        // Mock RobotRules and its dependencies
+        ProtocolFactory mockProtocolFactory = mock(ProtocolFactory.class);
+        Protocol mockProtocol = mock(Protocol.class);
+        when(mockProtocolFactory.getProtocol(any(URL.class))).thenReturn(mockProtocol);
 
-		BaseRobotRules mockRules1 = mock(BaseRobotRules.class);
-		when(mockProtocol.getRobotRules(any(String.class))).thenReturn(mockRules1);
-		when(mockRules.getSitemaps()).thenReturn(Collections.singletonList(adSitemapURL));
-		// Set up test data
-		byte[] content = readContent("cross-sitemap-news.xml");
-		String contentType = "";
-		Metadata parentMetadata = new Metadata();
-		List<Outlink> links = new ArrayList<>();
+        BaseRobotRules mockRules = mock(BaseRobotRules.class);
+        when(mockProtocol.getRobotRules(articleURL)).thenReturn(mockRules);
+        when(mockRules.getSitemaps()).thenReturn(Collections.singletonList(sitemapURL));
 
-		// Set recent publication date and cross-host URL
-		LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
-		content = (new String(content, StandardCharsets.UTF_8))
-					.replace("<news:publication_date>2008-12-23</news:publication_date>",
-						"<news:publication_date>" + yesterday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "</news:publication_date>")
-				.getBytes(StandardCharsets.UTF_8);
+        BaseRobotRules mockRules1 = mock(BaseRobotRules.class);
+        when(mockProtocol.getRobotRules(any(String.class))).thenReturn(mockRules1);
+        when(mockRules.getSitemaps()).thenReturn(Collections.singletonList(adSitemapURL));
+        // Set up test data
+        byte[] content = readContent("cross-sitemap-news.xml");
+        String contentType = "";
+        Metadata parentMetadata = new Metadata();
+        List<Outlink> links = new ArrayList<>();
 
-		// Inject mocked protocol factory
-		((NewsSiteMapParserBolt) bolt).setProtocolFactory(mockProtocolFactory);
+        // Set recent publication date and cross-host URL
+        LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+        content =
+                (new String(content, StandardCharsets.UTF_8))
+                        .replace(
+                                "<news:publication_date>2008-12-23</news:publication_date>",
+                                "<news:publication_date>"
+                                        + yesterday.format(
+                                                DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                                        + "</news:publication_date>")
+                        .getBytes(StandardCharsets.UTF_8);
 
-		((NewsSiteMapParserBolt) bolt).parseSiteMap(sitemapURL, content, contentType, parentMetadata, links);
-		// Verify the cross-host link is allowed and included
-		assertEquals(3, links.size());
-    	assertTrue(((NewsSiteMapParserBolt) bolt).crossSubmitCheck(links.get(0), sitemapURL, parentMetadata));
-    	assertFalse(((NewsSiteMapParserBolt) bolt).crossSubmitCheck(links.get(1), sitemapURL, parentMetadata));
-	}
+        // Inject mocked protocol factory
+        ((NewsSiteMapParserBolt) bolt).setProtocolFactory(mockProtocolFactory);
 
-	/**
-	 * Tests cross-host sitemap submissions with the following structure:
-	 *
-	 * www.example.org/sitemap-news.xml
-	 *    └── www.example.com/sports/news1.html
-	 *    └── www.example.org/business/article55.html
-	 *    └── www.example.net/ads/sponsored-content.html
-	 *
-	 * www.example.org/robots.txt
-	 *   └── www.example.org/sitemap-index.xml
-	 *       └── www.example.org/sitemap-news.xml
-	 *
-	 * www.example.com/robots.txt
-	 *   └── www.example.org/sitemap-index.xml (shared with www.example.org)
-	 *
-	 * www.example.net/robots.txt
-	 *   └── www.example.net/sitemap.xml
-	 *       └── www.example.net/ads/sponsored-content.html
-	 *
-	 * URLs from example.org and example.com pass crossSubmitCheck since their robots.txt
-	 * reference the same sitemap index which contains the sitemap from which the link is fetched.
-	 * URLs from example.net fail since their robots reference a different sitemap index.
-	 */
-	@Test
-    public void testCrossHostSubmissionSitemaps() throws IOException, UnknownFormatException, URISyntaxException {
-		String sitemapURL = "https://www.example.org/sitemap-news.xml";
-		String sitemapIndexURL = "https://www.example.org/sitemap-index.xml";
-		String adSitemapURL = "https://www.example.net/sitemap-ads.xml";
+        ((NewsSiteMapParserBolt) bolt)
+                .parseSiteMap(sitemapURL, content, contentType, parentMetadata, links);
+        // Verify the cross-host link is allowed and included
+        assertEquals(3, links.size());
+        assertTrue(
+                ((NewsSiteMapParserBolt) bolt)
+                        .crossSubmitCheck(links.get(0), sitemapURL, parentMetadata));
+        assertFalse(
+                ((NewsSiteMapParserBolt) bolt)
+                        .crossSubmitCheck(links.get(1), sitemapURL, parentMetadata));
+    }
 
+    /**
+     * Tests cross-host sitemap submissions with the following structure:
+     *
+     * <pre>
+     * www.example.org/sitemap-news.xml
+     *    └── www.example.com/sports/news1.html
+     *    └── www.example.org/business/article55.html
+     *    └── www.example.net/ads/sponsored-content.html
+     *
+     * www.example.org/robots.txt
+     *   └── www.example.org/sitemap-index.xml
+     *       └── www.example.org/sitemap-news.xml
+     *
+     * www.example.com/robots.txt
+     *   └── www.example.org/sitemap-index.xml (shared with www.example.org)
+     *
+     * www.example.net/robots.txt
+     *   └── www.example.net/sitemap.xml
+     *       └── www.example.net/ads/sponsored-content.html
+     * </pre>
+     *
+     * URLs from example.org and example.com pass crossSubmitCheck since their robots.txt reference
+     * the same sitemap index which contains the sitemap from which the link is fetched. URLs from
+     * example.net fail since their robots reference a different sitemap index.
+     */
+    @Test
+    public void testCrossHostSubmissionSitemaps()
+            throws IOException, UnknownFormatException, URISyntaxException {
+        String sitemapURL = "https://www.example.org/sitemap-news.xml";
+        String sitemapIndexURL = "https://www.example.org/sitemap-index.xml";
+        String adSitemapURL = "https://www.example.net/sitemap-ads.xml";
 
-		// Mock RobotRules and its dependencies
-		ProtocolFactory mockProtocolFactory = mock(ProtocolFactory.class);
-		Protocol mockProtocol = mock(Protocol.class);
-		when(mockProtocolFactory.getProtocol(any(URL.class))).thenReturn(mockProtocol);
+        // Mock RobotRules and its dependencies
+        ProtocolFactory mockProtocolFactory = mock(ProtocolFactory.class);
+        Protocol mockProtocol = mock(Protocol.class);
+        when(mockProtocolFactory.getProtocol(any(URL.class))).thenReturn(mockProtocol);
 
-		BaseRobotRules mockRules = mock(BaseRobotRules.class);
-		when(mockProtocol.getRobotRules("http://www.example.org/business/article55.html")).thenReturn(mockRules);
-		when(mockRules.getSitemaps()).thenReturn(Collections.singletonList(sitemapIndexURL));
+        BaseRobotRules mockRules = mock(BaseRobotRules.class);
+        when(mockProtocol.getRobotRules("http://www.example.org/business/article55.html"))
+                .thenReturn(mockRules);
+        when(mockRules.getSitemaps()).thenReturn(Collections.singletonList(sitemapIndexURL));
 
-		BaseRobotRules mockRules1 = mock(BaseRobotRules.class);
-		when(mockProtocol.getRobotRules("http://www.example.com/sports/news1.html")).thenReturn(mockRules1);
-		when(mockRules1.getSitemaps()).thenReturn(Collections.singletonList(sitemapIndexURL));
+        BaseRobotRules mockRules1 = mock(BaseRobotRules.class);
+        when(mockProtocol.getRobotRules("http://www.example.com/sports/news1.html"))
+                .thenReturn(mockRules1);
+        when(mockRules1.getSitemaps()).thenReturn(Collections.singletonList(sitemapIndexURL));
 
-		BaseRobotRules mockRules2 = mock(BaseRobotRules.class);
-		when(mockProtocol.getRobotRules("http://www.example.net/ads/sponsored-content.html")).thenReturn(mockRules2);
-		when(mockRules2.getSitemaps()).thenReturn(Collections.singletonList(adSitemapURL));
+        BaseRobotRules mockRules2 = mock(BaseRobotRules.class);
+        when(mockProtocol.getRobotRules("http://www.example.net/ads/sponsored-content.html"))
+                .thenReturn(mockRules2);
+        when(mockRules2.getSitemaps()).thenReturn(Collections.singletonList(adSitemapURL));
 
         // Mocking MetadataTransfer to return specific url.path metadata
         MetadataTransfer metadataTransferMock = mock(MetadataTransfer.class);
         Metadata targetMetadata = new Metadata();
         targetMetadata.addValues("url.path", Arrays.asList(sitemapIndexURL, sitemapURL));
         when(metadataTransferMock.getMetaForOutlink(anyString(), anyString(), any(Metadata.class)))
-            .thenReturn(targetMetadata);
+                .thenReturn(targetMetadata);
 
         // Injecting the mock into the bolt
         ((NewsSiteMapParserBolt) bolt).setMetadataTransfer(metadataTransferMock);
 
-		// Set up test data
-		byte[] content = readContent("cross-sitemap-news.xml");
-		String contentType = "";
-		Metadata parentMetadata = new Metadata();
-		List<Outlink> links = new ArrayList<>();
+        // Set up test data
+        byte[] content = readContent("cross-sitemap-news.xml");
+        String contentType = "";
+        Metadata parentMetadata = new Metadata();
+        List<Outlink> links = new ArrayList<>();
 
-		// Set recent publication date and cross-host URL
-		LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
-		content = (new String(content, StandardCharsets.UTF_8))
-					.replace("<news:publication_date>2008-12-23</news:publication_date>",
-						"<news:publication_date>" + yesterday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) + "</news:publication_date>")
-				.getBytes(StandardCharsets.UTF_8);
+        // Set recent publication date and cross-host URL
+        LocalDateTime yesterday = LocalDateTime.now().minusDays(1);
+        content =
+                (new String(content, StandardCharsets.UTF_8))
+                        .replace(
+                                "<news:publication_date>2008-12-23</news:publication_date>",
+                                "<news:publication_date>"
+                                        + yesterday.format(
+                                                DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                                        + "</news:publication_date>")
+                        .getBytes(StandardCharsets.UTF_8);
 
-		// Inject mocked protocol factory
-		((NewsSiteMapParserBolt) bolt).setProtocolFactory(mockProtocolFactory);
+        // Inject mocked protocol factory
+        ((NewsSiteMapParserBolt) bolt).setProtocolFactory(mockProtocolFactory);
 
-		((NewsSiteMapParserBolt) bolt).parseSiteMap(sitemapURL, content, contentType, parentMetadata, links);
-		// Verify the cross-host link is allowed and included
-		assertEquals(3, links.size());
-    	assertTrue(((NewsSiteMapParserBolt) bolt).crossSubmitCheck(links.get(0), sitemapURL, parentMetadata));
-    	assertFalse(((NewsSiteMapParserBolt) bolt).crossSubmitCheck(links.get(1), sitemapURL, parentMetadata));
-		assertTrue(((NewsSiteMapParserBolt) bolt).crossSubmitCheck(links.get(2), sitemapURL, parentMetadata));
+        ((NewsSiteMapParserBolt) bolt)
+                .parseSiteMap(sitemapURL, content, contentType, parentMetadata, links);
+        // Verify the cross-host link is allowed and included
+        assertEquals(3, links.size());
+        assertTrue(
+                ((NewsSiteMapParserBolt) bolt)
+                        .crossSubmitCheck(links.get(0), sitemapURL, parentMetadata));
+        assertFalse(
+                ((NewsSiteMapParserBolt) bolt)
+                        .crossSubmitCheck(links.get(1), sitemapURL, parentMetadata));
+        assertTrue(
+                ((NewsSiteMapParserBolt) bolt)
+                        .crossSubmitCheck(links.get(2), sitemapURL, parentMetadata));
     }
 }
