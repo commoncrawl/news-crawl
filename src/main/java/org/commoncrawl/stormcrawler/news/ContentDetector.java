@@ -13,10 +13,9 @@
  */
 package org.commoncrawl.stormcrawler.news;
 
+import com.google.common.primitives.Bytes;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-
-import com.google.common.primitives.Bytes;
 
 public class ContentDetector {
 
@@ -24,22 +23,18 @@ public class ContentDetector {
     protected int maxOffset;
 
     /**
-     * Set up detector to detect content sniffing for a set of clue strings in a
-     * prefix of the binary content.
+     * Set up detector to detect content sniffing for a set of clue strings in a prefix of the
+     * binary content.
      *
-     * @param clues
-     *            nested list of literal clues. Outer list defines an OR-group,
-     *            inner list contained ANDed clues required to match all, e.g.
-     *            the following definition would match if either
-     *            &quot;clue1&quot; and &quot;and_clue2&quot; are matched, or
-     *            alternatively &quot;or_clue3&quot; is found
+     * @param clues nested list of literal clues. Outer list defines an OR-group, inner list
+     *     contained ANDed clues required to match all, e.g. the following definition would match if
+     *     either &quot;clue1&quot; and &quot;and_clue2&quot; are matched, or alternatively
+     *     &quot;or_clue3&quot; is found
+     *     <pre>
+     *                  { { clue1, and_clue2 }, { or_clue3 } }
+     *                  </pre>
      *
-     *            <pre>
-     *            { { clue1, and_clue2 }, { or_clue3 } }
-     *            </pre>
-     *
-     * @param maxOffset
-     *            max. offset of content prefix checked for clues
+     * @param maxOffset max. offset of content prefix checked for clues
      */
     public ContentDetector(String[][] clues, int maxOffset) {
         this.maxOffset = maxOffset;
@@ -60,8 +55,7 @@ public class ContentDetector {
         for (int i = 0; i < clues.length; i++) {
             byte[][] group = clues[i];
             for (byte[] clue : group) {
-                if (Bytes.indexOf(beginning, clue) == -1)
-                    continue OR;
+                if (Bytes.indexOf(beginning, clue) == -1) continue OR;
             }
             // success, all members of one group matched
             return i;
@@ -72,5 +66,4 @@ public class ContentDetector {
     public boolean matches(byte[] content) {
         return (getFirstMatch(content) >= 0);
     }
-
 }

@@ -17,28 +17,32 @@ services:
   # Apache Storm components
   # - Zookeeper coordinates the communication between Nimbus and the Supervisors
   zookeeper:
-    image: zookeeper:${ZOOKEEPER_VERSION:-3.9.3}
-    container_name: zookeeper
+    image: zookeeper:${ZOOKEEPER_VERSION:-3.9.4}
+    container_name: zookeeper-news-crawl
+    networks:
+      - storm-network-news-crawl
     restart: always
 
   # - the daemon Nimbus runs on the master node
   storm-nimbus:
-    image: storm:${STORM_VERSION:-2.8.4}
-    container_name: storm-nimbus
+    image: storm:${STORM_VERSION:-2.8.8}
+    container_name: storm-nimbus-news-crawl
     hostname: nimbus
     command: storm nimbus
     depends_on:
       - zookeeper
     links:
       - zookeeper
+    networks:
+      - storm-network-news-crawl
     ports:
       - 6627:6627
     restart: always
 
   # - the Supervisors run on the worker nodes
   storm-supervisor:
-    image: storm:${STORM_VERSION:-2.8.4}
-    container_name: storm-supervisor
+    image: storm:${STORM_VERSION:-2.8.8}
+    container_name: storm-supervisor-news-crawl
     command: storm supervisor -c worker.childopts=-Xmx%HEAP-MEM%m
     depends_on:
       - zookeeper
@@ -50,9 +54,11 @@ services:
     # which need to be able to access
     # - (in case a indexing topology is run) the
     #   OpenSearch (http://opensearch:9200/) and
-      - opensearch-news-crawl
+      - opensearch
     # - the WARC output folder
     # - and the seed folder
+    networks:
+      - storm-network-news-crawl
     volumes:
       - ${WARCOUTPUT:-./warcdata}:/data/warc
       - ${SEEDDIR:-./seeds}:/data/seeds
@@ -60,19 +66,21 @@ services:
 
   # - the Storm UI provides diagnostics about the Storm cluster
   storm-ui:
-    image: storm:${STORM_VERSION:-2.8.4}
-    container_name: storm-ui
+    image: storm:${STORM_VERSION:-2.8.8}
+    container_name: storm-ui-news-crawl
     command: storm ui
     depends_on:
       - storm-nimbus
     links:
       - storm-nimbus:nimbus
+    networks:
+      - storm-network-news-crawl
     ports:
       - "127.0.0.1:8080:8080"
     restart: always
 
-  opensearch-news-crawl:
-    image: opensearchproject/opensearch:${OPENSEARCH_VERSION:-2.19.4}
+  opensearch:
+    image: opensearchproject/opensearch:${OPENSEARCH_VERSION:-2.19.5}
     container_name: opensearch-news-crawl
     environment:
       - cluster.name=opensearch-news-crawl-cluster
@@ -91,12 +99,16 @@ services:
       nofile:
         soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
         hard: 65536
+    networks:
+      - storm-network-news-crawl
     ports:
       - "127.0.0.1:9200:9200" # REST API
 
-  opensearch-dashboard-news-crawl:
-    image: opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION:-2.19.4}
+  opensearch-dashboard:
+    image: opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION:-2.19.5}
     container_name: opensearch-dashboard-news-crawl
+    networks:
+      - storm-network-news-crawl
     ports:
       - "127.0.0.1:5601:5601"
     expose:
@@ -115,8 +127,13 @@ services:
       - storm-nimbus
     links:
       - storm-nimbus:nimbus
+    networks:
+      - storm-network-news-crawl
     volumes:
       - ${WARCOUTPUT:-./warcdata}:/data/warc
       - ${SEEDDIR:-./seeds}:/data/seeds
     restart: "no"
 
+networks:
+  storm-network-news-crawl:
+    enable_ipv6: true

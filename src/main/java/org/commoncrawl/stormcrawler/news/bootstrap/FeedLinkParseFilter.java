@@ -14,19 +14,18 @@
 package org.commoncrawl.stormcrawler.news.bootstrap;
 
 import java.util.ArrayList;
-
-import org.slf4j.LoggerFactory;
-import org.w3c.dom.DocumentFragment;
-
 import org.apache.stormcrawler.bolt.FeedParserBolt;
 import org.apache.stormcrawler.parse.Outlink;
 import org.apache.stormcrawler.parse.ParseResult;
 import org.apache.stormcrawler.parse.filter.LinkParseFilter;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.DocumentFragment;
 
 /**
- * ParseFilter which extracts exclusively RSS links via Xpath, all other links
- * are skipped. See {@link LinkParseFilter} how to register and configure in
- * parsefilters.json. A configuration snippet:
+ * ParseFilter which extracts exclusively RSS links via Xpath, all other links are skipped. See
+ * {@link LinkParseFilter} how to register and configure in parsefilters.json. A configuration
+ * snippet:
+ *
  * <pre>
  *     {
  *      "class": "org.commoncrawl.stormcrawler.news.bootstrap.FeedLinkParseFilter",
@@ -41,12 +40,10 @@ import org.apache.stormcrawler.parse.filter.LinkParseFilter;
  */
 public class FeedLinkParseFilter extends LinkParseFilter {
 
-    private static final org.slf4j.Logger LOG = LoggerFactory
-            .getLogger(FeedLinkParseFilter.class);
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(FeedLinkParseFilter.class);
 
     @Override
-    public void filter(String URL, byte[] content, DocumentFragment doc,
-            ParseResult parse) {
+    public void filter(String URL, byte[] content, DocumentFragment doc, ParseResult parse) {
 
         // skip existing links
         logLinks(parse, URL, "Skipped links");
@@ -60,11 +57,8 @@ public class FeedLinkParseFilter extends LinkParseFilter {
 
     public static void logLinks(ParseResult parse, String URL, String message) {
         if (LOG.isDebugEnabled() && parse.getOutlinks().size() > 0) {
-            if (!message.isEmpty())
-                LOG.debug("{} for {}:", message, URL);
-            for (Outlink outlink : parse.getOutlinks())
-                LOG.debug(outlink.getTargetURL());
+            if (!message.isEmpty()) LOG.debug("{} for {}:", message, URL);
+            for (Outlink outlink : parse.getOutlinks()) LOG.debug(outlink.getTargetURL());
         }
     }
-
 }
