@@ -114,20 +114,17 @@ public class NewsSiteMapParserTest extends ParsingTester {
     public void testCrossHostSitemapVerification()
             throws IOException, UnknownFormatException, URISyntaxException {
         String sitemapURL = "https://www.example.org/sitemap-news.xml";
-        String articleURL = "http://www.example.org/business/article55.html";
         String adSitemapURL = "https://www.example.net/sitemap-ads.xml";
 
-        // Mock RobotRules and its dependencies
+        // Mock RobotRules and its dependencies: the robots.txt of any cross-host target
+        // references a different sitemap, so cross-host outlinks are rejected. The same-host
+        // outlink (article55 on www.example.org) never triggers a robots.txt lookup.
         ProtocolFactory mockProtocolFactory = mock(ProtocolFactory.class);
         Protocol mockProtocol = mock(Protocol.class);
         when(mockProtocolFactory.getProtocol(any(URL.class))).thenReturn(mockProtocol);
 
         BaseRobotRules mockRules = mock(BaseRobotRules.class);
-        when(mockProtocol.getRobotRules(articleURL)).thenReturn(mockRules);
-        when(mockRules.getSitemaps()).thenReturn(Collections.singletonList(sitemapURL));
-
-        BaseRobotRules mockRules1 = mock(BaseRobotRules.class);
-        when(mockProtocol.getRobotRules(any(String.class))).thenReturn(mockRules1);
+        when(mockProtocol.getRobotRules(anyString())).thenReturn(mockRules);
         when(mockRules.getSitemaps()).thenReturn(Collections.singletonList(adSitemapURL));
         // Set up test data
         byte[] content = readContent("cross-sitemap-news.xml");
@@ -152,7 +149,7 @@ public class NewsSiteMapParserTest extends ParsingTester {
 
         ((NewsSiteMapParserBolt) bolt)
                 .parseSiteMap(sitemapURL, content, contentType, parentMetadata, links);
-        // Verify the cross-host link is allowed and included
+        // same-host outlink allowed, both cross-host outlinks rejected
         assertEquals(3, links.size());
         assertTrue(
                 ((NewsSiteMapParserBolt) bolt)
@@ -160,6 +157,9 @@ public class NewsSiteMapParserTest extends ParsingTester {
         assertFalse(
                 ((NewsSiteMapParserBolt) bolt)
                         .crossSubmitCheck(links.get(1), sitemapURL, parentMetadata));
+        assertFalse(
+                ((NewsSiteMapParserBolt) bolt)
+                        .crossSubmitCheck(links.get(2), sitemapURL, parentMetadata));
     }
 
     /**
@@ -214,20 +214,14 @@ public class NewsSiteMapParserTest extends ParsingTester {
                 .thenReturn(mockRules2);
         when(mockRules2.getSitemaps()).thenReturn(Collections.singletonList(adSitemapURL));
 
-        // Mocking MetadataTransfer to return specific url.path metadata
-        MetadataTransfer metadataTransferMock = mock(MetadataTransfer.class);
-        Metadata targetMetadata = new Metadata();
-        targetMetadata.addValues("url.path", Arrays.asList(sitemapIndexURL, sitemapURL));
-        when(metadataTransferMock.getMetaForOutlink(anyString(), anyString(), any(Metadata.class)))
-                .thenReturn(targetMetadata);
-
-        // Injecting the mock into the bolt
-        ((NewsSiteMapParserBolt) bolt).setMetadataTransfer(metadataTransferMock);
-
         // Set up test data
         byte[] content = readContent("cross-sitemap-news.xml");
         String contentType = "";
+        // the sitemap's own metadata carries its discovery trail (url.path), recorded by
+        // metadata.track.path and persisted in the status index via metadata.persist
         Metadata parentMetadata = new Metadata();
+        parentMetadata.addValues(
+                MetadataTransfer.urlPathKeyName, Arrays.asList(sitemapIndexURL, sitemapURL));
         List<Outlink> links = new ArrayList<>();
 
         // Set recent publication date and cross-host URL

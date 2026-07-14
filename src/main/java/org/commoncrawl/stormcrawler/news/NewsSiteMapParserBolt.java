@@ -303,6 +303,9 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     }
 
     public String getHost(URI url) {
+        if (url.getHost() == null) {
+            return null;
+        }
         if (this.crossSubmitLenient) {
             /// www.example.com-> "example.com"
             /// blog.subdomain.example.co.uk -> "example.co.uk"
@@ -330,6 +333,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
         URI sitemapURL = new URI(sitemap);
         String sitemapHost = this.getHost(sitemapURL);
+
+        if (sitemapHost == null || targetHost == null) {
+            return false;
+        }
 
         // Same host - allow
         if (targetHost.equals(sitemapHost)) {
