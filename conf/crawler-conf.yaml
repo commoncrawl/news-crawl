@@ -241,7 +241,8 @@ config:
   # used by Fetcher for redirections, sitemapparser,
   # passing cookies to child pages, etc.
   # These are also persisted for the parent document (see below)
-  #metadata.transfer:
+  metadata.transfer:
+    - url.path
   # - protocol.set-cookie
 
   # lists the metadata to persist to storage
@@ -262,6 +263,7 @@ config:
    - signatureChangeDate
    - fetchInterval
    - protocol.etag
+
   # whether to track the URL path
   # (allows to identify which feeds and sitemaps contribute links)
   metadata.track.path: true

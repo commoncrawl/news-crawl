@@ -101,7 +101,6 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     private static final org.slf4j.Logger LOG =
             LoggerFactory.getLogger(NewsSiteMapParserBolt.class);
 
-    private MetadataTransfer metadataTransfer;
     private ProtocolFactory protocolFactory;
 
     /* content clues for news sitemaps, sitemap indexes or any sitemaps */
@@ -251,7 +250,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             metadata.setValue(Constants.STATUS_ERROR_SOURCE, "content filtering");
             metadata.setValue(Constants.STATUS_ERROR_MESSAGE, message);
             metadata.remove(numLinksKey);
-            collector.emit(Constants.StatusStreamName, tuple, new Values(url, metadata, Status.ERROR));
+            collector.emit(
+                    Constants.StatusStreamName, tuple, new Values(url, metadata, Status.ERROR));
             collector.ack(tuple);
             return;
         }
@@ -270,7 +270,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         for (Outlink ol : outlinks) {
             try {
                 if (!this.crossSubmitAllowed && !crossSubmitCheck(ol, url, metadata)) {
-                    LOG.info("Cross Submit check failed for {} in sitemap {}", ol.getTargetURL(), url);
+                    LOG.info(
+                            "Cross Submit check failed for {} in sitemap {}",
+                            ol.getTargetURL(),
+                            url);
                     continue;
                 }
             } catch (MalformedURLException | URISyntaxException e) {
@@ -323,25 +326,22 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     public boolean crossSubmitCheck(Outlink ol, String sitemap, Metadata metadata)
             throws URISyntaxException, MalformedURLException {
         URI targetURL = new URI(ol.getTargetURL());
-        URI sitemapURL = new URI(sitemap);
-
         String targetHost = this.getHost(targetURL);
+
+        URI sitemapURL = new URI(sitemap);
         String sitemapHost = this.getHost(sitemapURL);
+
         // Same host - allow
         if (targetHost.equals(sitemapHost)) {
             return true;
         }
 
-        // Cross-host checks
-        Metadata targetMetadata =
-                metadataTransfer.getMetaForOutlink(
-                        targetURL.toString(), sitemapURL.toString(), metadata);
-        String[] urlPaths = targetMetadata.getValues("url.path");
+        // Check tracked URL to the sitemap
+        String[] metadataPathTrack = metadata.getValues(MetadataTransfer.urlPathKeyName);
 
-        // Check url.path metadata first
-        if (urlPaths != null) {
-            for (String path : urlPaths) {
-                if (this.getHost(new URI(path)).equals(targetHost)) {
+        if (metadataPathTrack != null) {
+            for (String previousPath : metadataPathTrack) {
+                if (this.getHost(new URI(previousPath)).equals(targetHost)) {
                     return true;
                 }
             }
@@ -354,8 +354,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             if (rules.getSitemaps().contains(sitemapURL.toString())) {
                 return true;
             }
-            if (urlPaths != null) {
-                for (String path : urlPaths) {
+            if (metadataPathTrack != null) {
+                for (String path : metadataPathTrack) {
                     if (rules.getSitemaps().contains(path)) {
                         return true;
                     }
@@ -600,7 +600,6 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         super.prepare(stormConf, context, collector);
         Config conf = new Config();
         conf.putAll(stormConf);
-        metadataTransfer = MetadataTransfer.getInstance(stormConf);
         sniffContent = ConfUtils.getBoolean(stormConf, "sitemap.sniffContent", false);
         filterHoursSinceModified =
                 ConfUtils.getInt(stormConf, "sitemap.filter.hours.since.modified", -1);
@@ -628,13 +627,5 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
     public void setProtocolFactory(ProtocolFactory protocolFactory) {
         this.protocolFactory = protocolFactory;
-    }
-
-    public MetadataTransfer getMetadataTransfer() {
-        return metadataTransfer;
-    }
-
-    public void setMetadataTransfer(MetadataTransfer metadataTransfer) {
-        this.metadataTransfer = metadataTransfer;
     }
 }
