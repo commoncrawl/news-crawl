@@ -90,6 +90,12 @@ services:
       - "OPENSEARCH_JAVA_OPTS=-Xms4G -Xmx4G"
       - plugins.security.disabled=true
       - "DISABLE_INSTALL_DEMO_CONFIG=true"
+    networks:
+      # conf/opensearch-conf.yaml addresses the cluster as "opensearch-news-crawl" (the
+      # production DNS name); expose that as an alias so those addresses resolve in Compose too.
+      default:
+        aliases:
+          - opensearch-news-crawl
     volumes:
       - ${OPENSEARCHDATA:-./opensearchdata}:/usr/share/opensearch/data
     ulimits:
@@ -114,7 +120,7 @@ services:
     expose:
       - "5601"
     environment:
-      - 'OPENSEARCH_HOSTS=["http://opensearch-news-crawl:9200"]'
+      - 'OPENSEARCH_HOSTS=["http://opensearch:9200"]'
       - "DISABLE_SECURITY_DASHBOARDS_PLUGIN=true" # disables security dashboards plugin in OpenSearch Dashboards
 
   # - to launch a topology

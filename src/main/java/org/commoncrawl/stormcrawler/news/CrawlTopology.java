@@ -126,7 +126,7 @@ public class CrawlTopology extends ConfigurableTopology {
         fileNameFormat.withPrefix(filePrefix);
 
         Map<String, String> fields = new LinkedHashMap<>();
-        fields.put("software", "StormCrawler 2.10 https://stormcrawler.net/");
+        fields.put("software", "StormCrawler 3.6.0 https://stormcrawler.net/");
         fields.put("description", "News crawl for Common Crawl");
         String userAgent = AbstractHttpProtocol.getAgentString(getConf());
         fields.put("http-header-user-agent", userAgent);
