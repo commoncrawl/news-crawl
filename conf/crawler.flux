@@ -19,6 +19,10 @@ config:
   # delayed sync of the default ChecksumFileSystem
   warc: {"fs.file.impl": "org.apache.hadoop.fs.RawLocalFileSystem"}
 
+  # Allow/disallow cross submission of sitemaps, leniency will allow private host names in the submitted sitemaps
+  crossSubmit.allowed = false
+  crossSubmit.lenient = true
+
 components:
   - id: "WARCFileNameFormat"
     className: "org.apache.stormcrawler.warc.WARCFileNameFormat"

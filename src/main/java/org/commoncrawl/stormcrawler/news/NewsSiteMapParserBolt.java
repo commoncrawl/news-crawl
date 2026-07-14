@@ -73,25 +73,6 @@ import org.slf4j.LoggerFactory;
  */
 @SuppressWarnings("serial")
 public class NewsSiteMapParserBolt extends SiteMapParserBolt {
-    public ProtocolFactory getProtocolFactory() {
-        return protocolFactory;
-    }
-
-    public void setProtocolFactory(ProtocolFactory protocolFactory) {
-        this.protocolFactory = protocolFactory;
-    }
-
-    public MetadataTransfer getMetadataTransfer() {
-        return metadataTransfer;
-    }
-
-    public void setMetadataTransfer(MetadataTransfer metadataTransfer) {
-        this.metadataTransfer = metadataTransfer;
-    }
-
-    private MetadataTransfer metadataTransfer;
-
-    private ProtocolFactory protocolFactory;
     // TODO:
     // this is a modified copy of c.d.s.bolt.SiteMapParserBolt
     // - make parent class extensible and overridable
@@ -116,6 +97,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
      * sitemap.
      */
     public static final String isSitemapVerifiedKey = "isSitemapVerified";
+
+    private MetadataTransfer metadataTransfer;
+
+    private ProtocolFactory protocolFactory;
 
     private static final org.slf4j.Logger LOG =
             LoggerFactory.getLogger(NewsSiteMapParserBolt.class);
@@ -645,5 +630,21 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 "crossSubmit.allowed", crossSubmitAllowed);
         crossSubmitLenient = ConfUtils.getBoolean(stormConf,
                 "crossSubmit.lenient", crossSubmitLenient);;
+    }
+
+    public ProtocolFactory getProtocolFactory() {
+        return protocolFactory;
+    }
+
+    public void setProtocolFactory(ProtocolFactory protocolFactory) {
+        this.protocolFactory = protocolFactory;
+    }
+
+    public MetadataTransfer getMetadataTransfer() {
+        return metadataTransfer;
+    }
+
+    public void setMetadataTransfer(MetadataTransfer metadataTransfer) {
+        this.metadataTransfer = metadataTransfer;
     }
 }
