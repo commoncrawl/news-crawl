@@ -632,7 +632,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         crossSubmitAllowed = ConfUtils.getBoolean(stormConf,
                 "crossSubmit.allowed", crossSubmitAllowed);
         crossSubmitLenient = ConfUtils.getBoolean(stormConf,
-                "crossSubmit.lenient", crossSubmitLenient);;
+                "crossSubmit.lenient", crossSubmitLenient);
     }
 
     public ProtocolFactory getProtocolFactory() {
