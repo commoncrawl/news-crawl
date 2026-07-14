@@ -13,8 +13,6 @@
  */
 package org.commoncrawl.stormcrawler.news;
 
-import static org.apache.stormcrawler.Constants.StatusStreamName;
-
 import crawlercommons.domains.EffectiveTldFinder;
 import crawlercommons.robots.BaseRobotRules;
 import crawlercommons.sitemaps.AbstractSiteMap;
@@ -248,12 +246,12 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
             parseFilters.filter(url, content, null, parse);
         } catch (RuntimeException e) {
-            String errorMessage = "Exception while running parse filters on " + url + ": " + e;
-            LOG.error(errorMessage);
+            String message = "Exception while running parse filters on " + url + ": " + e;
+            LOG.error(message);
             metadata.setValue(Constants.STATUS_ERROR_SOURCE, "content filtering");
-            metadata.setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
+            metadata.setValue(Constants.STATUS_ERROR_MESSAGE, message);
             metadata.remove(numLinksKey);
-            collector.emit(StatusStreamName, tuple, new Values(url, metadata, Status.ERROR));
+            collector.emit(Constants.StatusStreamName, tuple, new Values(url, metadata, Status.ERROR));
             collector.ack(tuple);
             return;
         }
@@ -268,27 +266,16 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         }
 
         // send outlinks to status stream
+        int outlinksCounter = 0;
         for (Outlink ol : outlinks) {
             try {
                 if (!this.crossSubmitAllowed && !crossSubmitCheck(ol, url, metadata)) {
-                    String errorMessage =
-                            String.format(
-                                    "Cross Submit check failed for %s in %s",
-                                    ol.getTargetURL(), url);
-                    LOG.error(errorMessage);
-                    ol.getMetadata().setValue(Constants.STATUS_ERROR_SOURCE, "cross submit check");
-                    ol.getMetadata().setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
-                    Values v = new Values(ol.getTargetURL(), ol.getMetadata(), Status.ERROR);
-                    collector.emit(StatusStreamName, tuple, v);
+                    LOG.info("Cross Submit check failed for {} in sitemap {}", ol.getTargetURL(), url);
                     continue;
                 }
             } catch (MalformedURLException | URISyntaxException e) {
-                String errorMessage = String.format("Malformed URL in outlink %s: %s", url, e);
-                LOG.error(errorMessage);
-                ol.getMetadata().setValue(Constants.STATUS_ERROR_SOURCE, "cross submit check");
-                ol.getMetadata().setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
-                Values v = new Values(ol.getTargetURL(), ol.getMetadata(), Status.ERROR);
-                collector.emit(StatusStreamName, tuple, v);
+                LOG.info("Malformed URL {} in sitemap {}: {}", ol.getTargetURL(), url, e);
+                continue;
             }
 
             if (isSitemapIndex) {
@@ -300,10 +287,11 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             }
             Values v = new Values(ol.getTargetURL(), ol.getMetadata(), Status.DISCOVERED);
             collector.emit(Constants.StatusStreamName, tuple, v);
+            outlinksCounter++;
         }
 
         // track the number of links found in the sitemap
-        metadata.setValue(numLinksKey, String.valueOf(outlinks.size()));
+        metadata.setValue(numLinksKey, String.valueOf(outlinksCounter));
 
         // marking the main URL as successfully fetched
         collector.emit(
