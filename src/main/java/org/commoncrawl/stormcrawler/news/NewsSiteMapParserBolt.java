@@ -98,13 +98,16 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
      */
     public static final String isSitemapVerifiedKey = "isSitemapVerified";
 
-    private MetadataTransfer metadataTransfer;
-
-    private ProtocolFactory protocolFactory;
+    /** Number of (recent) links extracted from the sitemap on the last parse. */
+    public static final String numLinksKey = "numLinks";
 
     private static final org.slf4j.Logger LOG =
             LoggerFactory.getLogger(NewsSiteMapParserBolt.class);
-
+  
+    
+    private MetadataTransfer metadataTransfer;
+    private ProtocolFactory protocolFactory;
+ 
     /* content clues for news sitemaps, sitemap indexes or any sitemaps */
     public static String[][] contentClues;
     public static int contentCluesSitemapNewsMatchUpTo = -1;
@@ -231,7 +234,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             // its status
             metadata.setValue(Constants.STATUS_ERROR_SOURCE, "sitemap parsing");
             metadata.setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
-            metadata.remove("numLinks");
+            metadata.remove(numLinksKey);
             collector.emit(
                     Constants.StatusStreamName, tuple, new Values(url, metadata, Status.ERROR));
             collector.ack(tuple);
@@ -251,7 +254,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             LOG.error(errorMessage);
             metadata.setValue(Constants.STATUS_ERROR_SOURCE, "content filtering");
             metadata.setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
-            metadata.remove("numLinks");
+            metadata.remove(numLinksKey);
             collector.emit(StatusStreamName, tuple, new Values(url, metadata, Status.ERROR));
             collector.ack(tuple);
             return;
@@ -304,7 +307,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         }
 
         // track the number of links found in the sitemap
-        metadata.setValue("numLinks", String.valueOf(outlinks.size()));
+        metadata.setValue(numLinksKey, String.valueOf(outlinks.size()));
 
         // marking the main URL as successfully fetched
         collector.emit(
