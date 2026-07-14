@@ -53,15 +53,10 @@ services:
       - opensearch
     # - the WARC output folder
     # - and the seed folder
-    environment:
-      - AWS_PROFILE=${AWS_PROFILE:-cc}
-      - AWS_REGION=${AWS_REGION:-us-east-1}   # or rely on region= in the profile
+
     volumes:
       - ${WARCOUTPUT:-./warcdata}:/data/warc
       - ${SEEDDIR:-./seeds}:/data/seeds
-      # Worker JVMs run as the "storm" user (home /home/storm), so mount the host's ~/.aws
-      # at the storm user's home for the AWS SDK's default ~/.aws lookup to find it.
-      - ${HOME}/.aws:/home/storm/.aws:ro
     restart: always
 
   # - the Storm UI provides diagnostics about the Storm cluster

@@ -124,7 +124,7 @@ mvn clean package
 Verify the configuration in the file [docker-compose.yaml](docker-compose.yaml) and [conf/](conf/) is correct:
 - Don't forget to adapt the paths to mounted volumes used to persist data (OpenSearch indexes and WARC files).
 - Make sure to add the user agent configuration in conf/crawler-conf.yaml.
-- If the FastURLFilter rules file is loaded from S3 (`fast.urlfilter.file: "s3://..."` in `conf/`), the worker needs AWS credentials and a region. The `storm-supervisor` service selects a named profile via `AWS_PROFILE`/`AWS_REGION` (defaults in [docker-compose.yaml](docker-compose.yaml), overridable through a `.env` file) and mounts the host's `~/.aws` read-only at `/home/storm/.aws`. It is mounted there — the `storm` user's home — rather than `/root`, because the worker JVM runs as the `storm` user, so that is where the AWS SDK's default `~/.aws` lookup resolves. Make sure the profile exists in your `~/.aws/credentials` (and `~/.aws/config` for region / SSO / role).
+- If the FastURLFilter rules file is loaded from S3 (`fast.urlfilter.file: "s3://..."` in `conf/`) the worker needs AWS credentials. 
 
 Then download and build the Docker images:
 
