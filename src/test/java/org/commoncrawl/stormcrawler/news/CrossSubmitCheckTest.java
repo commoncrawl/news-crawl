@@ -328,4 +328,36 @@ public class CrossSubmitCheckTest extends ParsingTester {
         // tier 2 decided without consulting robots.txt
         verifyNoInteractions(protocolFactory);
     }
+
+    /**
+     * numLinks must count only the outlinks actually emitted, not all parsed ones: a sitemap with
+     * numLinks == 0 can be retired by the NewsSitemapScheduler, which must equally apply to
+     * sitemaps whose links are all rejected by the cross-submit check.
+     */
+    @Test
+    public void testNumLinksCountsOnlyEmittedOutlinks() throws IOException {
+        ProtocolFactory protocolFactory = mock(ProtocolFactory.class);
+        Protocol protocol = mock(Protocol.class);
+        when(protocolFactory.getProtocol(any(URL.class))).thenReturn(protocol);
+        BaseRobotRules rules = mock(BaseRobotRules.class);
+        when(protocol.getRobotRules(anyString())).thenReturn(rules);
+        when(rules.getSitemaps()).thenReturn(Collections.emptyList());
+        newsBolt().setProtocolFactory(protocolFactory);
+
+        executeWithContent(readRecentContent("cross-sitemap-news.xml"));
+
+        // 3 outlinks parsed, but only the same-host one is emitted
+        Metadata sitemapMetadata = fetchedMetadata(SITEMAP_URL);
+        assertEquals("1", sitemapMetadata.getFirstValue(NewsSiteMapParserBolt.numLinksKey));
+    }
+
+    private Metadata fetchedMetadata(String url) {
+        for (List<Object> values : statusEmissions()) {
+            if (url.equals(values.get(0)) && Status.FETCHED.equals(values.get(2))) {
+                return (Metadata) values.get(1);
+            }
+        }
+        fail("No FETCHED emission for " + url);
+        return null;
+    }
 }
