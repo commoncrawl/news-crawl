@@ -241,8 +241,8 @@ config:
   # used by Fetcher for redirections, sitemapparser,
   # passing cookies to child pages, etc.
   # These are also persisted for the parent document (see below)
-  metadata.transfer:
-    - url.path
+  #metadata.transfer:
+  # - url.path # not needed, already in the configuration below metadata.track.path
   # - protocol.set-cookie
 
   # lists the metadata to persist to storage
