@@ -628,6 +628,12 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                 ConfUtils.getBoolean(stormConf, "crossSubmit.lenient", crossSubmitLenient);
     }
 
+    @Override
+    public void cleanup() {
+       super.cleanup();
+       protocolFactory.cleanup();
+    }
+
     public ProtocolFactory getProtocolFactory() {
         return protocolFactory;
     }
