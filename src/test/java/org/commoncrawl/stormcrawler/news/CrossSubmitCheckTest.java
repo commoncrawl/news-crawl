@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -233,6 +234,46 @@ public class CrossSubmitCheckTest extends ParsingTester {
         assertFalse(
                 "URL with unknown TLD must not be allowed",
                 newsBolt().crossSubmitCheck(unknownTld, SITEMAP_URL, new Metadata()));
+    }
+
+    /**
+     * A url.path trail entry whose host resolves to null (IP address — no eTLD — or a URI without
+     * host) must neither throw an NPE nor allow the outlink; the check falls through to the
+     * robots.txt rules. Regression test for the null-safe host comparison in the trail loop of
+     * crossSubmitCheck.
+     */
+    @Test
+    public void testTrailEntryWithNullHostDoesNotThrow()
+            throws URISyntaxException, MalformedURLException {
+        // robots.txt of the target does not reference the sitemap -> rejection expected
+        ProtocolFactory protocolFactory = mock(ProtocolFactory.class);
+        Protocol protocol = mock(Protocol.class);
+        when(protocolFactory.getProtocol(any(URL.class))).thenReturn(protocol);
+        BaseRobotRules rules = mock(BaseRobotRules.class);
+        when(protocol.getRobotRules(anyString())).thenReturn(rules);
+        when(rules.getSitemaps()).thenReturn(Collections.emptyList());
+        newsBolt().setProtocolFactory(protocolFactory);
+
+        // trail with hosts unresolvable by EffectiveTldFinder (IP address, unknown TLD)
+        Metadata sitemapMetadata = new Metadata();
+        sitemapMetadata.addValues(
+                MetadataTransfer.urlPathKeyName,
+                Arrays.asList(
+                        "http://93.184.216.34/sitemap-index.xml",
+                        "http://host.invalidtld123/sitemap-index.xml"));
+
+        Outlink outlink = new Outlink(ARTICLE_COM);
+        assertFalse(
+                "Cross-host outlink must be rejected when the trail hosts are unresolvable"
+                        + " and robots.txt does not reference the sitemap",
+                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, sitemapMetadata));
+
+        // and a resolvable trail entry after the unresolvable ones must still allow
+        sitemapMetadata.addValue(
+                MetadataTransfer.urlPathKeyName, "http://www.example.com/sitemap-index.xml");
+        assertTrue(
+                "Resolvable trail entry matching the target host must allow the outlink",
+                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, sitemapMetadata));
     }
 
     /**
