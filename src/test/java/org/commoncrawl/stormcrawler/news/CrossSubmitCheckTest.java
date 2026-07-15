@@ -214,8 +214,6 @@ public class CrossSubmitCheckTest extends ParsingTester {
     /**
      * crossSubmitCheck must not throw when the target URL has no host (mailto:, file:) or when the
      * host's registered domain is unknown to the EffectiveTldFinder — it should return false.
-     *
-     * <p>Currently the code throws a NullPointerException (targetHost is null), see item B4.
      */
     @Test
     public void testNullHostDoesNotThrow() throws URISyntaxException, MalformedURLException {
