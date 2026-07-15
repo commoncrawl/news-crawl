@@ -46,7 +46,7 @@ under the License.
 		<mockito.version>5.23.0</mockito.version>
 		<wiremock.version>3.0.1</wiremock.version>
 		<junit.version>4.13.2</junit.version>
-		<git-code-format-maven-plugin.version>5.4</git-code-format-maven-plugin.version>
+		<git-code-format-maven-plugin.version>6.0</git-code-format-maven-plugin.version>
 		<skip.format.code>true</skip.format.code>
 	</properties>
 
