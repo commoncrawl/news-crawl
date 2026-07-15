@@ -13,8 +13,8 @@
  */
 package org.commoncrawl.stormcrawler.news;
 
-import static org.apache.stormcrawler.Constants.StatusStreamName;
-
+import crawlercommons.domains.EffectiveTldFinder;
+import crawlercommons.robots.BaseRobotRules;
 import crawlercommons.sitemaps.AbstractSiteMap;
 import crawlercommons.sitemaps.Namespace;
 import crawlercommons.sitemaps.SiteMap;
@@ -28,6 +28,9 @@ import crawlercommons.sitemaps.extension.ExtensionMetadata;
 import crawlercommons.sitemaps.extension.LinkAttributes;
 import crawlercommons.sitemaps.extension.NewsAttributes;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -38,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHeaders;
+import org.apache.storm.Config;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.task.OutputCollector;
@@ -54,7 +58,10 @@ import org.apache.stormcrawler.parse.ParseFilters;
 import org.apache.stormcrawler.parse.ParseResult;
 import org.apache.stormcrawler.persistence.DefaultScheduler;
 import org.apache.stormcrawler.persistence.Status;
+import org.apache.stormcrawler.protocol.Protocol;
+import org.apache.stormcrawler.protocol.ProtocolFactory;
 import org.apache.stormcrawler.util.ConfUtils;
+import org.apache.stormcrawler.util.MetadataTransfer;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -93,6 +100,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
     private static final org.slf4j.Logger LOG =
             LoggerFactory.getLogger(NewsSiteMapParserBolt.class);
+
+    private ProtocolFactory protocolFactory;
 
     /* content clues for news sitemaps, sitemap indexes or any sitemaps */
     public static String[][] contentClues;
@@ -134,6 +143,9 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
     /** Delay in minutes used for scheduling sub-sitemaps * */
     private int scheduleSitemapsWithDelay = -1;
+
+    private boolean crossSubmitAllowed = false;
+    private boolean crossSubmitLenient = true;
 
     @Override
     public void execute(Tuple tuple) {
@@ -233,12 +245,13 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
             parseFilters.filter(url, content, null, parse);
         } catch (RuntimeException e) {
-            String errorMessage = "Exception while running parse filters on " + url + ": " + e;
-            LOG.error(errorMessage);
+            String message = "Exception while running parse filters on " + url + ": " + e;
+            LOG.error(message);
             metadata.setValue(Constants.STATUS_ERROR_SOURCE, "content filtering");
-            metadata.setValue(Constants.STATUS_ERROR_MESSAGE, errorMessage);
+            metadata.setValue(Constants.STATUS_ERROR_MESSAGE, message);
             metadata.remove(numLinksKey);
-            collector.emit(StatusStreamName, tuple, new Values(url, metadata, Status.ERROR));
+            collector.emit(
+                    Constants.StatusStreamName, tuple, new Values(url, metadata, Status.ERROR));
             collector.ack(tuple);
             return;
         }
@@ -253,7 +266,21 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         }
 
         // send outlinks to status stream
+        int outlinksCounter = 0;
         for (Outlink ol : outlinks) {
+            try {
+                if (!this.crossSubmitAllowed && !crossSubmitCheck(ol, url, metadata)) {
+                    LOG.info(
+                            "Cross Submit check failed for {} in sitemap {}",
+                            ol.getTargetURL(),
+                            url);
+                    continue;
+                }
+            } catch (MalformedURLException | URISyntaxException e) {
+                LOG.info("Malformed URL {} in sitemap {}: {}", ol.getTargetURL(), url, e);
+                continue;
+            }
+
             if (isSitemapIndex) {
                 ol.getMetadata().setValue(isSitemapKey, "true");
                 if (isSitemapVerified) {
@@ -263,15 +290,87 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             }
             Values v = new Values(ol.getTargetURL(), ol.getMetadata(), Status.DISCOVERED);
             collector.emit(Constants.StatusStreamName, tuple, v);
+            outlinksCounter++;
         }
 
         // track the number of links found in the sitemap
-        metadata.setValue(numLinksKey, String.valueOf(outlinks.size()));
+        metadata.setValue(numLinksKey, String.valueOf(outlinksCounter));
 
         // marking the main URL as successfully fetched
         collector.emit(
                 Constants.StatusStreamName, tuple, new Values(url, metadata, Status.FETCHED));
         collector.ack(tuple);
+    }
+
+    public String getHost(URI url) {
+        if (url.getHost() == null) {
+            return null;
+        }
+        if (this.crossSubmitLenient) {
+            /// www.example.com-> "example.com"
+            /// blog.subdomain.example.co.uk -> "example.co.uk"
+            /// www.myapp.github.io -> "myapp.github.io" (excludePrivate is false)
+            return EffectiveTldFinder.getAssignedDomain(url.getHost(), true, false);
+        }
+        return url.getHost();
+    }
+
+    /**
+     * Checks whether a sitemap URL is allowed to submit URLs for another host. If the sitemap and
+     * target URLs are on the same host, submission is allowed. For cross-host submissions, checks
+     * robots.txt rules of the target host.
+     *
+     * @param ol The outlink containing the target URL to check
+     * @param sitemap The URL of the sitemap
+     * @param metadata
+     * @return true if submission is allowed, false otherwise
+     * @throws MalformedURLException if URLs are malformed
+     */
+    public boolean crossSubmitCheck(Outlink ol, String sitemap, Metadata metadata)
+            throws URISyntaxException, MalformedURLException {
+        URI targetURL = new URI(ol.getTargetURL());
+        String targetHost = this.getHost(targetURL);
+
+        URI sitemapURL = new URI(sitemap);
+        String sitemapHost = this.getHost(sitemapURL);
+
+        if (sitemapHost == null || targetHost == null) {
+            return false;
+        }
+
+        // Same host - allow
+        if (targetHost.equals(sitemapHost)) {
+            return true;
+        }
+
+        // Check tracked URL to the sitemap
+        String[] metadataPathTrack = metadata.getValues(MetadataTransfer.urlPathKeyName);
+
+        if (metadataPathTrack != null) {
+            for (String previousPath : metadataPathTrack) {
+                if (targetHost.equals(this.getHost(new URI(previousPath)))) {
+                    return true;
+                }
+            }
+        }
+
+        // Check robots.txt rules
+        Protocol protocol = protocolFactory.getProtocol(targetURL.toURL());
+        BaseRobotRules rules = protocol.getRobotRules(targetURL.toString());
+        if (rules != null) {
+            if (rules.getSitemaps().contains(sitemapURL.toString())) {
+                return true;
+            }
+            if (metadataPathTrack != null) {
+                for (String path : metadataPathTrack) {
+                    if (rules.getSitemaps().contains(path)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     public SitemapType detectContent(String url, byte[] content) {
@@ -506,10 +605,13 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     @SuppressWarnings({"rawtypes", "unchecked"})
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         super.prepare(stormConf, context, collector);
+        Config conf = new Config();
+        conf.putAll(stormConf);
         sniffContent = ConfUtils.getBoolean(stormConf, "sitemap.sniffContent", false);
         filterHoursSinceModified =
                 ConfUtils.getInt(stormConf, "sitemap.filter.hours.since.modified", -1);
         parseFilters = ParseFilters.fromConf(stormConf);
+        protocolFactory = ProtocolFactory.getInstance(conf);
         int maxOffsetGuess = ConfUtils.getInt(stormConf, "sitemap.offset.guess", 1024);
         contentDetector = new ContentDetector(NewsSiteMapParserBolt.contentClues, maxOffsetGuess);
         rssContentDetector = new ContentDetector(FeedDetectorBolt.contentClues, maxOffsetGuess);
@@ -520,5 +622,23 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                         30);
         scheduleSitemapsWithDelay =
                 ConfUtils.getInt(stormConf, "sitemap.schedule.delay", scheduleSitemapsWithDelay);
+        crossSubmitAllowed =
+                ConfUtils.getBoolean(stormConf, "crossSubmit.allowed", crossSubmitAllowed);
+        crossSubmitLenient =
+                ConfUtils.getBoolean(stormConf, "crossSubmit.lenient", crossSubmitLenient);
+    }
+
+    @Override
+    public void cleanup() {
+        super.cleanup();
+        protocolFactory.cleanup();
+    }
+
+    public ProtocolFactory getProtocolFactory() {
+        return protocolFactory;
+    }
+
+    public void setProtocolFactory(ProtocolFactory protocolFactory) {
+        this.protocolFactory = protocolFactory;
     }
 }
