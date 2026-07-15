@@ -630,8 +630,8 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
     @Override
     public void cleanup() {
-       super.cleanup();
-       protocolFactory.cleanup();
+        super.cleanup();
+        protocolFactory.cleanup();
     }
 
     public ProtocolFactory getProtocolFactory() {
