@@ -348,7 +348,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
         if (metadataPathTrack != null) {
             for (String previousPath : metadataPathTrack) {
-                if (this.getHost(new URI(previousPath)).equals(targetHost)) {
+                if (targetHost.equals(this.getHost(new URI(previousPath)))) {
                     return true;
                 }
             }
