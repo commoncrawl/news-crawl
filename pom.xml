@@ -40,7 +40,7 @@ under the License.
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<stormcrawler.version>3.6.0</stormcrawler.version>
 		<storm.version>2.8.8</storm.version>
-		<aws.version>2.47.5</aws.version>
+		<aws.version>2.48.3</aws.version>
 		<jackson.version>2.21.3</jackson.version>
 		<crawler-commons.version>1.6</crawler-commons.version>
 		<mockito.version>5.23.0</mockito.version>
