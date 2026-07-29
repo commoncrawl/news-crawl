@@ -74,7 +74,7 @@ The main news crawler topology is defined in [`conf/crawler.flux`](./conf/crawle
 
 For a quick local smoke test you can instead run the equivalent Java topology [`CrawlTopology`](src/main/java/org/commoncrawl/stormcrawler/news/CrawlTopology.java) in local mode. Note the `--` separator: it overrides the manifest's default Flux main class so the named class runs instead.
 ``` sh
-storm local target/crawler-3.6.0.jar --local-ttl 60 -- org.commoncrawl.stormcrawler.news.CrawlTopology -conf $PWD/conf/opensearch-conf.yaml -conf $PWD/conf/crawler-conf.yaml $PWD/seeds/ feeds.txt
+storm local target/crawler-3.7.0.jar --local-ttl 60 -- org.commoncrawl.stormcrawler.news.CrawlTopology -conf $PWD/conf/opensearch-conf.yaml -conf $PWD/conf/crawler-conf.yaml $PWD/seeds/ feeds.txt
 ```
 
 This will launch the crawl topology in local mode for 60 seconds. It will also "inject" all URLs found in the file `./seeds/feeds.txt` in the status index. The URLs point to news feeds and sitemaps from which links to news articles are extracted and fetched. The topology will create WARC files in the directory specified in the configuration under the key `warc.dir`. This directory must be created beforehand.
@@ -93,7 +93,7 @@ The news crawl assumes its seeds are *already known* to be feeds or news sitemap
 It uses its own configuration ([conf/bootstrap-conf.yaml](conf/bootstrap-conf.yaml)), which sets a distinct WARC output directory and a more conservative `fetcher.server.delay`. Run it like the production topology, but with the bootstrap main class and config:
 
 ``` sh
-storm local target/crawler-3.6.0.jar --local-ttl 60 -- org.commoncrawl.stormcrawler.news.bootstrap.BootstrapTopology -conf $PWD/conf/opensearch-conf.yaml -conf $PWD/conf/bootstrap-conf.yaml $PWD/seeds/ feeds.txt
+storm local target/crawler-3.7.0.jar --local-ttl 60 -- org.commoncrawl.stormcrawler.news.bootstrap.BootstrapTopology -conf $PWD/conf/opensearch-conf.yaml -conf $PWD/conf/bootstrap-conf.yaml $PWD/seeds/ feeds.txt
 ```
 
 
@@ -180,7 +180,7 @@ $> storm kill NewsCrawl
 Requires **JDK 17+** (see [.java-version](.java-version)). Common commands:
 
 ```
-mvn clean package                         # build the shaded uberjar → target/crawler-3.6.0.jar
+mvn clean package                         # build the shaded uberjar → target/crawler-3.7.0.jar
 mvn test                                  # run all JUnit tests
 mvn test -Dtest=NewsSiteMapParserTest     # run a single test class
 ```

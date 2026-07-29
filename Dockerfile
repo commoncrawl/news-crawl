@@ -10,7 +10,7 @@ RUN apt-get update -qq && \
 #
 # news-crawler
 #
-ENV CRAWLER_VERSION=3.6.0
+ENV CRAWLER_VERSION=3.7.0
 
 RUN mkdir /news-crawler/ && \
 	mkdir /news-crawler/conf/ && \
