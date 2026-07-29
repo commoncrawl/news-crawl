@@ -93,7 +93,7 @@ services:
     networks:
       # conf/opensearch-conf.yaml addresses the cluster as "opensearch-news-crawl" (the
       # production DNS name); expose that as an alias so those addresses resolve in Compose too.
-      default:
+      storm-network-news-crawl:
         aliases:
           - opensearch-news-crawl
     volumes:
@@ -105,8 +105,6 @@ services:
       nofile:
         soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
         hard: 65536
-    networks:
-      - storm-network-news-crawl
     ports:
       - "127.0.0.1:9200:9200" # REST API
 
