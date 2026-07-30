@@ -12,7 +12,7 @@ Two indexes / stores are involved:
 - **OpenSearch** holds the *URL status index*: every known URL and its state (`DISCOVERED`, `FETCHED`, `REDIRECTION`, `ERROR`). This is the crawler's memory of what to fetch next.
 - **WARC files** on local disk (`warc.dir`) hold the actual fetched content — this is the output shipped to Common Crawl.
 
-The production crawl is a Storm pipeline defined primarily in [`conf/crawler.flux`](conf/crawler.flux) (the main topology, launched via [Storm Flux](https://storm.apache.org/releases/2.8.8/flux.html)). A functionally-equivalent Java implementation of the same pipeline is provided in [`CrawlTopology`](src/main/java/org/commoncrawl/stormcrawler/news/CrawlTopology.java). Either way the DAG is the same:
+The production crawl is a Storm pipeline defined primarily in [`conf/crawler.flux`](conf/crawler.flux) (the main topology, launched via [Storm Flux](https://storm.apache.org/releases/2.8.9/flux.html)). A functionally-equivalent Java implementation of the same pipeline is provided in [`CrawlTopology`](src/main/java/org/commoncrawl/stormcrawler/news/CrawlTopology.java). Either way the DAG is the same:
 
 ```
 seeds/feeds.txt
@@ -27,8 +27,8 @@ Feeds and sitemaps are re-fetched on a schedule to discover new articles; the ar
 
 ## Prerequisites
 * JVM 17 or higher
-* Install OpenSearch 2.19.5
-* Install Apache Storm 2.8.8
+* Install OpenSearch 2.19.6
+* Install Apache Storm 2.8.9
 * Start OpenSearch and Storm
 * Create the OpenSearch indices by running [bin/OS_IndexInit.sh](bin/OS_IndexInit.sh) and the dashboards by [OS_ImportDashboards.sh](bin/OS_ImportDashboards.sh)
 
@@ -70,7 +70,7 @@ Once the configuration is in place, generate the uberjar:
 mvn clean package
 ```
 
-The main news crawler topology is defined in [`conf/crawler.flux`](./conf/crawler.flux) and launched via [Storm Flux](https://storm.apache.org/releases/2.8.8/flux.html) — this is also the default entry point of the shaded jar (its manifest `mainClass` is `org.apache.storm.flux.Flux`).
+The main news crawler topology is defined in [`conf/crawler.flux`](./conf/crawler.flux) and launched via [Storm Flux](https://storm.apache.org/releases/2.8.9/flux.html) — this is also the default entry point of the shaded jar (its manifest `mainClass` is `org.apache.storm.flux.Flux`).
 
 For a quick local smoke test you can instead run the equivalent Java topology [`CrawlTopology`](src/main/java/org/commoncrawl/stormcrawler/news/CrawlTopology.java) in local mode. Note the `--` separator: it overrides the manifest's default Flux main class so the named class runs instead.
 ``` sh
@@ -144,7 +144,7 @@ NOTE:
 - Make sure that the OpenSearch port 9200 is not already in use or mapped by a running OpenSearch instance. Otherwise, OpenSearch commands may affect the running instance!
 
 
-Submit the topology from the `news-crawler` service. The main path uses [Storm Flux](https://storm.apache.org/releases/2.8.8/flux.html) with `conf/crawler.flux`:
+Submit the topology from the `news-crawler` service. The main path uses [Storm Flux](https://storm.apache.org/releases/2.8.9/flux.html) with `conf/crawler.flux`:
 ```
 docker compose run --rm news-crawler \
     storm jar lib/crawler.jar org.apache.storm.flux.Flux --remote /news-crawler/conf/crawler.flux

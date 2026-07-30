@@ -1,4 +1,4 @@
-FROM storm:2.8.8
+FROM storm:2.8.9
 
 RUN apt-get update -qq && \
 	apt-get install -yq --no-install-recommends \
