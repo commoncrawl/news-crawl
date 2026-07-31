@@ -13,6 +13,7 @@ config:
   topology.debug: false
 
   # override the JVM parameters for the workers
+  # -Djava.net.preferIPv4Stack=false  :: allow fetches over IPv6
   topology.worker.childopts: "-Xmx4g -Djava.net.preferIPv4Stack=false"
 
   topology.name: "NewsCrawl"
@@ -27,7 +28,7 @@ config:
   # set to 0 to deactivate debugging
   topology.eventlogger.executors: 0
 
-  #Metrics consumers:
+  # Metrics consumers:
   topology.metrics.consumer.register:
      - class: "org.apache.storm.metric.LoggingMetricsConsumer"
        parallelism.hint: 1
@@ -231,7 +232,9 @@ config:
   sitemap.schedule.delay: 15
 
   # do not add feeds older than 30 days
-  # (longest adaptive fetch interval is 28 days)
+  # Note: the longest adaptive fetch interval is 90 days.
+  # We accept that some news articles are missed, if a feed/sitemap
+  # changes only occasionally.
   feed.filter.hours.since.published: 720
   # same for news sitemaps
   sitemap.filter.hours.since.modified: 720
@@ -268,6 +271,7 @@ config:
    - fetchInterval
    - protocol.etag
    - protocol._request.time_
+
   # whether to track the URL path
   # (allows to identify which feeds and sitemaps contribute links)
   metadata.track.path: true
