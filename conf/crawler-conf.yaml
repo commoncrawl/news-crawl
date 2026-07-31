@@ -58,6 +58,11 @@ config:
   parsefilters.config.file: "parsefilters.json"
   urlfilters.config.file: "urlfilters.json"
 
+  # block private IP address ranges to avoid that attackers can make
+  # the crawler leak internal information (Storm Web UI pages, OS dashboards)
+  # into WARC files
+  http.filter.ipaddress.exclude: loopback,sitelocal
+
   # time bucket to use for the metrics sent by the Fetcher
   fetcher.metrics.time.bucket.secs: 60
 
