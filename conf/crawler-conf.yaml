@@ -151,8 +151,8 @@ config:
   # revisit a page (value in minutes)
   # - never revisit a news article
   #   (seeds / RSS feeds are revisited)
-  # - 10 years (-1 would not allow to distinguish the fetch time, required for clean-ups)
-  fetchInterval.default: 5256000
+  # - note: the fetch time is persisted as "protocol._request.time_"
+  fetchInterval.default: -1
 
   # revisit a page with a transient fetch error after 48 hours (value in minutes)
   # - choose a larger interval (2 days instead of 2 hours) to give the server
@@ -262,6 +262,7 @@ config:
    - signatureChangeDate
    - fetchInterval
    - protocol.etag
+   - protocol._request.time_
   # whether to track the URL path
   # (allows to identify which feeds and sitemaps contribute links)
   metadata.track.path: true
