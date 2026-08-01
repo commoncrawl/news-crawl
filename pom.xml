@@ -38,7 +38,7 @@ under the License.
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<stormcrawler.version>3.6.0</stormcrawler.version>
+		<stormcrawler.version>3.7.0</stormcrawler.version>
 		<storm.version>2.8.8</storm.version>
 		<aws.version>2.49.3</aws.version>
 		<jackson.version>2.21.3</jackson.version>
