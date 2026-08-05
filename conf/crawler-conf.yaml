@@ -163,10 +163,16 @@ config:
   # - this is important for seeds and sitemaps which may flip into error state
   #   if the refetch interval is too short in case the server is unavailable for
   #     (max.fetch.errors - 1) * fetchInterval.fetch.error
+  # - with the default value of max.fetch.errors = 3, pages are retried 3 times
+  #   within five days
   fetchInterval.fetch.error: 2880
 
-  # revisit a page with an error after 3 month (value in minutes)
-  fetchInterval.error: 133920
+  # never revisit a page with an error (value in minutes or -1 "never")
+  # - pages have been already retried three times over minimum five days
+  # - after that news pages are already somewhat outdated, no need
+  #   to retry again after a longer period of time
+  # - note that feeds and sitemaps are retried, see below
+  fetchInterval.error: -1
 
   # custom interval for feeds and sitemaps
 
