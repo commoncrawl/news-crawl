@@ -12,6 +12,7 @@ config:
   topology.max.spout.pending: 100
   topology.debug: false
 
+  worker.heap.memory.mb: 4096
   # override the JVM parameters for the workers
   # -Djava.net.preferIPv4Stack=false  :: allow fetches over IPv6
   topology.worker.childopts: "-Xmx4g -Djava.net.preferIPv4Stack=false"
@@ -68,10 +69,6 @@ config:
   fetcher.metrics.time.bucket.secs: 60
 
   fetcher.threads.number: 80
-
-  worker.heap.memory.mb: 4096
-  # override the JVM parameters for the workers
-  # topology.worker.childopts: "-Xmx2g -Djava.net.preferIPv4Stack=true"
 
   # increased network timeout (ms) for news sites from Asia and eastern Europe
   http.timeout: 30000
