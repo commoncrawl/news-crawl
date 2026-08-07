@@ -85,11 +85,20 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         SITEMAP
     }
 
-    /*
-     The sitemaps cross-check can be allowed, or denied with two reasons,
-       1) no robots.txt was available,
-       2) robots.txt was available but the sitemap target URL was not declared.
-    */
+    /**
+     * Outcome of the cross-submit check: a sitemap may either submit the outlink, or is denied for
+     * one of three reasons.
+     *
+     * <ul>
+     *   <li>{@link #DENIED_NOT_PARSEABLE}: the sitemap or the target URL has no usable host
+     *       (mailto:, file:, or a host whose registered domain is unknown).
+     *   <li>{@link #DENIED_NO_ROBOTS_CACHED}: no robots.txt of the target host is held in the
+     *       shared robots cache, so the submission cannot be vouched for. The check never fetches a
+     *       robots.txt itself.
+     *   <li>{@link #DENIED_NOT_DECLARED}: a robots.txt of the target host is cached, but declares
+     *       neither the sitemap nor any sitemap index it was reached through.
+     * </ul>
+     */
     public enum SitemapCrossCheckResult {
         ALLOWED,
         DENIED_NOT_PARSEABLE,
@@ -354,14 +363,23 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     }
 
     /**
-     * Checks whether a sitemap URL is allowed to submit URLs for another host. If the sitemap and
-     * target URLs are on the same host, submission is allowed. For cross-host submissions, checks
-     * robots.txt rules of the target host.
+     * Checks whether a sitemap is allowed to submit URLs for another host. If the sitemap and the
+     * target URL are on the same host, submission is allowed. A cross-host submission requires the
+     * <em>target</em> host to vouch for the sitemap: its robots.txt must declare either the sitemap
+     * itself or a sitemap index the sitemap was reached through (see the {@code url.path} trail
+     * recorded by {@link MetadataTransfer}).
+     *
+     * <p>The robots.txt rules are only read from the shared, static robots cache populated by the
+     * fetcher — this method never fetches a robots.txt itself. A sitemap may contain tens of
+     * thousands of URLs on as many hosts, and fetching per outlink would block the parse thread
+     * long enough to time out the tuple. The trade-off is coverage: a target host whose robots.txt
+     * is not cached is denied with {@link SitemapCrossCheckResult#DENIED_NO_ROBOTS_CACHED}.
      *
      * @param ol The outlink containing the target URL to check
      * @param sitemap The URL of the sitemap
-     * @param metadata
-     * @return true if submission is allowed, false otherwise
+     * @param metadata metadata of the sitemap, carrying its {@code url.path} discovery trail
+     * @return {@link SitemapCrossCheckResult#ALLOWED} if submission is allowed, otherwise the
+     *     reason for denying it
      * @throws MalformedURLException if URLs are malformed
      */
     public SitemapCrossCheckResult crossSubmitCheck(Outlink ol, String sitemap, Metadata metadata)

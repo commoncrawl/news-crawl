@@ -406,6 +406,36 @@ public class CrossSubmitCheckTest extends ParsingTester {
     }
 
     /**
+     * The check reads robots.txt from the shared cache only and never fetches: a cross-host outlink
+     * whose target host has no cached robots.txt is denied as DENIED_NO_ROBOTS_CACHED, which is
+     * distinct from a cached robots.txt that simply does not declare the sitemap.
+     */
+    @Test
+    public void testCrossHostDeniedWhenRobotsNotCached()
+            throws URISyntaxException, MalformedURLException {
+        HttpRobotRulesParser robots = emptyRobotsCache();
+        newsBolt().setRobotRulesParser(robots);
+
+        Outlink outlink = new Outlink(ARTICLE_COM);
+        assertThat(
+                "Cross-host outlink must be denied when no robots.txt of the target is cached",
+                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, new Metadata()),
+                is(SitemapCrossCheckResult.DENIED_NO_ROBOTS_CACHED));
+
+        // the cache was consulted, but nothing was fetched: only the cache-only lookup is used
+        verify(robots)
+                .getRobotRulesSetFromCache(argThat(url -> "www.example.com".equals(url.getHost())));
+        verifyNoMoreInteractions(robots);
+
+        // a cached robots.txt that declares no sitemap is a different outcome
+        withCachedRobots(robots, "www.example.com");
+        assertThat(
+                "A cached robots.txt declaring no sitemap must be reported as NOT_DECLARED",
+                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, new Metadata()),
+                is(SitemapCrossCheckResult.DENIED_NOT_DECLARED));
+    }
+
+    /**
      * numLinks must count only the outlinks actually emitted, not all parsed ones: a sitemap with
      * numLinks == 0 can be retired by the NewsSitemapScheduler, which must equally apply to
      * sitemaps whose links are all rejected by the cross-submit check.
