@@ -13,6 +13,8 @@
  */
 package org.commoncrawl.stormcrawler.news;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -39,9 +41,10 @@ import org.apache.stormcrawler.TestUtil;
 import org.apache.stormcrawler.parse.Outlink;
 import org.apache.stormcrawler.parse.ParsingTester;
 import org.apache.stormcrawler.persistence.Status;
-import org.apache.stormcrawler.protocol.Protocol;
-import org.apache.stormcrawler.protocol.ProtocolFactory;
+import org.apache.stormcrawler.protocol.HttpRobotRulesParser;
+import org.apache.stormcrawler.protocol.RobotRulesParser;
 import org.apache.stormcrawler.util.MetadataTransfer;
+import org.commoncrawl.stormcrawler.news.NewsSiteMapParserBolt.SitemapCrossCheckResult;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -74,6 +77,43 @@ public class CrossSubmitCheckTest extends ParsingTester {
 
     private NewsSiteMapParserBolt newsBolt() {
         return (NewsSiteMapParserBolt) bolt;
+    }
+
+    /**
+     * A robots.txt parser whose cache holds nothing: every lookup returns {@link
+     * RobotRulesParser#EMPTY_RULES}, which the bolt reports as DENIED_NO_ROBOTS_CACHED. Stub
+     * individual hosts on top with {@link #withCachedRobots(HttpRobotRulesParser, String,
+     * String...)}.
+     */
+    private HttpRobotRulesParser emptyRobotsCache() {
+        HttpRobotRulesParser robots = mock(HttpRobotRulesParser.class);
+        when(robots.getRobotRulesSetFromCache(any(URL.class)))
+                .thenReturn(RobotRulesParser.EMPTY_RULES);
+        return robots;
+    }
+
+    /**
+     * Puts a robots.txt for {@code host} into the mocked cache, declaring the given sitemaps (none
+     * means: a robots.txt is cached but declares no sitemap at all).
+     *
+     * <p>Matching is by host rather than by URL equality on purpose: {@link URL#equals(Object)}
+     * resolves host names via DNS.
+     */
+    private void withCachedRobots(HttpRobotRulesParser robots, String host, String... sitemaps) {
+        BaseRobotRules rules = mock(BaseRobotRules.class);
+        when(rules.getSitemaps()).thenReturn(Arrays.asList(sitemaps));
+        when(robots.getRobotRulesSetFromCache(
+                        argThat(url -> url != null && host.equals(url.getHost()))))
+                .thenReturn(rules);
+    }
+
+    /** A robots.txt parser returning the same cached rules for every host. */
+    private HttpRobotRulesParser robotsForAllHosts(String... sitemaps) {
+        HttpRobotRulesParser robots = mock(HttpRobotRulesParser.class);
+        BaseRobotRules rules = mock(BaseRobotRules.class);
+        when(rules.getSitemaps()).thenReturn(Arrays.asList(sitemaps));
+        when(robots.getRobotRulesSetFromCache(any(URL.class))).thenReturn(rules);
+        return robots;
     }
 
     protected byte[] readContent(String filename) throws IOException {
@@ -136,20 +176,12 @@ public class CrossSubmitCheckTest extends ParsingTester {
      */
     @Test
     public void testRejectedOutlinkNotEmitted() throws IOException {
-        ProtocolFactory protocolFactory = mock(ProtocolFactory.class);
-        Protocol protocol = mock(Protocol.class);
-        when(protocolFactory.getProtocol(any(URL.class))).thenReturn(protocol);
+        // robots.txt of both cross-host targets is cached but does not reference the sitemap
+        HttpRobotRulesParser robots = emptyRobotsCache();
+        withCachedRobots(robots, "www.example.net");
+        withCachedRobots(robots, "www.example.com");
 
-        // robots.txt of both cross-host targets do not reference the sitemap
-        BaseRobotRules rulesNet = mock(BaseRobotRules.class);
-        when(protocol.getRobotRules(ARTICLE_NET)).thenReturn(rulesNet);
-        when(rulesNet.getSitemaps()).thenReturn(Collections.emptyList());
-
-        BaseRobotRules rulesCom = mock(BaseRobotRules.class);
-        when(protocol.getRobotRules(ARTICLE_COM)).thenReturn(rulesCom);
-        when(rulesCom.getSitemaps()).thenReturn(Collections.emptyList());
-
-        newsBolt().setProtocolFactory(protocolFactory);
+        newsBolt().setRobotRulesParser(robots);
 
         executeWithContent(readRecentContent("cross-sitemap-news.xml"));
 
@@ -184,9 +216,9 @@ public class CrossSubmitCheckTest extends ParsingTester {
                         + newsSitemapEntry(secondGoodURL)
                         + "</urlset>";
 
-        // all outlinks are on the sitemap's own host, the protocol factory must stay untouched
-        ProtocolFactory protocolFactory = mock(ProtocolFactory.class);
-        newsBolt().setProtocolFactory(protocolFactory);
+        // all outlinks are on the sitemap's own host, the robots cache must stay untouched
+        HttpRobotRulesParser robots = mock(HttpRobotRulesParser.class);
+        newsBolt().setRobotRulesParser(robots);
 
         executeWithContent(content);
 
@@ -198,7 +230,7 @@ public class CrossSubmitCheckTest extends ParsingTester {
         assertEquals(1, countStatusEmissions(secondGoodURL, Status.DISCOVERED));
         assertEquals(1, countStatusEmissions(SITEMAP_URL, Status.FETCHED));
 
-        verifyNoInteractions(protocolFactory);
+        verifyNoInteractions(robots);
     }
 
     private static String newsSitemapEntry(String loc) {
@@ -214,26 +246,35 @@ public class CrossSubmitCheckTest extends ParsingTester {
 
     /**
      * crossSubmitCheck must not throw when the target URL has no host (mailto:, file:) or when the
-     * host's registered domain is unknown to the EffectiveTldFinder — it should return false.
+     * host's registered domain is unknown to the EffectiveTldFinder — it should deny the outlink as
+     * DENIED_NOT_PARSEABLE, without ever reaching the robots.txt cache.
      */
     @Test
     public void testNullHostDoesNotThrow() throws URISyntaxException, MalformedURLException {
+        HttpRobotRulesParser robots = mock(HttpRobotRulesParser.class);
+        newsBolt().setRobotRulesParser(robots);
+
         // URI without a host part
         Outlink mailto = new Outlink("mailto:contact@example.org");
-        assertFalse(
+        assertThat(
                 "URL without host must not be allowed",
-                newsBolt().crossSubmitCheck(mailto, SITEMAP_URL, new Metadata()));
+                newsBolt().crossSubmitCheck(mailto, SITEMAP_URL, new Metadata()),
+                is(SitemapCrossCheckResult.DENIED_NOT_PARSEABLE));
 
         Outlink file = new Outlink("file:///tmp/x.html");
-        assertFalse(
+        assertThat(
                 "URL without host must not be allowed",
-                newsBolt().crossSubmitCheck(file, SITEMAP_URL, new Metadata()));
+                newsBolt().crossSubmitCheck(file, SITEMAP_URL, new Metadata()),
+                is(SitemapCrossCheckResult.DENIED_NOT_PARSEABLE));
 
         // host whose TLD is unknown to EffectiveTldFinder (lenient mode returns null)
         Outlink unknownTld = new Outlink("http://host.invalidtld123/");
-        assertFalse(
+        assertThat(
                 "URL with unknown TLD must not be allowed",
-                newsBolt().crossSubmitCheck(unknownTld, SITEMAP_URL, new Metadata()));
+                newsBolt().crossSubmitCheck(unknownTld, SITEMAP_URL, new Metadata()),
+                is(SitemapCrossCheckResult.DENIED_NOT_PARSEABLE));
+
+        verifyNoInteractions(robots);
     }
 
     /**
@@ -245,14 +286,8 @@ public class CrossSubmitCheckTest extends ParsingTester {
     @Test
     public void testTrailEntryWithNullHostDoesNotThrow()
             throws URISyntaxException, MalformedURLException {
-        // robots.txt of the target does not reference the sitemap -> rejection expected
-        ProtocolFactory protocolFactory = mock(ProtocolFactory.class);
-        Protocol protocol = mock(Protocol.class);
-        when(protocolFactory.getProtocol(any(URL.class))).thenReturn(protocol);
-        BaseRobotRules rules = mock(BaseRobotRules.class);
-        when(protocol.getRobotRules(anyString())).thenReturn(rules);
-        when(rules.getSitemaps()).thenReturn(Collections.emptyList());
-        newsBolt().setProtocolFactory(protocolFactory);
+        // robots.txt of the target is cached but does not reference the sitemap -> rejection
+        newsBolt().setRobotRulesParser(robotsForAllHosts());
 
         // trail with hosts unresolvable by EffectiveTldFinder (IP address, unknown TLD)
         Metadata sitemapMetadata = new Metadata();
@@ -263,17 +298,19 @@ public class CrossSubmitCheckTest extends ParsingTester {
                         "http://host.invalidtld123/sitemap-index.xml"));
 
         Outlink outlink = new Outlink(ARTICLE_COM);
-        assertFalse(
+        assertThat(
                 "Cross-host outlink must be rejected when the trail hosts are unresolvable"
                         + " and robots.txt does not reference the sitemap",
-                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, sitemapMetadata));
+                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, sitemapMetadata),
+                is(SitemapCrossCheckResult.DENIED_NOT_DECLARED));
 
         // and a resolvable trail entry after the unresolvable ones must still allow
         sitemapMetadata.addValue(
                 MetadataTransfer.urlPathKeyName, "http://www.example.com/sitemap-index.xml");
-        assertTrue(
+        assertThat(
                 "Resolvable trail entry matching the target host must allow the outlink",
-                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, sitemapMetadata));
+                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, sitemapMetadata),
+                is(SitemapCrossCheckResult.ALLOWED));
     }
 
     /**
@@ -289,47 +326,46 @@ public class CrossSubmitCheckTest extends ParsingTester {
         Outlink outlink = new Outlink(targetURL);
 
         // lenient (default): same registered domain, allowed without any robots lookup
-        ProtocolFactory lenientFactory = mock(ProtocolFactory.class);
-        newsBolt().setProtocolFactory(lenientFactory);
-        assertTrue(
+        HttpRobotRulesParser lenientRobots = mock(HttpRobotRulesParser.class);
+        newsBolt().setRobotRulesParser(lenientRobots);
+        assertThat(
                 "Same registered domain must be allowed in lenient mode",
-                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, new Metadata()));
-        verifyNoInteractions(lenientFactory);
+                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, new Metadata()),
+                is(SitemapCrossCheckResult.ALLOWED));
+        verifyNoInteractions(lenientRobots);
 
         // strict: exact hosts differ, falls through to the robots.txt check
         setupParserBolt(new NewsSiteMapParserBolt());
         Map<String, Object> config = baseConfig();
-        config.put("sitemaps.crossSubmit.lenient", false);
+        config.put("sitemap.crossSubmit.lenient", false);
         prepareParserBolt("test.parsefilters.json", config);
 
-        ProtocolFactory strictFactory = mock(ProtocolFactory.class);
-        Protocol protocol = mock(Protocol.class);
-        when(strictFactory.getProtocol(any(URL.class))).thenReturn(protocol);
-        BaseRobotRules rules = mock(BaseRobotRules.class);
-        when(protocol.getRobotRules(targetURL)).thenReturn(rules);
-        when(rules.getSitemaps()).thenReturn(Collections.emptyList());
-        newsBolt().setProtocolFactory(strictFactory);
+        HttpRobotRulesParser strictRobots = robotsForAllHosts();
+        newsBolt().setRobotRulesParser(strictRobots);
 
-        assertFalse(
+        assertThat(
                 "Different host must be rejected in strict mode if robots.txt does not"
                         + " reference the sitemap",
-                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, new Metadata()));
-        verify(protocol).getRobotRules(targetURL);
+                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, new Metadata()),
+                is(SitemapCrossCheckResult.DENIED_NOT_DECLARED));
+        verify(strictRobots)
+                .getRobotRulesSetFromCache(
+                        argThat(url -> "news.example.org".equals(url.getHost())));
     }
 
     /**
-     * With crossSubmit.allowed=true the check is skipped entirely: all outlinks are emitted as
-     * DISCOVERED and neither robots.txt nor the protocol factory are ever consulted.
+     * With sitemap.crossSubmit.allowed=true the check is skipped entirely: all outlinks are emitted
+     * as DISCOVERED and the robots.txt cache is never consulted.
      */
     @Test
     public void testCrossSubmitAllowedBypassesCheck() throws IOException {
         setupParserBolt(new NewsSiteMapParserBolt());
         Map<String, Object> config = baseConfig();
-        config.put("sitemaps.crossSubmit.allowed", true);
+        config.put("sitemap.crossSubmit.allowed", true);
         prepareParserBolt("test.parsefilters.json", config);
 
-        ProtocolFactory protocolFactory = mock(ProtocolFactory.class);
-        newsBolt().setProtocolFactory(protocolFactory);
+        HttpRobotRulesParser robots = mock(HttpRobotRulesParser.class);
+        newsBolt().setRobotRulesParser(robots);
 
         executeWithContent(readRecentContent("cross-sitemap-news.xml"));
 
@@ -338,7 +374,7 @@ public class CrossSubmitCheckTest extends ParsingTester {
         assertEquals(1, countStatusEmissions(ARTICLE_COM, Status.DISCOVERED));
         assertEquals(1, countStatusEmissions(SITEMAP_URL, Status.FETCHED));
 
-        verifyNoInteractions(protocolFactory);
+        verifyNoInteractions(robots);
     }
 
     /**
@@ -349,8 +385,8 @@ public class CrossSubmitCheckTest extends ParsingTester {
     @Test
     public void testTrailAllowsCrossHostWithoutRobotsLookup()
             throws URISyntaxException, MalformedURLException {
-        ProtocolFactory protocolFactory = mock(ProtocolFactory.class);
-        newsBolt().setProtocolFactory(protocolFactory);
+        HttpRobotRulesParser robots = mock(HttpRobotRulesParser.class);
+        newsBolt().setRobotRulesParser(robots);
 
         // the sitemap (hosted on www.example.org) was discovered via a sitemap
         // index on www.example.com, the host of the outlink to check
@@ -360,12 +396,13 @@ public class CrossSubmitCheckTest extends ParsingTester {
                 Collections.singletonList("http://www.example.com/sitemap-index.xml"));
 
         Outlink outlink = new Outlink(ARTICLE_COM);
-        assertTrue(
+        assertThat(
                 "Outlink must be allowed when the sitemap was discovered via the target host",
-                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, sitemapMetadata));
+                newsBolt().crossSubmitCheck(outlink, SITEMAP_URL, sitemapMetadata),
+                is(SitemapCrossCheckResult.ALLOWED));
 
         // tier 2 decided without consulting robots.txt
-        verifyNoInteractions(protocolFactory);
+        verifyNoInteractions(robots);
     }
 
     /**
@@ -375,13 +412,8 @@ public class CrossSubmitCheckTest extends ParsingTester {
      */
     @Test
     public void testNumLinksCountsOnlyEmittedOutlinks() throws IOException {
-        ProtocolFactory protocolFactory = mock(ProtocolFactory.class);
-        Protocol protocol = mock(Protocol.class);
-        when(protocolFactory.getProtocol(any(URL.class))).thenReturn(protocol);
-        BaseRobotRules rules = mock(BaseRobotRules.class);
-        when(protocol.getRobotRules(anyString())).thenReturn(rules);
-        when(rules.getSitemaps()).thenReturn(Collections.emptyList());
-        newsBolt().setProtocolFactory(protocolFactory);
+        // every host has a cached robots.txt, none of them declaring the sitemap
+        newsBolt().setRobotRulesParser(robotsForAllHosts());
 
         executeWithContent(readRecentContent("cross-sitemap-news.xml"));
 

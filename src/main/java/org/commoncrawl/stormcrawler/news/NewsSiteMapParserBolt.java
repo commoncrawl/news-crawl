@@ -58,8 +58,8 @@ import org.apache.stormcrawler.parse.ParseFilters;
 import org.apache.stormcrawler.parse.ParseResult;
 import org.apache.stormcrawler.persistence.DefaultScheduler;
 import org.apache.stormcrawler.persistence.Status;
-import org.apache.stormcrawler.protocol.Protocol;
-import org.apache.stormcrawler.protocol.ProtocolFactory;
+import org.apache.stormcrawler.protocol.HttpRobotRulesParser;
+import org.apache.stormcrawler.protocol.RobotRulesParser;
 import org.apache.stormcrawler.util.ConfUtils;
 import org.apache.stormcrawler.util.MetadataTransfer;
 import org.slf4j.LoggerFactory;
@@ -79,10 +79,22 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     // be news sitemaps
     // - pass "isSitemapNews" to status metadata
 
-    public static enum SitemapType {
+    public enum SitemapType {
         NEWS,
         INDEX,
         SITEMAP
+    }
+
+    /*
+     The sitemaps cross-check can be allowed, or denied with two reasons,
+       1) no robots.txt was available,
+       2) robots.txt was available but the sitemap target URL was not declared.
+    */
+    public enum SitemapCrossCheckResult {
+        ALLOWED,
+        DENIED_NOT_PARSEABLE,
+        DENIED_NO_ROBOTS_CACHED,
+        DENIED_NOT_DECLARED
     }
 
     public static final String isSitemapNewsKey = "isSitemapNews";
@@ -101,12 +113,11 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     private static final org.slf4j.Logger LOG =
             LoggerFactory.getLogger(NewsSiteMapParserBolt.class);
 
-    private ProtocolFactory protocolFactory;
-
     /* content clues for news sitemaps, sitemap indexes or any sitemaps */
     public static String[][] contentClues;
     public static int contentCluesSitemapNewsMatchUpTo = -1;
     public static int contentCluesSitemapIndexMatchUpTo = -1;
+    private HttpRobotRulesParser robotRulesParser;
 
     static {
         int cluesSize = Namespace.NEWS.length + 1 + 1 + Namespace.SITEMAP_LEGACY.length;
@@ -155,10 +166,12 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         byte[] content = tuple.getBinaryByField("content");
         String url = tuple.getStringByField("url");
 
-        boolean isSitemap = Boolean.valueOf(metadata.getFirstValue(SiteMapParserBolt.isSitemapKey));
-        boolean isNewsSitemap = Boolean.valueOf(metadata.getFirstValue(isSitemapNewsKey));
-        boolean isSitemapIndex = Boolean.valueOf(metadata.getFirstValue(isSitemapIndexKey));
-        boolean isSitemapVerified = Boolean.valueOf(metadata.getFirstValue(isSitemapVerifiedKey));
+        boolean isSitemap =
+                Boolean.parseBoolean(metadata.getFirstValue(SiteMapParserBolt.isSitemapKey));
+        boolean isNewsSitemap = Boolean.parseBoolean(metadata.getFirstValue(isSitemapNewsKey));
+        boolean isSitemapIndex = Boolean.parseBoolean(metadata.getFirstValue(isSitemapIndexKey));
+        boolean isSitemapVerified =
+                Boolean.parseBoolean(metadata.getFirstValue(isSitemapVerifiedKey));
 
         if (sniffContent) {
             SitemapType type = detectContent(url, content);
@@ -267,14 +280,30 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
 
         // send outlinks to status stream
         int outlinksCounter = 0;
+        int numberOutlinksCrossValidated = 0;
+        int numberOutlinksDeniedNoRobotsCached = 0;
+        int numberOutlinksDeniedUnparseable = 0;
+        int numberOutlinksDenied = 0;
         for (Outlink ol : outlinks) {
             try {
-                if (!this.crossSubmitAllowed && !crossSubmitCheck(ol, url, metadata)) {
-                    LOG.info(
-                            "Cross Submit check failed for {} in sitemap {}",
-                            ol.getTargetURL(),
-                            url);
-                    continue;
+                if (!this.crossSubmitAllowed) {
+                    SitemapCrossCheckResult result = crossSubmitCheck(ol, url, metadata);
+                    if (result != SitemapCrossCheckResult.ALLOWED) {
+                        if (result == SitemapCrossCheckResult.DENIED_NO_ROBOTS_CACHED) {
+                            numberOutlinksDeniedNoRobotsCached++;
+                        } else if (result == SitemapCrossCheckResult.DENIED_NOT_PARSEABLE) {
+                            numberOutlinksDeniedUnparseable++;
+                        } else {
+                            numberOutlinksDenied++;
+                        }
+                        LOG.debug(
+                                "Cross Submit check failed for {} in sitemap {}",
+                                ol.getTargetURL(),
+                                url);
+                        continue;
+                    } else {
+                        numberOutlinksCrossValidated++;
+                    }
                 }
             } catch (MalformedURLException | URISyntaxException e) {
                 LOG.info("Malformed URL {} in sitemap {}: {}", ol.getTargetURL(), url, e);
@@ -292,6 +321,15 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             collector.emit(Constants.StatusStreamName, tuple, v);
             outlinksCounter++;
         }
+
+        LOG.info(
+                "Sitemap {}: {} outlinks emitted, {} cross-validated, {} denied (no robots.txt), {} denied (not parseable), {} denied (not declared)",
+                url,
+                outlinksCounter,
+                numberOutlinksCrossValidated,
+                numberOutlinksDeniedNoRobotsCached,
+                numberOutlinksDeniedUnparseable,
+                numberOutlinksDenied);
 
         // track the number of links found in the sitemap
         metadata.setValue(numLinksKey, String.valueOf(outlinksCounter));
@@ -326,7 +364,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
      * @return true if submission is allowed, false otherwise
      * @throws MalformedURLException if URLs are malformed
      */
-    public boolean crossSubmitCheck(Outlink ol, String sitemap, Metadata metadata)
+    public SitemapCrossCheckResult crossSubmitCheck(Outlink ol, String sitemap, Metadata metadata)
             throws URISyntaxException, MalformedURLException {
         URI targetURL = new URI(ol.getTargetURL());
         String targetHost = this.getHost(targetURL);
@@ -335,12 +373,12 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         String sitemapHost = this.getHost(sitemapURL);
 
         if (sitemapHost == null || targetHost == null) {
-            return false;
+            return SitemapCrossCheckResult.DENIED_NOT_PARSEABLE;
         }
 
         // Same host - allow
         if (targetHost.equals(sitemapHost)) {
-            return true;
+            return SitemapCrossCheckResult.ALLOWED;
         }
 
         // Check tracked URL to the sitemap
@@ -349,28 +387,29 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         if (metadataPathTrack != null) {
             for (String previousPath : metadataPathTrack) {
                 if (targetHost.equals(this.getHost(new URI(previousPath)))) {
-                    return true;
+                    return SitemapCrossCheckResult.ALLOWED;
                 }
             }
         }
 
         // Check robots.txt rules
-        Protocol protocol = protocolFactory.getProtocol(targetURL.toURL());
-        BaseRobotRules rules = protocol.getRobotRules(targetURL.toString());
+        BaseRobotRules rules = robotRulesParser.getRobotRulesSetFromCache(targetURL.toURL());
         if (rules != null) {
-            if (rules.getSitemaps().contains(sitemapURL.toString())) {
-                return true;
+            if (rules == RobotRulesParser.EMPTY_RULES) {
+                return SitemapCrossCheckResult.DENIED_NO_ROBOTS_CACHED;
+            } else if (rules.getSitemaps().contains(sitemapURL.toString())) {
+                return SitemapCrossCheckResult.ALLOWED;
             }
             if (metadataPathTrack != null) {
                 for (String path : metadataPathTrack) {
                     if (rules.getSitemaps().contains(path)) {
-                        return true;
+                        return SitemapCrossCheckResult.ALLOWED;
                     }
                 }
             }
         }
 
-        return false;
+        return SitemapCrossCheckResult.DENIED_NOT_DECLARED;
     }
 
     public SitemapType detectContent(String url, byte[] content) {
@@ -611,7 +650,6 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         filterHoursSinceModified =
                 ConfUtils.getInt(stormConf, "sitemap.filter.hours.since.modified", -1);
         parseFilters = ParseFilters.fromConf(stormConf);
-        protocolFactory = ProtocolFactory.getInstance(conf);
         int maxOffsetGuess = ConfUtils.getInt(stormConf, "sitemap.offset.guess", 1024);
         contentDetector = new ContentDetector(NewsSiteMapParserBolt.contentClues, maxOffsetGuess);
         rssContentDetector = new ContentDetector(FeedDetectorBolt.contentClues, maxOffsetGuess);
@@ -622,23 +660,22 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                         30);
         scheduleSitemapsWithDelay =
                 ConfUtils.getInt(stormConf, "sitemap.schedule.delay", scheduleSitemapsWithDelay);
+
+        robotRulesParser = new HttpRobotRulesParser(conf);
         crossSubmitAllowed =
                 ConfUtils.getBoolean(stormConf, "sitemap.crossSubmit.allowed", crossSubmitAllowed);
         crossSubmitLenient =
                 ConfUtils.getBoolean(stormConf, "sitemap.crossSubmit.lenient", crossSubmitLenient);
     }
 
-    @Override
-    public void cleanup() {
-        super.cleanup();
-        protocolFactory.cleanup();
+    public HttpRobotRulesParser getRobotRulesParser() {
+        return robotRulesParser;
     }
 
-    public ProtocolFactory getProtocolFactory() {
-        return protocolFactory;
-    }
-
-    public void setProtocolFactory(ProtocolFactory protocolFactory) {
-        this.protocolFactory = protocolFactory;
+    /**
+     * Test seam: replaces the robots.txt rules parser backed by the shared, static robots cache.
+     */
+    public void setRobotRulesParser(HttpRobotRulesParser robotRulesParser) {
+        this.robotRulesParser = robotRulesParser;
     }
 }
