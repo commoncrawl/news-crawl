@@ -43,7 +43,7 @@ if [ -z "$STORM_HOME" ]; then
     echo "Please, download it from https://storm.apache.org/downloads.html,"
     echo "unpack the binary package or compile the source package,"
     echo "and point STORM_HOME to the installation directory, e.g.,"
-    echo "  STORM_HOME=\"/path/to/downloads/apache-storm-2.8.8\""
+    echo "  STORM_HOME=\"/path/to/downloads/apache-storm-2.8.9\""
     echo "  export STORM_HOME"
     exit 1;
 fi

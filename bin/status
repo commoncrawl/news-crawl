@@ -32,56 +32,71 @@ function ____show_help() {
     echo "      (valid DATE formats include even \`tomorrow', \`third day', see \`man date')"
     echo " set_metadata_url <URL> <METAFIELD> <METAVALUE>"
     echo "      set metadata for URL"
+    echo "      (Note: no support for multi-valued metadata)"
     echo " inject_url <URL> <ROUTING> [<METAFIELD> <METAVALUE>]..."
     echo "      inject URL with metadata METAFIELD=METAVALUE"
+    echo "      (Note: no support for multi-valued metadata)"
     echo
     echo " id <ID> <ROUTING>"
     echo "      look up by ID"
     echo " delete_id <ID> <ROUTING>"
     echo "      delete document/record by ID"
     echo
-    echo " list <SIZE>"
-    echo "      list SIZE documents"
+    echo " list [<SIZE>]"
+    echo "      list SIZE documents, default: list 10 documents"
     echo " query [search|count] <QUERY> [<PAGE> [<SIZE>]]"
     echo "      query status index"
+    echo "      Example queries:"
+    echo "        '\"match\": { \"url\": \"https://example.com/\" }'"
     echo " match [search|count] <EXPR>"
     echo "      match expression in status index"
+    echo "      Example expression:"
+    echo "        '\"url\": \"https://example.com/\"'"
     echo " match_field [search|count] <FIELD> <VALUE>"
     echo "      match documents by field and value"
-    echo " match_by_metadata [search|count] <FIELD> <VALUE> <META>"
-    echo "      match documents by field value and metadata"
+    echo " match_by_metadata [search|count] <FIELD> <VALUE> <METAFIELD>"
+    echo "      match documents by field value and metadata (value of METAFIELD equals \"true\")"
+    echo "      Example usage:"
+    echo "        status match_by_metadata search key example.com isfeed"
+    echo "          (search feeds of host / domain example.com)"
     echo
     echo " aggregate_status"
     echo "      aggregate fetch status"
-    echo " aggregate_hostname <META> [<SIZE>]"
-    echo "      aggregate host names (or domain names) filtered by metadata"
+    echo " aggregate_hostname <FILTEREXPR> [<SIZE>]"
+    echo "      aggregate host names (or domain names) filtered by expression"
+    echo "      Example expression:"
+    echo "        '\"must\": { \"match\": { \"status\": \"FETCHED\" }}'"
     echo " aggregate_hostname_by_status <STATUS>"
     echo "      aggregate host names (or domain names) filtered by status"
     echo " aggregate <FIELD> [<SIZE>]"
     echo "      aggregate values on field"
-    echo " aggregate_by_metadata <FIELD> <META> [<SIZE>]"
-    echo "      aggregate field values filtered by metadata"
+    echo " aggregate_by_metadata <FIELD> <METAFIELD> [<SIZE>]"
+    echo "      aggregate field values filtered by metadata (cf. match_by_metadata)"
     echo " aggregate_by <FIELD> <QUERY> <SIZE>"
     echo "      aggregate field values filtered by query"
+    echo "      Example usage:"
+    echo "        status aggregate_by status '\"must\": { \"match\": { \"key\": \"example.com\" }}'"
     echo
     echo " next_fetch [search|count] [<PAGE> [<SIZE>]]"
     echo "      documents to be fetched next"
     echo " next_fetch_for_date [search|count] <DATE> [<PAGE> [<SIZE>]]"
-    echo "      documents to be fetched next for date"
+    echo "      documents to be fetched next for date, cf. fetch_at_url"
+    echo "      Example usage:"
+    echo "        status -v next_fetch_for_date count tomorrow"
     echo " next_fetch_for_date_and_host [search|count] <DATE> <HOST/DOMAIN> [<PAGE> [<SIZE>]]"
     echo "      documents to be fetched next at date for given host/domain"
-    echo " failed_by_metadata [search|count] <META>"
-    echo "      failed fetches (status not FETCHED) filtered by metadata"
-    echo " status_by_metadata [search|count] <STATUS> <META>"
-    echo "      match by status and metadata"
+    echo " failed_by_metadata [search|count] <METAFIELD>"
+    echo "      failed fetches (status not FETCHED) filtered by metadata (value of METAFIELD equals \"true\")"
+    echo " status_by_metadata [search|count] <STATUS> <METAFIELD>"
+    echo "      match by status and metadata (value of METAFIELD equals \"true\")"
     echo
     echo " update_by_query <SCRIPT> <QUERY>"
     echo "      update documents by query"
     echo " reset_by_query [search|count|reset] <QUERY>"
     echo "      reset documents by query (or count/search to inspect impact before)"
-    echo " reset_failed_by_metadata [search|count|reset] <META>"
+    echo " reset_failed_by_metadata [search|count|reset] <METAFIELD>"
     echo "      reset failed fetches filtered by metadata"
-    echo " fetch_at [search|count|update] <DATE> <TYPE> <TERM> <META>"
+    echo " fetch_at [search|count|update] <DATE> <TYPE> <TERM> <METAFIELD>"
     echo "      bulk setting of next fetch time (or count/search to inspect impact before)"
     echo
     echo " index_size"
@@ -107,7 +122,7 @@ function ____show_help() {
 + curl -s -H Content-Type:application/json -XGET 'http://localhost:9200/status/_search?pretty' --data '{
     "query": {
         "match": {
-            "url": "http://example.com/"
+            "url": "https://example.com/"
         }
     }
 }'
@@ -158,15 +173,12 @@ function ____escape_id () {
 # return expression to match a metadata field in a boolean query
 function ____must_match_metadata () {
     META="$1"
-    echo '"must": [
-'"$(____metadata_exists_istrue "$META")"'
-                    ]'
+    echo '"must": ['"$(____metadata_exists_istrue "$META")"']'
 }
 
 function ____metadata_exists_istrue () {
     META="$1"
-    echo '                 { "exists": { "field": "metadata.'"$META"'" }},
-                 { "match": { "metadata.'"$META"'": "true" }}'
+    echo '{ "exists": { "field": "metadata.'"$META"'" }}, { "match": { "metadata.'"$META"'": "true" }}'
 }
 
 # query status index
@@ -179,12 +191,7 @@ function __query () {
         PAGING=$'\n''    "from" : '$(($PAGE*$SIZE))', "size" : '$SIZE','
     fi
     $SHOW_COMMAND
-    $CURL -XGET $ES_STATUS_URL'/_'$CMND'?pretty' --data \
-'{'"$PAGING"'
-    "query": {
-        '"$QUERY"'
-    }
-}'
+    $CURL -XGET $ES_STATUS_URL'/_'$CMND'?pretty' --data '{'"$PAGING"' "query": { '"$QUERY"' }}'
 }
 
 # query status index with routing
@@ -199,8 +206,7 @@ function __query_routed () {
     fi
     $SHOW_COMMAND
     $CURL -XGET $ES_STATUS_URL'/_'$CMND'?pretty&routing='$ROUTE --data \
-'{'"$PAGING"'
-    "query": {
+'{'"$PAGING"' "query": {
         '"$QUERY"'
     }
 }'
@@ -232,15 +238,19 @@ function __inject_url () {
         META_NAME="$1"
         META_VALUE="$2"
         shift 2 || { echo "Metadata must be given as key-value pairs"; exit 1; }
-        METADATA_ADD="$METADATA_ADD,"$'\n'"      \"$META_NAME\": \"$META_VALUE\""
+        if [ -n "$METADATA_ADD" ]; then
+            METADATA_ADD="$METADATA_ADD",$'\n'
+        fi
+        METADATA_ADD="$METADATA_ADD      \"$META_NAME\": [\"$META_VALUE\"]"
     done
     ID="$(echo -n "$URL" | sha256sum | cut -d' ' -f1)"
     $SHOW_COMMAND
     $CURL -XPUT "$ES_STATUS_URL/_doc/$ID?op_type=create&routing=$ROUTING" --data '{
     "url" : "'"$URL"'",
     "status" : "DISCOVERED",
+    "key": "'"$ROUTING"'",
     "metadata" : {
-      "hostname": "'"$ROUTING"'"'"$METADATA_ADD"'
+      '"$METADATA_ADD"'
     },
     "nextFetchDate": "'"$(____now)"'"
 }'
@@ -251,8 +261,7 @@ function __inject_url () {
 function __delete_url () {
     URL="$1"
     $SHOW_COMMAND
-    $CURL -XPOST $ES_STATUS_URL/_doc/_delete_by_query --data '{
-    "query": {
+    $CURL -XPOST $ES_STATUS_URL/_doc/_delete_by_query --data '{ "query": {
         "match": {
             "url": "'"$URL"'"
         }
@@ -291,9 +300,9 @@ function __delete_url_with_routing () {
 
 # list n documents
 function __list () {
-    SIZE=$1
+    SIZE=${1:-10}
     $SHOW_COMMAND
-    $CURL -XGET "$ES_STATUS_URL/_doc/_search?pretty&size=$SIZE"
+    $CURL -XGET "$ES_STATUS_URL/_search?pretty&size=$SIZE"
 }
 
 # match documents by field and value
@@ -325,7 +334,7 @@ function ____next_fetch_at_for_host () {
      '"bool" : {
         "must": {
            "term": {
-               "metadata.hostname": "'"$HOST"'"
+               "key": "'"$HOST"'"
            }
         },
         "filter": {
@@ -443,7 +452,7 @@ function __aggregate_by_metadata () {
 function __aggregate_hostname () {
     FILTER="$1"
     shift 1 || { echo "Not enough arguments"; exit 1; }
-    __aggregate_by metadata.hostname "$FILTER" "$@"
+    __aggregate_by key "$FILTER" "$@"
 }
 
 # aggregate host names (or domain names) filtered by status
@@ -487,12 +496,7 @@ function __update_by_query () {
     QUERY="$2"
     $SHOW_COMMAND
     $CURL -XPOST $ES_STATUS_URL'/_update_by_query?pretty' --data \
-         '{
-    '"$SCRIPT"'
-    "query": {
-        '"$QUERY"'
-    }
-}'
+         '{ '"$SCRIPT"' "query": { '"$QUERY"' }}'
 }
 
 # reset documents by query
@@ -518,15 +522,15 @@ function __reset_by_query () {
 
 # reset by URL
 function __reset_url () {
-    URL="$2"
-    __reset_by_query "reset" '"match": {
-            "url": "'"$URL"'"
-        }'
+    URL="$1"
+    shift || { echo "reset_url <URL>"; exit 1; }
+    __reset_by_query "reset" '"match": { "url": "'"$URL"'" }'
 }
 
 # set time of next fetch to now for URL
 function __fetch_now_url () {
     URL="$1"
+    shift || { echo "fetch_now_url <URL>"; exit 1; }
     NEXTFETCHDATE="$(____now)"
     __fetch_at_url "$URL" "$NEXTFETCHDATE"
 }
@@ -535,6 +539,7 @@ function __fetch_now_url () {
 function __fetch_at_url () {
     URL="$1"
     NEXTFETCHDATE="$(____date "$2")"
+    shift 2 || { echo "fetch_at_url <URL> <DATE>"; exit 1; }
     SCRIPT='"script" : {
           "lang":   "painless",
           "source": "ctx._source.nextFetchDate = params.nextfetchdate",
@@ -551,18 +556,14 @@ function __fetch_at_url () {
 function __reset_failed_by_metadata () {
     CMND="$1"
     META="$2"
-    __reset_by_query "$CMND" '"filtered": {
-            "filter": {
-                "bool": {
+    __reset_by_query "$CMND" '"bool": {
                     '"$(____must_match_metadata "$META")"',
                     "must_not": {
                         "match": {
                             "status": "FETCHED"
                         }
                     }
-                }
-            }
-        }'
+                }'
 }
 
 # bulk setting of next fetch time
@@ -573,18 +574,12 @@ function __fetch_at () {
     TERM="$4"
     META="$5"
     shift 5 || { echo "Not enough arguments"; exit 1; }
-    QUERY='"filtered": {
-            "filter": {
-               "bool": {
-                    '"$(____must_match_metadata "$META")"'
-                }
-            },
-            "query": {
-                "match": {
-                    "'"$TYPE"'": "'"$TERM"'"
-                }
-            }
-        }'
+    QUERY='"bool": {
+             "must": [
+                '"$(____metadata_exists_istrue "$META")"',
+                { "match": { "'"$TYPE"'": "'"$TERM"'" }}
+               ]
+             }'
     if [ "$CMND" == "update" ]; then
         CMND=update_by_query
         NEXTFETCHDATE="$(____date "$DATE")"
@@ -613,12 +608,10 @@ function __set_metadata_url () {
           "lang":   "painless",
           "source": "ctx._source.metadata.'"$META_NAME"' = params.metavalue",
           "params": {
-               "metavalue": "'"$META_VALUE"'"
+               "metavalue": "['"$META_VALUE"']"
           }
         },'
-    __update_by_query "$SCRIPT" '"match": {
-            "url": "'"$URL"'"
-        }'
+    __update_by_query "$SCRIPT" '"match": { "url": "'"$URL"'" }'
 }
 
 
