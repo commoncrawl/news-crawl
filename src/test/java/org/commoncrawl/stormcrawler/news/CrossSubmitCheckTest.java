@@ -299,7 +299,7 @@ public class CrossSubmitCheckTest extends ParsingTester {
         // strict: exact hosts differ, falls through to the robots.txt check
         setupParserBolt(new NewsSiteMapParserBolt());
         Map<String, Object> config = baseConfig();
-        config.put("crossSubmit.lenient", false);
+        config.put("sitemaps.crossSubmit.lenient", false);
         prepareParserBolt("test.parsefilters.json", config);
 
         ProtocolFactory strictFactory = mock(ProtocolFactory.class);
@@ -325,7 +325,7 @@ public class CrossSubmitCheckTest extends ParsingTester {
     public void testCrossSubmitAllowedBypassesCheck() throws IOException {
         setupParserBolt(new NewsSiteMapParserBolt());
         Map<String, Object> config = baseConfig();
-        config.put("crossSubmit.allowed", true);
+        config.put("sitemaps.crossSubmit.allowed", true);
         prepareParserBolt("test.parsefilters.json", config);
 
         ProtocolFactory protocolFactory = mock(ProtocolFactory.class);
