@@ -623,9 +623,9 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
         scheduleSitemapsWithDelay =
                 ConfUtils.getInt(stormConf, "sitemap.schedule.delay", scheduleSitemapsWithDelay);
         crossSubmitAllowed =
-                ConfUtils.getBoolean(stormConf, "crossSubmit.allowed", crossSubmitAllowed);
+                ConfUtils.getBoolean(stormConf, "sitemap.crossSubmit.allowed", crossSubmitAllowed);
         crossSubmitLenient =
-                ConfUtils.getBoolean(stormConf, "crossSubmit.lenient", crossSubmitLenient);
+                ConfUtils.getBoolean(stormConf, "sitemap.crossSubmit.lenient", crossSubmitLenient);
     }
 
     @Override

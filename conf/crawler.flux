@@ -19,11 +19,6 @@ config:
   # delayed sync of the default ChecksumFileSystem
   warc: {"fs.file.impl": "org.apache.hadoop.fs.RawLocalFileSystem"}
 
-  # Allow/disallow cross submission of sitemaps
-  crossSubmit.allowed: false
-
-  # use lenient:true to compare only domains in the submitted sitemaps
-  crossSubmit.lenient: true
 
 components:
   - id: "WARCFileNameFormat"
