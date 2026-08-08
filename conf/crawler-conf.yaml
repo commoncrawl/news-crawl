@@ -297,10 +297,18 @@ config:
   # but latest after one day
   warc.rotation.policy.max-minutes: 1440
 
-  # Allow/disallow cross submission of sitemaps
+  # Cross submission: a sitemap listing URLs of a host other than its own. Set to true to skip
+  # the check entirely and accept every outlink. When false (default) a cross-host outlink is
+  # only accepted if the target host agreed to it, either by hosting the document that led us
+  # directly to the sitemap, or by declaring the sitemap (or that document) in its robots.txt.
+  # Only the sitemap's immediate parent counts, so authority does not spread along a chain of
+  # sitemap indexes. The robots.txt is read from the fetcher's cache only, never fetched: a
+  # target whose robots.txt is not cached is rejected. Rejections are counted per sitemap in
+  # the "Sitemap ...: N outlinks emitted, ..." log line of NewsSiteMapParserBolt.
   sitemap.crossSubmit.allowed: false
 
   # use lenient:true to compare only domains in the submitted sitemaps
+  # (news.example.org and www.example.org count as the same host), false compares exact hostnames
   sitemap.crossSubmit.lenient: true
 
 

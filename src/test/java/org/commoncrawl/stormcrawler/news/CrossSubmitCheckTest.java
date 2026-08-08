@@ -495,6 +495,60 @@ public class CrossSubmitCheckTest extends ParsingTester {
     }
 
     /**
+     * The mirror image of the transitive case. In
+     *
+     * <pre>
+     * aggregator.com/index.xml -&gt; evil.com/sitemap.xml -&gt; aggregator.com/page
+     * </pre>
+     *
+     * evil.com's sitemap <em>may</em> submit URLs on aggregator.com, with no robots.txt lookup: the
+     * aggregator's index is the sitemap's immediate parent, so the aggregator introduced that
+     * sitemap itself and gets back what it asked for. This looks like a leak but is the very same
+     * one-hop delegation that lets a site reference a sitemap hosted on a CDN - crossSubmitCheck
+     * sees identical values in both cases and cannot tell them apart.
+     *
+     * <p>Kept as a test so the behaviour is deliberate rather than incidental: the aggregator's
+     * remedy is to drop the sitemap from its index. A host further up the chain has no such remedy,
+     * which is why only the immediate parent confers authority.
+     */
+    @Test
+    public void testParentHostMaySubmitThroughSitemapItIntroduced()
+            throws URISyntaxException, MalformedURLException {
+        String aggregatorIndex = "http://www.aggregator.com/index.xml";
+        String evilSitemap = "http://www.evil.com/sitemap.xml";
+
+        HttpRobotRulesParser robots = emptyRobotsCache();
+        newsBolt().setRobotRulesParser(robots);
+
+        // evil.com/sitemap.xml was reached directly from the aggregator's own index
+        Metadata sitemapMetadata = new Metadata();
+        sitemapMetadata.addValues(
+                MetadataTransfer.urlPathKeyName, Collections.singletonList(aggregatorIndex));
+
+        assertThat(
+                "the host that introduced the sitemap lets it submit URLs on that host",
+                newsBolt()
+                        .crossSubmitCheck(
+                                new Outlink("http://www.aggregator.com/page.html"),
+                                evilSitemap,
+                                sitemapMetadata),
+                is(SitemapCrossCheckResult.ALLOWED));
+
+        // a sitemap may always submit URLs on its own host
+        assertThat(
+                "evil.com may list its own URLs",
+                newsBolt()
+                        .crossSubmitCheck(
+                                new Outlink("http://www.evil.com/whatever.html"),
+                                evilSitemap,
+                                sitemapMetadata),
+                is(SitemapCrossCheckResult.ALLOWED));
+
+        // neither decision needed robots.txt: both were settled by host comparison
+        verifyNoInteractions(robots);
+    }
+
+    /**
      * numLinks must count only the outlinks actually emitted, not all parsed ones: a sitemap with
      * numLinks == 0 can be retired by the NewsSitemapScheduler, which must equally apply to
      * sitemaps whose links are all rejected by the cross-submit check.

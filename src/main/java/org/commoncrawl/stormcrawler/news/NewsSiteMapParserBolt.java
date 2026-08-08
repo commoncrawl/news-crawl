@@ -15,8 +15,14 @@ package org.commoncrawl.stormcrawler.news;
 
 import crawlercommons.domains.EffectiveTldFinder;
 import crawlercommons.robots.BaseRobotRules;
-import crawlercommons.sitemaps.*;
+import crawlercommons.sitemaps.AbstractSiteMap;
+import crawlercommons.sitemaps.Namespace;
+import crawlercommons.sitemaps.SiteMap;
+import crawlercommons.sitemaps.SiteMapIndex;
+import crawlercommons.sitemaps.SiteMapParser;
+import crawlercommons.sitemaps.SiteMapURL;
 import crawlercommons.sitemaps.SiteMapURL.ChangeFrequency;
+import crawlercommons.sitemaps.UnknownFormatException;
 import crawlercommons.sitemaps.extension.Extension;
 import crawlercommons.sitemaps.extension.ExtensionMetadata;
 import crawlercommons.sitemaps.extension.LinkAttributes;
@@ -26,7 +32,13 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.storm.Config;
@@ -39,7 +51,11 @@ import org.apache.storm.tuple.Values;
 import org.apache.stormcrawler.Constants;
 import org.apache.stormcrawler.Metadata;
 import org.apache.stormcrawler.bolt.SiteMapParserBolt;
-import org.apache.stormcrawler.parse.*;
+import org.apache.stormcrawler.parse.Outlink;
+import org.apache.stormcrawler.parse.ParseData;
+import org.apache.stormcrawler.parse.ParseFilter;
+import org.apache.stormcrawler.parse.ParseFilters;
+import org.apache.stormcrawler.parse.ParseResult;
 import org.apache.stormcrawler.persistence.DefaultScheduler;
 import org.apache.stormcrawler.persistence.Status;
 import org.apache.stormcrawler.protocol.HttpRobotRulesParser;
@@ -80,7 +96,7 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
      *       shared robots cache, so the submission cannot be vouched for. The check never fetches a
      *       robots.txt itself.
      *   <li>{@link #DENIED_NOT_DECLARED}: a robots.txt of the target host is cached, but declares
-     *       neither the sitemap nor any sitemap index it was reached through.
+     *       neither the sitemap nor the document the sitemap was directly reached through.
      * </ul>
      */
     public enum SitemapCrossCheckResult {
@@ -347,11 +363,24 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
     }
 
     /**
-     * Checks whether a sitemap is allowed to submit URLs for another host. If the sitemap and the
-     * target URL are on the same host, submission is allowed. A cross-host submission requires the
-     * <em>target</em> host to vouch for the sitemap: its robots.txt must declare either the sitemap
-     * itself or a sitemap index the sitemap was reached through (see the {@code url.path} trail
-     * recorded by {@link MetadataTransfer}).
+     * Checks whether a sitemap is allowed to submit URLs for another host. A sitemap may always
+     * submit URLs on its own host. A cross-host submission requires the <em>target</em> host to
+     * have agreed to it, in one of two ways:
+     *
+     * <ul>
+     *   <li>the sitemap was reached directly through a document on the target's own host — the
+     *       delegation was observed rather than asserted, so no robots.txt is needed; or
+     *   <li>the target's robots.txt declares the sitemap itself, or the document the sitemap was
+     *       directly reached through (a sitemap index, typically).
+     * </ul>
+     *
+     * <p>Both use only the <em>last</em> entry of the {@code url.path} trail recorded by {@link
+     * MetadataTransfer} — the sitemap's immediate parent. The trail holds the full ancestry back to
+     * the seed and is never trimmed, so accepting any entry would make the trust transitive: in
+     * {@code victim.com/index.xml → aggregator.com/index.xml → evil.com/sitemap.xml}, victim.com is
+     * still an ancestor although it only ever delegated to the aggregator, and its robots.txt
+     * declares its own index — which would let evil.com submit URLs on victim.com by either route.
+     * Authority therefore extends exactly one hop and does not compound.
      *
      * <p>The robots.txt rules are only read from the shared, static robots cache populated by the
      * fetcher — this method never fetches a robots.txt itself. A sitemap may contain tens of
