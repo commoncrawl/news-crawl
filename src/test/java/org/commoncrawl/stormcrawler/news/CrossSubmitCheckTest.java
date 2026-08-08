@@ -436,6 +436,65 @@ public class CrossSubmitCheckTest extends ParsingTester {
     }
 
     /**
+     * Only the page a sitemap was <em>directly</em> reached through may vouch for it. In the chain
+     *
+     * <pre>
+     * victim.com/index.xml -&gt; aggregator.com/index.xml -&gt; evil.com/sitemap.xml -&gt; victim.com/anything
+     * </pre>
+     *
+     * victim.com delegated to the aggregator and never to evil.com, so evil.com must not submit
+     * URLs on victim.com. Two separate paths through crossSubmitCheck would wrongly allow it:
+     *
+     * <ul>
+     *   <li>the url.path trail still contains victim.com/index.xml, two hops upstream;
+     *   <li>victim.com's robots.txt declares its own sitemap index - as virtually every site does -
+     *       and that index is likewise still in the trail.
+     * </ul>
+     *
+     * Both must be restricted to the sitemap's immediate parent, which here is the aggregator's
+     * index and is declared by nobody.
+     */
+    @Test
+    public void testTrailDoesNotAllowTransitiveCrossSubmit()
+            throws URISyntaxException, MalformedURLException {
+        String victimIndex = "http://www.victim.com/index.xml";
+        String aggregatorIndex = "http://www.aggregator.com/index.xml";
+        String evilSitemap = "http://www.evil.com/sitemap.xml";
+        Outlink victimArticle = new Outlink("http://www.victim.com/anything.html");
+
+        // victim.com's robots.txt declares its own sitemap index, and nothing belonging to evil.com
+        HttpRobotRulesParser robots = emptyRobotsCache();
+        withCachedRobots(robots, "www.victim.com", victimIndex);
+        newsBolt().setRobotRulesParser(robots);
+
+        // evil.com's sitemap was reached through the aggregator, itself reached through victim.com
+        Metadata transitive = new Metadata();
+        transitive.addValues(
+                MetadataTransfer.urlPathKeyName, Arrays.asList(victimIndex, aggregatorIndex));
+
+        assertThat(
+                "evil.com must not submit URLs on victim.com: victim.com delegated to the"
+                        + " aggregator, never to evil.com",
+                newsBolt().crossSubmitCheck(victimArticle, evilSitemap, transitive),
+                is(SitemapCrossCheckResult.DENIED_NOT_DECLARED));
+
+        // the legitimate one-hop delegation must keep working: victim.com's own index points
+        // directly at a cross-host sitemap which lists victim.com URLs
+        Metadata directDelegation = new Metadata();
+        directDelegation.addValues(
+                MetadataTransfer.urlPathKeyName, Collections.singletonList(victimIndex));
+
+        assertThat(
+                "a sitemap reached directly through victim.com's own index stays allowed",
+                newsBolt()
+                        .crossSubmitCheck(
+                                victimArticle,
+                                "http://cdn.example.net/shard1.xml",
+                                directDelegation),
+                is(SitemapCrossCheckResult.ALLOWED));
+    }
+
+    /**
      * numLinks must count only the outlinks actually emitted, not all parsed ones: a sitemap with
      * numLinks == 0 can be retired by the NewsSitemapScheduler, which must equally apply to
      * sitemaps whose links are all rejected by the cross-submit check.

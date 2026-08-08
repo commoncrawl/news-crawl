@@ -15,14 +15,8 @@ package org.commoncrawl.stormcrawler.news;
 
 import crawlercommons.domains.EffectiveTldFinder;
 import crawlercommons.robots.BaseRobotRules;
-import crawlercommons.sitemaps.AbstractSiteMap;
-import crawlercommons.sitemaps.Namespace;
-import crawlercommons.sitemaps.SiteMap;
-import crawlercommons.sitemaps.SiteMapIndex;
-import crawlercommons.sitemaps.SiteMapParser;
-import crawlercommons.sitemaps.SiteMapURL;
+import crawlercommons.sitemaps.*;
 import crawlercommons.sitemaps.SiteMapURL.ChangeFrequency;
-import crawlercommons.sitemaps.UnknownFormatException;
 import crawlercommons.sitemaps.extension.Extension;
 import crawlercommons.sitemaps.extension.ExtensionMetadata;
 import crawlercommons.sitemaps.extension.LinkAttributes;
@@ -32,13 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.storm.Config;
@@ -51,11 +39,7 @@ import org.apache.storm.tuple.Values;
 import org.apache.stormcrawler.Constants;
 import org.apache.stormcrawler.Metadata;
 import org.apache.stormcrawler.bolt.SiteMapParserBolt;
-import org.apache.stormcrawler.parse.Outlink;
-import org.apache.stormcrawler.parse.ParseData;
-import org.apache.stormcrawler.parse.ParseFilter;
-import org.apache.stormcrawler.parse.ParseFilters;
-import org.apache.stormcrawler.parse.ParseResult;
+import org.apache.stormcrawler.parse.*;
 import org.apache.stormcrawler.persistence.DefaultScheduler;
 import org.apache.stormcrawler.persistence.Status;
 import org.apache.stormcrawler.protocol.HttpRobotRulesParser;
@@ -394,40 +378,33 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
             return SitemapCrossCheckResult.DENIED_NOT_PARSEABLE;
         }
 
-        // Same host - allow
-        if (targetHost.equals(sitemapHost)) {
-            return SitemapCrossCheckResult.ALLOWED;
-        }
-
         // Check tracked URL to the sitemap
         String[] metadataPathTrack = metadata.getValues(MetadataTransfer.urlPathKeyName);
 
-        if (metadataPathTrack != null) {
-            for (String previousPath : metadataPathTrack) {
-                if (targetHost.equals(this.getHost(new URI(previousPath)))) {
-                    return SitemapCrossCheckResult.ALLOWED;
-                }
-            }
-        }
+        String parentURL =
+                (metadataPathTrack != null && metadataPathTrack.length > 0)
+                        ? metadataPathTrack[metadataPathTrack.length - 1]
+                        : null;
 
-        // Check robots.txt rules
-        BaseRobotRules rules = robotRulesParser.getRobotRulesSetFromCache(targetURL.toURL());
-        if (rules != null) {
+        // Same host - allow
+        if (targetHost.equals(sitemapHost)) {
+            return SitemapCrossCheckResult.ALLOWED;
+        } else {
+            if (parentURL != null && targetHost.equals(this.getHost(new URI(parentURL)))) {
+                return SitemapCrossCheckResult.ALLOWED;
+            }
+            // Check the immediate link first
+            BaseRobotRules rules = robotRulesParser.getRobotRulesSetFromCache(targetURL.toURL());
             if (rules == RobotRulesParser.EMPTY_RULES) {
                 return SitemapCrossCheckResult.DENIED_NO_ROBOTS_CACHED;
             } else if (rules.getSitemaps().contains(sitemapURL.toString())) {
                 return SitemapCrossCheckResult.ALLOWED;
-            }
-            if (metadataPathTrack != null) {
-                for (String path : metadataPathTrack) {
-                    if (rules.getSitemaps().contains(path)) {
-                        return SitemapCrossCheckResult.ALLOWED;
-                    }
-                }
+            } else if (parentURL != null && rules.getSitemaps().contains(parentURL)) {
+                return SitemapCrossCheckResult.ALLOWED;
+            } else {
+                return SitemapCrossCheckResult.DENIED_NOT_DECLARED;
             }
         }
-
-        return SitemapCrossCheckResult.DENIED_NOT_DECLARED;
     }
 
     public SitemapType detectContent(String url, byte[] content) {
