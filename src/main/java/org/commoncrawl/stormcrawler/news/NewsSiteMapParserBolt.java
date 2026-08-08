@@ -305,8 +305,10 @@ public class NewsSiteMapParserBolt extends SiteMapParserBolt {
                         } else {
                             numberOutlinksDenied++;
                         }
+
                         LOG.debug(
-                                "Cross Submit check failed for {} in sitemap {}",
+                                "Cross-submit check {} for outlink {} in sitemap {}",
+                                result,
                                 ol.getTargetURL(),
                                 url);
                         continue;
