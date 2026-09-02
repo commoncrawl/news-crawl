@@ -76,6 +76,11 @@ function ____show_help() {
     echo "      aggregate field values filtered by query"
     echo "      Example usage:"
     echo "        status aggregate_by status '\"must\": { \"match\": { \"key\": \"example.com\" }}'"
+    echo " domain_report <HOST/DOMAIN>..."
+    echo "      per-domain summary: status counts (with how many are scheduled for"
+    echo "      refetch), error causes, and the most recently fetched URL"
+    echo "      Example usage:"
+    echo "        status domain_report example.com www.example.org"
     echo
     echo " next_fetch [search|count] [<PAGE> [<SIZE>]]"
     echo "      documents to be fetched next"
@@ -466,6 +471,72 @@ function __aggregate_hostname_by_status () {
                     }' "$@"
 }
 
+# status counts and error causes of a single host/domain
+#
+# Routed: every document of a domain shares the routing key, so this hits one shard
+# instead of all 16. The "scheduled" sub-aggregation counts, per status, the documents
+# that still carry a nextFetchDate -- reindexed articles have it removed, so a FETCHED
+# bucket with scheduled=0 is one that will never be refetched.
+function ____domain_aggregations () {
+    DOMAIN="$1"
+    $SHOW_COMMAND
+    $CURL -XGET $ES_STATUS_URL'/_search?pretty&routing='"$DOMAIN" --data '{
+    "size": 0,
+    "query": { "term": { "key": "'"$DOMAIN"'" }},
+    "aggs": {
+        "by_status": {
+            "terms": { "field": "status", "size": 10 },
+            "aggs": {
+                "scheduled": { "filter": { "exists": { "field": "nextFetchDate" }}}
+            }
+        },
+        "cause": {
+            "terms": { "field": "metadata.error%2Ecause", "size": 10 }
+        }
+    }
+}' | jq --raw-output '
+        "-- status",
+        (["STATUS", "TOTAL", "SCHEDULED"] | @tsv),
+        (.aggregations.by_status.buckets[]
+         | [.key, .doc_count, .scheduled.doc_count] | @tsv),
+        "-- error causes",
+        (.aggregations.cause.buckets[] | [.key, .doc_count] | @tsv)'
+}
+
+# most recently fetched document of a host/domain
+#
+# protocol._request.time_ is epoch milliseconds written by the fetcher (and replayed by
+# the reindex), mapped as a keyword by the metadata.* dynamic template. Sorting it as a
+# string is only correct because every value in range is 13 digits wide. Documents that
+# were never fetched have no such field and sort last; "-" is printed if none has one.
+function ____domain_last_fetch () {
+    DOMAIN="$1"
+    $SHOW_COMMAND
+    $CURL -XGET $ES_STATUS_URL'/_search?pretty&routing='"$DOMAIN" --data '{
+    "size": 1,
+    "_source": ["url", "status"],
+    "query": { "term": { "key": "'"$DOMAIN"'" }},
+    "sort": [ { "metadata.protocol%2E_request%2Etime_": "desc" }],
+    "docvalue_fields": ["metadata.protocol%2E_request%2Etime_"]
+}' | jq --raw-output '.hits.hits[]
+        | ((.fields["metadata.protocol%2E_request%2Etime_"] // [])[0]) as $time
+        | [(if $time then ($time | tonumber / 1000 | floor | todate) else "-" end),
+           ._source.status,
+           ._source.url]
+        | @tsv'
+}
+
+# per-domain report
+function __domain_report () {
+    [ $# -gt 0 ] || { echo "domain_report <HOST/DOMAIN>..."; exit 1; }
+    for DOMAIN in "$@"; do
+        echo "===== $DOMAIN"
+        ____domain_aggregations "$DOMAIN"
+        echo "-- last fetch"
+        ____domain_last_fetch "$DOMAIN"
+    done
+}
+
 # failed fetches (status not FETCHED) filtered by metadata
 function __failed_by_metadata () {
     CMND="$1"
@@ -671,7 +742,9 @@ fi
 
 COMMAND="$1"; shift
 
-if $COLORIZE && ! [[ "$COMMAND" =~ ^aggregate ]]; then
+# the commands below already reduce their response to plain text with jq, so there is
+# no JSON left for -C to colorize
+if $COLORIZE && ! [[ "$COMMAND" =~ ^(aggregate|domain_report) ]]; then
     __$COMMAND "$@" | jq --color-output --raw-output '.'
 else
     __$COMMAND "$@"
