@@ -19,6 +19,7 @@ config:
   # delayed sync of the default ChecksumFileSystem
   warc: {"fs.file.impl": "org.apache.hadoop.fs.RawLocalFileSystem"}
 
+
 components:
   - id: "WARCFileNameFormat"
     className: "org.apache.stormcrawler.warc.WARCFileNameFormat"
