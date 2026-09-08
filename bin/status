@@ -81,6 +81,40 @@ function ____show_help() {
     echo "      refetch), error causes, and the most recently fetched URL"
     echo "      Example usage:"
     echo "        status domain_report example.com www.example.org"
+    echo " domain_sources <HOST/DOMAIN>..."
+    echo "      list all feeds and sitemaps (the crawl sources) of a host/domain"
+    echo "      with their status and metadata: type, fetch status, next/last"
+    echo "      fetch, fetch interval, number of links, HTTP status, Last-Modified,"
+    echo "      error cause or redirect target. URLs which look like a feed or"
+    echo "      sitemap but carry no flag (e.g. seeds rejected by the pre-filter"
+    echo "      before their first fetch) are listed as type \"unflagged\"."
+    echo "      Example usage:"
+    echo "        status domain_sources example.com"
+    echo " refetch_sources [search|count|update] <HOST/DOMAIN> [<URL-REGEXP> [<TYPES>]]"
+    echo "      re-arm the flagged feeds and sitemaps of a host/domain so that they are"
+    echo "      fetched again: status is reset to DISCOVERED, nextFetchDate set to"
+    echo "      \$REFETCH_DATE (default: now), cached validators (Last-Modified, ETag) and"
+    echo "      error cause removed. Use search/count first to inspect the affected"
+    echo "      documents. Note that URLs of a domain are fetched in nextFetchDate order:"
+    echo "      set REFETCH_DATE to a past date (e.g. 2000-01-01) to put the sources ahead"
+    echo "      of a large backlog of older DISCOVERED URLs."
+    echo "      URL-REGEXP (default .*, quote it!) must match the whole URL. TYPES is a comma-"
+    echo "      separated list of feed, sitemap, sitemap-news, sitemap-index, sitemap-verified,"
+    echo "      unflagged (default: all flagged types, i.e. without unflagged)."
+    echo "      Example usage:"
+    echo "        status refetch_sources search brighteon.com"
+    echo "        status refetch_sources update brighteon.com '.*/sitemap\\.xml'"
+    echo "        status refetch_sources update example.com '.*' feed,sitemap-news"
+    echo "        REFETCH_DATE=2000-01-01 status refetch_sources update brighteon.com '.*/sitemap\\.xml'"
+    echo " filtered_sources [search|count|update] <HOST/DOMAIN> [<URL-REGEXP> [<TYPES>]]"
+    echo "      feeds and sitemaps of a host/domain rejected by the pre-filter (error"
+    echo "      cause \"Filtered\"), including unflagged look-alikes (seeds blocked before"
+    echo "      their first fetch). \"update\" re-arms them like refetch_sources does."
+    echo "      URL-REGEXP and TYPES as for refetch_sources (default TYPES: all)."
+    echo "      Typical use after removing a host/domain from the fast URL filter:"
+    echo "        status filtered_sources search example.com"
+    echo "        status filtered_sources update example.com"
+    echo "        status filtered_sources update feedburner.com '.*' feed"
     echo
     echo " next_fetch [search|count] [<PAGE> [<SIZE>]]"
     echo "      documents to be fetched next"
@@ -537,6 +571,248 @@ function __domain_report () {
     done
 }
 
+# feeds and sitemaps of a single host/domain, with metadata
+#
+# A document is a crawl source if any of the persisted boolean flags is "true" (see
+# metadata.persist in crawler-conf.yaml). The flags are matched against the string
+# "true" rather than by mere existence because NewsSiteMapParserBolt explicitly writes
+# "false" when it re-classifies a sitemap (e.g. isSitemapNews=false on a sitemap index).
+#
+# StormCrawler's Metadata class lowercases all keys, so the flags configured as
+# "isFeed", "isSitemapNews", ... in crawler-conf.yaml are stored as "isfeed",
+# "issitemapnews", ... in the index. Keys containing a dot are stored with the dot
+# escaped as %2E, and every metadata value is an array (hence the [0] in jq below).
+#
+# ____sources_query DOMAIN URLREGEXP TYPES [EXTRAFILTER]
+#   boolean query selecting the sources of DOMAIN whose URL matches URLREGEXP (".*" for
+#   all) and whose type is one of TYPES (comma-separated: feed, sitemap, sitemap-news,
+#   sitemap-index, sitemap-verified, unflagged). Type "unflagged" selects URLs which
+#   merely look like a feed or sitemap (containing sitemap, rss, feed or atom, not
+#   followed by a letter, so that "feeding" or "atomic" do not match): a seed rejected by PreFilterBolt
+#   (error.cause=Filtered) before its first successful fetch never received a flag, yet
+#   it is exactly the document to reset once the host is unblocked. The name-based match
+#   is a heuristic; the URL column tells. When "unflagged" is requested, documents
+#   carrying one of the flags *not* requested are excluded, so that e.g. "feed,unflagged"
+#   does not re-arm sitemaps named sitemap.xml. EXTRAFILTER is an additional JSON filter
+#   clause (e.g. a term on the error cause).
+SOURCE_TYPES_FLAGGED="feed,sitemap,sitemap-news,sitemap-index,sitemap-verified"
+SOURCE_TYPES_ALL="$SOURCE_TYPES_FLAGGED,unflagged"
+function ____source_type_flag () {
+    case "$1" in
+        feed )             echo isfeed ;;
+        sitemap )          echo issitemap ;;
+        sitemap-news )     echo issitemapnews ;;
+        sitemap-index )    echo issitemapindex ;;
+        sitemap-verified ) echo issitemapverified ;;
+        unflagged )        echo "" ;;
+        * ) echo "Unknown source type: $1 (expected one of $SOURCE_TYPES_ALL)" >&2; exit 1 ;;
+    esac
+}
+function ____check_source_types () {
+    for T in ${1//,/ }; do
+        ____source_type_flag "$T" > /dev/null
+    done
+}
+function ____sources_query () {
+    DOMAIN="$1"
+    URLREGEXP="${2:-.*}"
+    TYPES="${3:-$SOURCE_TYPES_ALL}"
+    # the regexp is embedded in a JSON string: escape backslashes and double quotes
+    URLREGEXP="${URLREGEXP//\\/\\\\}"
+    URLREGEXP="${URLREGEXP//\"/\\\"}"
+    EXTRAFILTER=""
+    [ -n "$4" ] && EXTRAFILTER=",
+                $4"
+    SHOULD=""
+    MUSTNOT=""
+    UNFLAGGED=false
+    for T in ${TYPES//,/ }; do
+        FLAG="$(____source_type_flag "$T")"
+        if [ -z "$FLAG" ]; then
+            UNFLAGGED=true
+            SHOULD="$SHOULD"',
+                { "regexp": { "url": { "value": ".*(sitemaps?|rss|feeds?|atom)([^a-zA-Z].*)?",
+                                       "case_insensitive": true }}}'
+        else
+            SHOULD="$SHOULD"',
+                { "term": { "metadata.'"$FLAG"'": "true" }}'
+        fi
+    done
+    if $UNFLAGGED; then
+        for T in ${SOURCE_TYPES_FLAGGED//,/ }; do
+            case ",$TYPES," in
+                *,$T,* ) ;;
+                * ) MUSTNOT="$MUSTNOT"',
+                { "term": { "metadata.'"$(____source_type_flag "$T")"'": "true" }}' ;;
+            esac
+        done
+    fi
+    echo '"bool": {
+            "filter": [
+                { "term": { "key": "'"$DOMAIN"'" }},
+                { "regexp": { "url": { "value": "'"$URLREGEXP"'" }}}'"$EXTRAFILTER"'
+            ],
+            "should": ['"${SHOULD#,}"'
+            ],
+            "minimum_should_match": 1,
+            "must_not": ['"${MUSTNOT#,}"'
+            ]
+        }'
+}
+
+# search the sources of a host/domain (routed: one shard) and print them as a TSV table
+#
+# At most 10000 documents (index.max_result_window) are shown. Feeds and news/index/
+# verified sitemaps are sorted first so that, if the cap is hit, only plain (robots.txt
+# discovered) sitemaps and unflagged candidates are cut off. track_total_hits makes the
+# reported total exact (otherwise OpenSearch stops counting at 10000 as well).
+function ____sources_table () {
+    DOMAIN="$1"
+    QUERY="$2"
+    $SHOW_COMMAND
+    $CURL -XGET $ES_STATUS_URL'/_search?pretty&routing='"$DOMAIN" --data '{
+    "size": 10000,
+    "track_total_hits": true,
+    "_source": ["url", "status", "nextFetchDate", "metadata"],
+    "query": { '"$QUERY"' },
+    "sort": [
+        { "metadata.isfeed":            { "order": "desc", "missing": "_last", "unmapped_type": "keyword" }},
+        { "metadata.issitemapnews":     { "order": "desc", "missing": "_last", "unmapped_type": "keyword" }},
+        { "metadata.issitemapindex":    { "order": "desc", "missing": "_last", "unmapped_type": "keyword" }},
+        { "metadata.issitemapverified": { "order": "desc", "missing": "_last", "unmapped_type": "keyword" }},
+        { "metadata.issitemap":         { "order": "desc", "missing": "_last", "unmapped_type": "keyword" }},
+        { "url": "asc" }
+    ]
+}' | jq --raw-output '
+        def meta($k): ((._source.metadata[$k] // [])[0]) // "-";
+        # all values, for keys which are appended to (PreFilterBolt adds "Filtered" to error.cause)
+        def metas($k): ((._source.metadata[$k] // []) | join(",")) | if . == "" then "-" else . end;
+        def istrue($k): (._source.metadata[$k] // [])[0] == "true";
+        # precedence matters only for the rare document carrying several flags
+        def srctype:
+            if istrue("isfeed") then "feed"
+            elif istrue("issitemapnews") then "sitemap-news"
+            elif istrue("issitemapindex") then "sitemap-index"
+            elif istrue("issitemapverified") then "sitemap-verified"
+            elif istrue("issitemap") then "sitemap"
+            else "unflagged" end;
+        def epoch_ms_to_date:
+            if . == "-" then "-" else (tonumber / 1000 | floor | todate) end;
+        [.hits.hits[] | {
+            type: srctype,
+            status: ._source.status,
+            next: (._source.nextFetchDate // "-"),
+            last: (meta("protocol%2E_request%2Etime_") | epoch_ms_to_date),
+            interval: meta("fetchinterval"),
+            links: meta("numlinks"),
+            http: meta("fetch%2Estatuscode"),
+            modified: meta("last-modified"),
+            info: (if ._source.status == "REDIRECTION" then meta("_redirto")
+                   else metas("error%2Ecause") end),
+            url: ._source.url
+        }] as $rows
+        | (["TYPE", "STATUS", "NEXT_FETCH", "LAST_FETCH", "INTERVAL", "LINKS", "HTTP",
+            "LAST_MODIFIED", "ERROR/REDIRECT", "URL"] | @tsv),
+          ($rows | sort_by(.type, .url)[]
+           | [.type, .status, .next, .last, .interval, .links, .http, .modified, .info, .url]
+           | @tsv),
+          "-- \($rows | length) sources: \($rows | group_by(.type)
+                | map("\(length) \(.[0].type)") | join(", "))",
+          (if .hits.total.value > ($rows | length)
+           then "WARNING: only \($rows | length) of \(.hits.total.value) sources shown; the"
+                + " missing ones are plain sitemaps or unflagged URLs (feeds and news/index/"
+                + "verified sitemaps are listed first). Narrow down with refetch_sources search"
+                + " <DOMAIN> <URL-REGEXP>."
+           else empty end)'
+}
+
+# per-domain list of feeds and sitemaps
+function __domain_sources () {
+    [ $# -gt 0 ] || { echo "domain_sources <HOST/DOMAIN>..."; exit 1; }
+    for DOMAIN in "$@"; do
+        echo "===== $DOMAIN"
+        ____sources_table "$DOMAIN" "$(____sources_query "$DOMAIN" '.*' "$SOURCE_TYPES_ALL")"
+    done
+}
+
+# re-arm the feeds and sitemaps of a host/domain
+#
+# Like reset_url, the status is set to DISCOVERED and the cached HTTP validators are
+# removed, so that the content is fetched and parsed again rather than answered by a
+# 304. The flags are kept: after the fetch the usual feed/sitemap intervals apply.
+# By default only flagged sources are affected; pass TYPES to narrow down or to include
+# "unflagged" ones (cf. ____sources_query).
+#
+# nextFetchDate is set to $REFETCH_DATE, default "now": the sources queue up behind the
+# domain's other due URLs. The spout takes at most opensearch.status.max.urls.per.bucket
+# URLs per domain and query, in ascending nextFetchDate order, so for a domain with a
+# large backlog of older DISCOVERED URLs "now" may mean weeks. Set REFETCH_DATE to a date
+# in the past (any expression accepted by `date -d`, e.g. 2000-01-01) to put the sources
+# first in their bucket instead.
+REFETCH_DATE="${REFETCH_DATE:-now}"
+function ____refetch_date () {
+    if [ "$REFETCH_DATE" == "now" ]; then ____now; else ____date "$REFETCH_DATE"; fi
+}
+function ____sources_action () {
+    NAME="$1"
+    CMND="$2"
+    DOMAIN="$3"
+    QUERY="$4"
+    case "$CMND" in
+        search )
+            ____sources_table "$DOMAIN" "$QUERY" ;;
+        count )
+            $SHOW_COMMAND
+            $CURL -XGET $ES_STATUS_URL'/_count?routing='"$DOMAIN" --data '{ "query": { '"$QUERY"' }}' \
+                | jq --raw-output '.count' ;;
+        update )
+            $SHOW_COMMAND
+            $CURL -XPOST $ES_STATUS_URL'/_update_by_query?pretty&routing='"$DOMAIN"'&conflicts=proceed&refresh=true' --data '{
+    "script": {
+        "lang": "painless",
+        "source": "ctx._source.status = \"DISCOVERED\"; ctx._source.nextFetchDate = params.date; for (k in params.remove) { ctx._source.metadata.remove(k) }",
+        "params": {
+            "date": "'"$(____refetch_date)"'",
+            "remove": ["signaturechangedate", "last-modified", "protocol%2Eetag",
+                       "error%2Esource", "error%2Ecause"]
+        }
+    },
+    "query": { '"$QUERY"' }
+}' | jq --raw-output '"updated \(.updated) of \(.total) sources" + (if (.failures | length) > 0 then ", \(.failures | length) FAILURES" else "" end)'
+            ;;
+        * )
+            echo "$NAME [search|count|update] <HOST/DOMAIN> [<URL-REGEXP> [<TYPES>]]"; exit 1 ;;
+    esac
+}
+
+function __refetch_sources () {
+    CMND="$1"
+    DOMAIN="$2"
+    URLREGEXP="${3:-.*}"
+    TYPES="${4:-$SOURCE_TYPES_FLAGGED}"
+    [ -n "$DOMAIN" ] || { echo "refetch_sources [search|count|update] <HOST/DOMAIN> [<URL-REGEXP> [<TYPES>]]"; exit 1; }
+    ____check_source_types "$TYPES"
+    ____sources_action refetch_sources "$CMND" "$DOMAIN" "$(____sources_query "$DOMAIN" "$URLREGEXP" "$TYPES")"
+}
+
+# feeds and sitemaps of a host/domain rejected by the pre-filter (error.cause=Filtered)
+#
+# After a host or domain has been removed from the fast URL filter, these are the
+# documents to re-arm: "update" does the same as refetch_sources. Unlike refetch_sources,
+# URLs that only look like a feed or sitemap ("unflagged") are included, because a seed
+# blocked before its first fetch has no flag. Restricting to Filtered documents keeps the
+# name-based match safe enough; check with "search" before "update" anyway.
+function __filtered_sources () {
+    CMND="$1"
+    DOMAIN="$2"
+    URLREGEXP="${3:-.*}"
+    TYPES="${4:-$SOURCE_TYPES_ALL}"
+    [ -n "$DOMAIN" ] || { echo "filtered_sources [search|count|update] <HOST/DOMAIN> [<URL-REGEXP> [<TYPES>]]"; exit 1; }
+    ____check_source_types "$TYPES"
+    ____sources_action filtered_sources "$CMND" "$DOMAIN" \
+        "$(____sources_query "$DOMAIN" "$URLREGEXP" "$TYPES" '{ "term": { "metadata.error%2Ecause": "Filtered" }}')"
+}
+
 # failed fetches (status not FETCHED) filtered by metadata
 function __failed_by_metadata () {
     CMND="$1"
@@ -744,7 +1020,7 @@ COMMAND="$1"; shift
 
 # the commands below already reduce their response to plain text with jq, so there is
 # no JSON left for -C to colorize
-if $COLORIZE && ! [[ "$COMMAND" =~ ^(aggregate|domain_report) ]]; then
+if $COLORIZE && ! [[ "$COMMAND" =~ ^(aggregate|domain_report|domain_sources|refetch_sources|filtered_sources) ]]; then
     __$COMMAND "$@" | jq --color-output --raw-output '.'
 else
     __$COMMAND "$@"
