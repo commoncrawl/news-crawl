@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="http://www.example.com/sitemap-news.xsl"?>
+<!-- comment -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+		http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd
+		http://www.google.com/schemas/sitemap-news/0.9
+		http://www.google.com/schemas/sitemap-news/0.9/sitemap-news.xsd
+		http://www.google.com/schemas/sitemap-image/1.1
+		http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd">
+  <!-- example from https://support.google.com/news/publisher-center/answer/74288 -->
+  <url>
+    <loc>http://www.example.org/business/article55.html</loc>
+    <news:news>
+      <news:publication>
+        <news:name>The Example Times</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:genres>PressRelease, Blog</news:genres>
+      <news:publication_date>2008-12-23</news:publication_date>
+      <news:title>Companies A, B in Merger Talks</news:title>
+      <news:keywords>business, merger, acquisition, A, B</news:keywords>
+      <news:stock_tickers>NASDAQ:A, NASDAQ:B</news:stock_tickers>
+    </news:news>
+    <!-- ignore image links -->
+    <image:image>
+      <image:loc>http://www.example.org/image.jpg</image:loc>
+    </image:image>
+    <image:image>
+      <image:loc>http://example.org/photo.jpg</image:loc>
+      <image:caption>This is the caption.</image:caption>
+      <image:geo_location>Limerick, Ireland</image:geo_location>
+      <image:title>Example photo shot in Limerick, Ireland</image:title>
+      <image:license>https://creativecommons.org/licenses/by/4.0/legalcode</image:license>
+    </image:image>
+    <!-- include alternate language links -->
+  </url>
+    <url>
+    <loc>http://www.example.net/ads/sponsored-content.html</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Example News</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:genres>Advertisement, Sponsored</news:genres>
+      <news:publication_date>2008-12-23</news:publication_date>
+      <news:title>Special Holiday Deals from Our Partners</news:title>
+      <news:keywords>sponsored, advertisement, deals, holiday</news:keywords>
+    </news:news>
+    <image:image>
+      <image:loc>http://www.example.net/ads/promo-banner.jpg</image:loc>
+      <image:caption>Holiday Season Special Offers</image:caption>
+      <image:title>Promotional Banner</image:title>
+    </image:image>
+  </url>
+  <url>
+    <loc>http://www.example.com/sports/news1.html</loc>
+    <news:news>
+      <news:publication>
+        <news:name>Example News</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:genres>Advertisement, Sponsored</news:genres>
+      <news:publication_date>2008-12-23</news:publication_date>
+      <news:title>Special Holiday Deals from Our Partners</news:title>
+      <news:keywords>sponsored, advertisement, deals, holiday</news:keywords>
+    </news:news>
+    <image:image>
+      <image:loc>http://www.example.net/ads/promo-banner.jpg</image:loc>
+      <image:caption>Holiday Season Special Offers</image:caption>
+      <image:title>Promotional Banner</image:title>
+    </image:image>
+  </url>
+
+</urlset>
