@@ -112,6 +112,8 @@ $> bin/status aggregate_status
 
 Run `bin/status` without arguments to see the full list of sub-commands (each sub-command is a function inside the script). Pass `-C` to colorize the JSON output.
 
+For managing filtered resources in the statux index, see [docs/status-sources.md](./docs/status-sources.md).
+
 
 ## Run Crawl with Docker Compose
 
