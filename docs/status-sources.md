@@ -55,7 +55,7 @@ sitemap       ERROR    -                         -                     -        
 
 | column | source |
 |---|---|
-| TYPE | `feed`, `sitemap-news`, `sitemap-index`, `sitemap-verified`, `sitemap`, `unflagged` (first flag wins, in this order) |
+| TYPE | `sitemap-verified`, `feed`, `sitemap-news`, `sitemap-index`, `sitemap`, `unflagged` (first flag wins, in this order) |
 | STATUS | `status` |
 | NEXT_FETCH | `nextFetchDate`; `-` if the document is not scheduled |
 | LAST_FETCH | `protocol._request.time_` converted from epoch milliseconds |

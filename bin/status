@@ -631,7 +631,7 @@ function ____sources_query () {
         if [ -z "$FLAG" ]; then
             UNFLAGGED=true
             SHOULD="$SHOULD"',
-                { "regexp": { "url": { "value": ".*(sitemaps?|rss|feeds?|atom)([^a-zA-Z].*)?",
+                { "regexp": { "url": { "value": ".*(sitemap.*|[^a-zA-Z](news)?(rss|feeds?|atom)+([^a-zA-Z].*)?)",
                                        "case_insensitive": true }}}'
         else
             SHOULD="$SHOULD"',
@@ -676,10 +676,10 @@ function ____sources_table () {
     "_source": ["url", "status", "nextFetchDate", "metadata"],
     "query": { '"$QUERY"' },
     "sort": [
+        { "metadata.issitemapverified": { "order": "desc", "missing": "_last", "unmapped_type": "keyword" }},
         { "metadata.isfeed":            { "order": "desc", "missing": "_last", "unmapped_type": "keyword" }},
         { "metadata.issitemapnews":     { "order": "desc", "missing": "_last", "unmapped_type": "keyword" }},
         { "metadata.issitemapindex":    { "order": "desc", "missing": "_last", "unmapped_type": "keyword" }},
-        { "metadata.issitemapverified": { "order": "desc", "missing": "_last", "unmapped_type": "keyword" }},
         { "metadata.issitemap":         { "order": "desc", "missing": "_last", "unmapped_type": "keyword" }},
         { "url": "asc" }
     ]
@@ -690,10 +690,10 @@ function ____sources_table () {
         def istrue($k): (._source.metadata[$k] // [])[0] == "true";
         # precedence matters only for the rare document carrying several flags
         def srctype:
-            if istrue("isfeed") then "feed"
+            if istrue("issitemapverified") then "sitemap-verified"
+            elif istrue("isfeed") then "feed"
             elif istrue("issitemapnews") then "sitemap-news"
             elif istrue("issitemapindex") then "sitemap-index"
-            elif istrue("issitemapverified") then "sitemap-verified"
             elif istrue("issitemap") then "sitemap"
             else "unflagged" end;
         def epoch_ms_to_date:
